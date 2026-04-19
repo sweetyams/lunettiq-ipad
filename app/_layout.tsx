@@ -17,17 +17,10 @@ import { usePhotoUploader } from '../lib/usePhotoUploader';
 
 const CLERK_KEY = 'pk_test_c3VidGxlLXN1bmJlYW0tMTcuY2xlcmsuYWNjb3VudHMuZGV2JA';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+export { ErrorBoundary } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
+export const unstable_settings = { initialRouteName: '(tabs)' };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -36,25 +29,21 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  useEffect(() => { if (error) throw error; }, [error]);
+  useEffect(() => { if (loaded) SplashScreen.hideAsync(); }, [loaded]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+  if (!loaded) return null;
 
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
+  // ClerkProvider at the top so all children can use useAuth
+  return (
+    <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
+      <AppShell />
+    </ClerkProvider>
+  );
 }
 
-function RootLayoutNav() {
+// Inside ClerkProvider — safe to use useAuth-dependent hooks
+function AppShell() {
   const colorScheme = useColorScheme();
   useNetworkStatus();
   useSyncQueue();
@@ -74,23 +63,21 @@ function RootLayoutNav() {
   }
 
   return (
-    <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerStyle: { backgroundColor: '#F2F2F7' }, headerTintColor: '#000000', headerBackTitle: '' }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
-          <Stack.Screen name="client/new" options={{ title: 'New Client', presentation: 'modal' }} />
-          <Stack.Screen name="session/[clientId]" options={{ title: 'Session', headerShown: false }} />
-          <Stack.Screen name="session/fitting" options={{ title: 'Fitting', headerShown: false }} />
-          <Stack.Screen name="appointment/[id]" options={{ title: 'Appointment' }} />
-          <Stack.Screen name="second-sight/new" options={{ title: 'Second Sight', presentation: 'modal' }} />
-          <Stack.Screen name="custom-design/new" options={{ title: 'Custom Design', presentation: 'modal' }} />
-          <Stack.Screen name="product/[id]" options={{ title: 'Product' }} />
-          <Stack.Screen name="handoff" options={{ title: 'Shift Handoff', presentation: 'modal' }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </ThemeProvider>
-    </ClerkProvider>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={{ headerStyle: { backgroundColor: '#F2F2F7' }, headerTintColor: '#000000', headerBackTitle: '' }}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
+        <Stack.Screen name="client/new" options={{ title: 'New Client', presentation: 'modal' }} />
+        <Stack.Screen name="session/[clientId]" options={{ title: 'Session', headerShown: false }} />
+        <Stack.Screen name="session/fitting" options={{ title: 'Fitting', headerShown: false }} />
+        <Stack.Screen name="appointment/[id]" options={{ title: 'Appointment' }} />
+        <Stack.Screen name="second-sight/new" options={{ title: 'Second Sight', presentation: 'modal' }} />
+        <Stack.Screen name="custom-design/new" options={{ title: 'Custom Design', presentation: 'modal' }} />
+        <Stack.Screen name="product/[id]" options={{ title: 'Product' }} />
+        <Stack.Screen name="handoff" options={{ title: 'Shift Handoff', presentation: 'modal' }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }
 
