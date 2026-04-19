@@ -21,8 +21,15 @@ export default function ClientDetail() {
 
   useEffect(() => {
     if (!id) return;
-    clients.get(id).then(setClient).catch(console.error);
-    clients.timeline(id).then((t) => setTimeline(Array.isArray(t) ? t : [])).catch(console.error);
+    clients.get(id).then((res: any) => {
+      // API returns { client, orders, timeline, intakes, appointments, preferences }
+      if (res?.client) {
+        setClient({ ...res.client, orders: res.orders || [], appointments: res.appointments || [] });
+        setTimeline(Array.isArray(res.timeline) ? res.timeline : []);
+      } else {
+        setClient(res);
+      }
+    }).catch(console.error);
     clients.suggestions(id, 6).then((s) => setSuggestions(Array.isArray(s) ? s : [])).catch(console.error);
   }, [id]);
 
