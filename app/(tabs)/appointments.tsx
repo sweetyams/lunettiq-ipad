@@ -10,19 +10,26 @@ import type { Appointment } from '../../lib/types';
 
 const STATUS_VARIANT = { scheduled: 'default', confirmed: 'success', in_progress: 'warning', completed: 'success', no_show: 'error', cancelled: 'error' } as const;
 
+function formatTime(iso: string | undefined) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
 export default function AppointmentsScreen() {
   const { appointments } = useApi();
   const router = useRouter();
   const [appts, setAppts] = useState<Appointment[]>([]);
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    appointments.list({ date: today }).then((r) => setAppts(Array.isArray(r) ? r : [])).catch(console.error);
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - today.getDay() + 1);
+    appointments.list({ date: monday.toISOString().split('T')[0] } as any).then((r) => setAppts(Array.isArray(r) ? r : [])).catch(console.error);
   }, []);
 
-  const upcoming = appts.filter((a) => a.status === 'scheduled' || a.status === 'confirmed');
-  const inProgress = appts.filter((a) => a.status === 'in_progress');
-  const completed = appts.filter((a) => a.status === 'completed' || a.status === 'no_show');
+  const upcoming = appts.filter((a: any) => a.status === 'scheduled' || a.status === 'confirmed');
+  const inProgress = appts.filter((a: any) => a.status === 'in_progress');
+  const completed = appts.filter((a: any) => a.status === 'completed' || a.status === 'no_show');
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -30,10 +37,10 @@ export default function AppointmentsScreen() {
 
       {inProgress.length > 0 && (
         <Section title="In Progress">
-          {inProgress.map((a, i) => (
+          {inProgress.map((a: any, i: number) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="clock-o" onPress={() => router.push(`/session/${a.clientId}`)} />
+              <Row title={a.customerName || 'Client'} subtitle={`${formatTime(a.startsAt)} · ${a.type || 'appointment'}`} icon="clock-o" onPress={() => router.push(`/session/${a.shopifyCustomerId}`)} />
             </View>
           ))}
         </Section>
@@ -41,10 +48,10 @@ export default function AppointmentsScreen() {
 
       {upcoming.length > 0 && (
         <Section title="Upcoming">
-          {upcoming.map((a, i) => (
+          {upcoming.map((a: any, i: number) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="calendar-o" onPress={() => router.push(`/appointment/${a.id}`)} />
+              <Row title={a.customerName || 'Client'} subtitle={`${formatTime(a.startsAt)} · ${a.type || 'appointment'}`} icon="calendar-o" onPress={() => router.push(`/appointment/${a.id}`)} />
             </View>
           ))}
         </Section>
@@ -52,10 +59,10 @@ export default function AppointmentsScreen() {
 
       {completed.length > 0 && (
         <Section title="Completed">
-          {completed.map((a, i) => (
+          {completed.map((a: any, i: number) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} detail={a.status} icon="check-circle" accessory="none" />
+              <Row title={a.customerName || 'Client'} subtitle={`${formatTime(a.startsAt)} · ${a.type || 'appointment'}`} detail={a.status} icon="check-circle" accessory="none" />
             </View>
           ))}
         </Section>

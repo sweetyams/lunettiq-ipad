@@ -45,7 +45,7 @@ function HomeContent() {
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
-    appointments.list({ date: today }).then((r) => setAppts(Array.isArray(r) ? r : [])).catch(console.error);
+    appointments.list({ date: today } as any).then((r) => setAppts(Array.isArray(r) ? r : [])).catch(console.error);
     clients.list({ limit: 5 }).then((r) => setRecent(Array.isArray(r) ? r : [])).catch(console.error);
   }, []);
 
@@ -58,8 +58,8 @@ function HomeContent() {
       {next && (
         <Section title="Next Up">
           <Row
-            title={next.clientName || next.client?.firstName ? `${next.client?.firstName || ''} ${next.client?.lastName || ''}`.trim() : 'Client'}
-            subtitle={`${next.startTime || ''} · ${next.type || 'appointment'}`}
+            title={(next as any).customerName || 'Client'}
+            subtitle={`${next.startsAt ? new Date(next.startsAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : ''} · ${next.type || 'appointment'}`}
             icon="calendar"
             onPress={() => router.push(`/appointment/${next.id}`)}
           />

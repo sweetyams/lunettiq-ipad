@@ -49,15 +49,19 @@ export interface Variant {
 
 export interface Appointment {
   id: string;
-  clientId: string;
+  clientId?: string;
+  shopifyCustomerId?: string;
   clientName?: string;
+  customerName?: string;
   client?: { firstName?: string; lastName?: string };
   staffId: string;
   locationId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  type: 'fitting' | 'eye_exam' | 'second_sight' | 'custom_design' | 'consultation';
+  date?: string;
+  startsAt?: string;
+  endsAt?: string;
+  startTime?: string;
+  endTime?: string;
+  type?: string;
   status: 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'no_show' | 'cancelled';
   notes?: string;
 }
