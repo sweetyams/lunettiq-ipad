@@ -18,7 +18,7 @@ export default function ClientsScreen() {
   const search = useCallback((q: string) => {
     setQuery(q);
     if (q.length < 2) { setResults([]); return; }
-    clients.list({ q, limit: 20 }).then(setResults).catch(console.error);
+    clients.list({ q, limit: 20 }).then((r) => setResults(Array.isArray(r) ? r : [])).catch(console.error);
   }, []);
 
   return (

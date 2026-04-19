@@ -18,7 +18,7 @@ export default function ClientDetail() {
   useEffect(() => {
     if (!id) return;
     clients.get(id).then(setClient).catch(console.error);
-    clients.timeline(id).then(setTimeline).catch(console.error);
+    clients.timeline(id).then((t) => setTimeline(Array.isArray(t) ? t : [])).catch(console.error);
   }, [id]);
 
   if (!client) return null;

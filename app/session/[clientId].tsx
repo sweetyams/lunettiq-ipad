@@ -24,7 +24,7 @@ export default function SessionScreen() {
   useEffect(() => {
     if (!clientId) return;
     clients.get(clientId).then(setClient).catch(console.error);
-    clients.suggestions(clientId).then(setSuggestions).catch(console.error);
+    clients.suggestions(clientId).then((s) => setSuggestions(Array.isArray(s) ? s : [])).catch(console.error);
     // Create try-on session
     clients.createTryOn(clientId, { mode: 'session', startedAt: new Date().toISOString() })
       .then((s) => setSessionId(s.id))
@@ -77,7 +77,7 @@ export default function SessionScreen() {
           {suggestions.slice(0, 6).map((p, i) => (
             <View key={p.id}>
               {i > 0 && <Separator />}
-              <Row title={p.title} subtitle={p.vendor} detail={p.variants[0]?.price ? `$${p.variants[0].price}` : ''} onPress={() => router.push(`/product/${p.id}`)} />
+              <Row title={p.title} subtitle={p.vendor} detail={p.variants?.[0]?.price ? `$${p.variants[0].price}` : ''} onPress={() => router.push(`/product/${p.id}`)} />
             </View>
           ))}
           {suggestions.length === 0 && <Row title="No suggestions yet" accessory="none" />}
@@ -108,7 +108,7 @@ export default function SessionScreen() {
       <ScrollView style={styles.panel} contentContainerStyle={styles.panelContent}>
         <View style={styles.panelHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.initials}>{client.firstName[0]}{client.lastName[0]}</Text>
+            <Text style={styles.initials}>{(client.firstName || '?')[0]}{(client.lastName || '?')[0]}</Text>
           </View>
           <Text style={styles.panelName}>{client.firstName} {client.lastName}</Text>
           {client.tier && <Badge label={client.tier} variant="success" />}

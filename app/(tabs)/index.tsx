@@ -45,8 +45,8 @@ function HomeContent() {
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
-    appointments.list({ date: today }).then(setAppts).catch(console.error);
-    clients.list({ limit: 5 }).then(setRecent).catch(console.error);
+    appointments.list({ date: today }).then((r) => setAppts(Array.isArray(r) ? r : [])).catch(console.error);
+    clients.list({ limit: 5 }).then((r) => setRecent(Array.isArray(r) ? r : [])).catch(console.error);
   }, []);
 
   const next = appts.find((a) => a.status === 'scheduled' || a.status === 'confirmed');

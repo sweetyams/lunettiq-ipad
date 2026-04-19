@@ -21,8 +21,8 @@ export default function ProductDetail() {
 
   if (!product) return null;
 
-  const mainImage = product.images[0]?.src;
-  const variant = product.variants[0];
+  const mainImage = product.images?.[0]?.src;
+  const variant = product.variants?.[0];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -33,14 +33,14 @@ export default function ProductDetail() {
         <Text style={styles.vendor}>{product.vendor}</Text>
         {variant && <Text style={styles.price}>${variant.price}</Text>}
         <View style={styles.tags}>
-          {product.tags.slice(0, 4).map((t) => <Badge key={t} label={t} />)}
+          {(product.tags || []).slice(0, 4).map((t) => <Badge key={t} label={t} />)}
         </View>
       </View>
 
       {/* Variants */}
-      {product.variants.length > 1 && (
+      {(product.variants || []).length > 1 && (
         <Section title="Variants">
-          {product.variants.map((v, i) => (
+          {(product.variants || []).map((v, i) => (
             <View key={v.id}>
               {i > 0 && <Separator />}
               <Row

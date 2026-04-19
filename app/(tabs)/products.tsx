@@ -27,7 +27,7 @@ export default function ProductsScreen() {
 
   useEffect(() => {
     const f = FILTERS[activeFilter].param;
-    products.list({ q: query || undefined, limit: 24, ...f } as any).then(setData).catch(console.error);
+    products.list({ q: query || undefined, limit: 24, ...f } as any).then((r) => setData(Array.isArray(r) ? r : [])).catch(console.error);
   }, [query, activeFilter]);
 
   const cardWidth = (width - 40 - (cols - 1) * 10) / cols;
@@ -54,9 +54,9 @@ export default function ProductsScreen() {
         columnWrapperStyle={{ gap: 10 }}
         renderItem={({ item }) => (
           <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push(`/product/${item.id}`)}>
-            {item.images[0] && <Image source={{ uri: item.images[0].src }} style={styles.img} />}
+            {item.images?.[0] && <Image source={{ uri: item.images[0].src }} style={styles.img} />}
             <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-            <Text style={styles.price}>{item.variants[0]?.price ? `$${item.variants[0].price}` : ''}</Text>
+            <Text style={styles.price}>{item.variants?.[0]?.price ? `$${item.variants[0].price}` : ''}</Text>
           </Pressable>
         )}
         ListEmptyComponent={<Text style={styles.empty}>No products found</Text>}
