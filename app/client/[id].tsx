@@ -68,9 +68,9 @@ export default function ClientDetail() {
       {/* Fit Profile */}
       {fit && (
         <Section title="Fit Profile">
-          {fit.faceShape && <><Row title="Face Shape" detail={fit.faceShape} accessory="none" /><Separator /></>}
-          {fit.frameWidth && <><Row title="Frame Width" detail={`${fit.frameWidth}mm`} accessory="none" /><Separator /></>}
-          {fit.bridge && <><Row title="Bridge" detail={`${fit.bridge}mm`} accessory="none" /><Separator /></>}
+          {fit.faceShape && <View key="face"><Row title="Face Shape" detail={fit.faceShape} accessory="none" /><Separator /></View>}
+          {fit.frameWidth && <View key="fw"><Row title="Frame Width" detail={`${fit.frameWidth}mm`} accessory="none" /><Separator /></View>}
+          {fit.bridge && <View key="br"><Row title="Bridge" detail={`${fit.bridge}mm`} accessory="none" /><Separator /></View>}
           {fit.templeLength && <Row title="Temple" detail={`${fit.templeLength}mm`} accessory="none" />}
         </Section>
       )}
@@ -78,9 +78,9 @@ export default function ClientDetail() {
       {/* Preferences */}
       {prefs && (
         <Section title="Preferences">
-          {prefs.shapes?.length ? <><Row title="Shapes" detail={prefs.shapes.join(', ')} accessory="none" /><Separator /></> : null}
-          {prefs.materials?.length ? <><Row title="Materials" detail={prefs.materials.join(', ')} accessory="none" /><Separator /></> : null}
-          {prefs.colors?.length ? <><Row title="Colors" detail={prefs.colors.join(', ')} accessory="none" /><Separator /></> : null}
+          {prefs.shapes?.length ? <View key="sh"><Row title="Shapes" detail={prefs.shapes.join(', ')} accessory="none" /><Separator /></View> : null}
+          {prefs.materials?.length ? <View key="mt"><Row title="Materials" detail={prefs.materials.join(', ')} accessory="none" /><Separator /></View> : null}
+          {prefs.colors?.length ? <View key="cl"><Row title="Colors" detail={prefs.colors.join(', ')} accessory="none" /><Separator /></View> : null}
           {prefs.avoid?.length ? <Row title="Avoid" detail={prefs.avoid.join(', ')} accessory="none" /> : null}
         </Section>
       )}

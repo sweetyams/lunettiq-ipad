@@ -59,9 +59,9 @@ export default function ProductDetail() {
         <Row title="Type" detail={product.productType || '—'} accessory="none" />
         <Separator />
         <Row title="Handle" detail={product.handle} accessory="none" />
-        {variant?.sku && <><Separator /><Row title="SKU" detail={variant.sku} accessory="none" /></>}
+        {variant?.sku && <View key="sku"><Separator /><Row title="SKU" detail={variant.sku} accessory="none" /></View>}
         {variant?.inventoryQuantity !== undefined && (
-          <><Separator /><Row title="Stock (this location)" detail={`${variant.inventoryQuantity}`} accessory="none" /></>
+          <View key="stock"><Separator /><Row title="Stock (this location)" detail={`${variant.inventoryQuantity}`} accessory="none" /></View>
         )}
       </Section>
 

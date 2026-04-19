@@ -117,14 +117,14 @@ export default function SessionScreen() {
         {fit && (
           <Section title="Fit">
             {fit.faceShape && <Row title="Face" detail={fit.faceShape} accessory="none" />}
-            {fit.frameWidth && <><Separator /><Row title="Width" detail={`${fit.frameWidth}mm`} accessory="none" /></>}
+            {fit.frameWidth && <View key="fw"><Separator /><Row title="Width" detail={`${fit.frameWidth}mm`} accessory="none" /></View>}
           </Section>
         )}
 
         {prefs && (
           <Section title="Preferences">
             {prefs.shapes?.length ? <Row title="Shapes" detail={prefs.shapes.join(', ')} accessory="none" /> : null}
-            {prefs.materials?.length ? <><Separator /><Row title="Materials" detail={prefs.materials.join(', ')} accessory="none" /></> : null}
+            {prefs.materials?.length ? <View key="mt"><Separator /><Row title="Materials" detail={prefs.materials.join(', ')} accessory="none" /></View> : null}
           </Section>
         )}
       </ScrollView>
