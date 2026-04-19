@@ -69,6 +69,7 @@ export default function SessionScreen() {
       {/* Left: Main workspace */}
       <ScrollView style={styles.main} contentContainerStyle={styles.mainContent}>
         <View style={styles.topBar}>
+          <Button title="✕ Exit" onPress={() => router.back()} variant="outline" small />
           <Text style={styles.title}>Session</Text>
           <Button title="Start Fitting" onPress={() => router.push({ pathname: '/session/fitting', params: { clientId, sessionId: sessionId || '' } })} variant="secondary" />
         </View>
