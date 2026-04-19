@@ -128,10 +128,10 @@ export default function ProductDetail() {
             <Button title="Recommend to Client" onPress={async () => {
               try {
                 await clients.recommend(clientId, { productId: id, productTitle: product.title });
-                Alert.alert('Recommended', `${product.title} recommended to client.`, [{ text: 'OK', onPress: () => router.back() }]);
+                Alert.alert('Recommended', `${product.title} recommended to client.`, [{ text: 'OK', onPress: () => router.replace(`/client/${clientId}`) }]);
               } catch (e: any) { Alert.alert('Error', e.message); }
             }} variant="secondary" />
-            <Button title="Add to Session" onPress={() => router.back()} variant="outline" />
+            <Button title="Add to Session" onPress={() => clientId ? router.replace(`/client/${clientId}`) : router.back()} variant="outline" />
           </>
         ) : (
           <>
