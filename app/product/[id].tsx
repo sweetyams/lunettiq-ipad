@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Image, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, Image, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Card } from '../../components/ui/Card';
@@ -9,8 +9,8 @@ import { SectionLabel } from '../../components/ui/List';
 import Colors from '../../constants/Colors';
 
 export default function ProductDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { products } = useApi();
+  const { id, clientId } = useLocalSearchParams<{ id: string; clientId?: string }>();
+  const { products, clients } = useApi();
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
 
@@ -123,10 +123,23 @@ export default function ProductDetail() {
 
       {/* Actions */}
       <View style={styles.actions}>
-        <Button title="Add to Session" onPress={() => router.back()} />
-        <Button title="Tried On" onPress={() => {}} variant="outline" />
-        <Button title="Client Likes" onPress={() => {}} variant="outline" />
-        <Button title="Not a Match" onPress={() => {}} variant="outline" />
+        {clientId ? (
+          <>
+            <Button title="Recommend to Client" onPress={async () => {
+              try {
+                await clients.addTimeline(clientId, { type: 'recommendation', productId: id, productTitle: product.title });
+                Alert.alert('Recommended', `${product.title} recommended to client.`, [{ text: 'OK', onPress: () => router.back() }]);
+              } catch (e: any) { Alert.alert('Error', e.message); }
+            }} variant="secondary" />
+            <Button title="Add to Session" onPress={() => router.back()} variant="outline" />
+          </>
+        ) : (
+          <>
+            <Button title="Add to Session" onPress={() => router.back()} />
+            <Button title="Tried On" onPress={() => {}} variant="outline" />
+            <Button title="Client Likes" onPress={() => {}} variant="outline" />
+          </>
+        )}
       </View>
     </ScrollView>
   );

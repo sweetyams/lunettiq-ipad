@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, Image, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { SectionLabel } from '../../components/ui/List';
+import { Button } from '../../components/ui/Button';
 import Colors from '../../constants/Colors';
 
 const FILTERS: { label: string; key: string; value: string }[] = [
@@ -20,6 +21,7 @@ const FILTERS: { label: string; key: string; value: string }[] = [
 export default function ProductsScreen() {
   const { products } = useApi();
   const router = useRouter();
+  const { clientId } = useLocalSearchParams<{ clientId?: string }>();
   const { width } = useWindowDimensions();
   const cols = width > 1000 ? 3 : 2;
   const [data, setData] = useState<any[]>([]);
@@ -42,6 +44,13 @@ export default function ProductsScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* Client context banner */}
+      {clientId && (
+        <View style={styles.contextBanner}>
+          <Text style={styles.contextText}>Browsing for client — tap a product to recommend</Text>
+          <Button title="Dismiss" onPress={() => router.setParams({ clientId: '' })} variant="outline" small />
+        </View>
+      )}
       {/* Search + Filters */}
       <View style={styles.header}>
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search frames…" />
@@ -63,7 +72,7 @@ export default function ProductsScreen() {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={{ gap: 12 }}
         renderItem={({ item }) => (
-          <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push(`/product/${item.shopifyProductId}`)}>
+          <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push({ pathname: `/product/${item.shopifyProductId}` as any, params: clientId ? { clientId } : {} })}>
             {item.imageUrl ? (
               <Image source={{ uri: item.imageUrl }} style={styles.img} resizeMode="cover" />
             ) : (
@@ -104,6 +113,8 @@ function StockDot({ count }: { count: number }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
+  contextBanner: { backgroundColor: Colors.primaryLight, paddingHorizontal: 16, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  contextText: { fontSize: 13, fontWeight: '500', color: Colors.primary },
   header: { padding: 16, paddingBottom: 8 },
   filterRow: { marginTop: 10 },
   filterContent: { gap: 8 },
