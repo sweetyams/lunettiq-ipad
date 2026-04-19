@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Image, TextInput, StyleSheet, Linking } from 'react-native';
+import { ScrollView, View, Text, Pressable, Image, TextInput, StyleSheet, Linking, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Card } from '../../components/ui/Card';
@@ -39,7 +39,11 @@ export default function ClientDetail() {
         setError('Could not load client');
       }
     }).catch((e) => setError(e.message));
-    clients.suggestions(id, 6).then((s) => setSuggestions(Array.isArray(s) ? s : [])).catch(() => {});
+    clients.suggestions(id, 6).then((s) => {
+      const arr = Array.isArray(s) ? s : [];
+      // Normalize: API may return {product, matchReasons, score} or flat product objects
+      setSuggestions(arr);
+    }).catch(() => {});
   }, [id]);
 
   if (error) return <View style={styles.container}><Text style={{ padding: 40, color: Colors.error }}>{error}</Text></View>;
@@ -207,9 +211,13 @@ function EditablePreferences({ id, prefs, derived, clients: api }: { id: string;
   const [avoid, setAvoid] = useState<string[]>(prefs.avoid || []);
 
   const save = async () => {
-    const value = JSON.stringify({ shapes, materials, colours, avoid });
-    await api.update(id, { metafields: { preferences_json: { value, type: 'json' } } });
-    setEditing(false);
+    try {
+      const value = JSON.stringify({ shapes, materials, colours, avoid });
+      await api.update(id, { metafields: { preferences_json: { value, type: 'json' } } });
+      setEditing(false);
+    } catch (e: any) {
+      Alert.alert('Save failed', e.message);
+    }
   };
 
   return (
@@ -296,9 +304,13 @@ function EditableFitProfile({ id, fit, clients: api }: { id: string; fit: any; c
   const [temple, setTemple] = useState(String(fit.templeLength || fit.temple || ''));
 
   const save = async () => {
-    const value = JSON.stringify({ face_shape: faceShape, frame_width: frameWidth, bridge, temple });
-    await api.update(id, { metafields: { fit_profile: { value, type: 'json' } } });
-    setEditing(false);
+    try {
+      const value = JSON.stringify({ face_shape: faceShape, frame_width: frameWidth, bridge, temple });
+      await api.update(id, { metafields: { fit_profile: { value, type: 'json' } } });
+      setEditing(false);
+    } catch (e: any) {
+      Alert.alert('Save failed', e.message);
+    }
   };
 
   return (
