@@ -64,7 +64,7 @@ export default function SecondSightIntake() {
             <View style={[styles.stepDot, i <= step && styles.stepDotActive]}>
               <Text style={[styles.stepNum, i <= step && { color: Colors.white }]}>{i + 1}</Text>
             </View>
-            <Text style={[styles.stepLabel, i === step && { color: Colors.navy, fontWeight: '600' }]}>{s}</Text>
+            <Text style={[styles.stepLabel, i === step && { color: Colors.black, fontWeight: '600' }]}>{s}</Text>
           </View>
         ))}
       </View>
@@ -166,12 +166,12 @@ export default function SecondSightIntake() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
   steps: { flexDirection: 'row', justifyContent: 'center', gap: 24, paddingVertical: 20 },
   stepItem: { alignItems: 'center' },
   stepDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
-  stepDotActive: { backgroundColor: Colors.navy },
+  stepDotActive: { backgroundColor: Colors.black },
   stepNum: { fontSize: 15, fontWeight: '700', color: Colors.muted },
   stepLabel: { fontSize: 13, color: Colors.muted, marginTop: 4 },
   nextBtn: { marginHorizontal: 20, marginTop: 12 },
@@ -181,5 +181,5 @@ const styles = StyleSheet.create({
   photoRow: { maxHeight: 110 },
   photoThumb: { width: 80, height: 80, borderRadius: 8 },
   photoLabel: { fontSize: 11, color: Colors.muted, textAlign: 'center', marginTop: 4 },
-  notesInput: { fontSize: 17, color: Colors.navy, padding: 16, minHeight: 80, textAlignVertical: 'top' },
+  notesInput: { fontSize: 17, color: Colors.black, padding: 16, minHeight: 80, textAlignVertical: 'top' },
 });

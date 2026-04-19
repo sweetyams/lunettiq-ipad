@@ -88,12 +88,12 @@ export default function ClientDetail() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
   identity: { alignItems: 'center', paddingVertical: 24 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.navy, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: Colors.black, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   initials: { fontSize: 28, fontWeight: '700', color: Colors.white },
-  name: { fontSize: 28, fontWeight: '700', color: Colors.navy },
+  name: { fontSize: 28, fontWeight: '700', color: Colors.black },
   badges: { flexDirection: 'row', gap: 6, marginTop: 8 },
   actions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginBottom: 24 },
 });

@@ -49,7 +49,7 @@ export default function ClientsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   searchWrap: { paddingHorizontal: 20, paddingBottom: 12 },
   list: { backgroundColor: Colors.white, borderRadius: 12, marginHorizontal: 20 },
   empty: { fontSize: 17, color: Colors.muted, textAlign: 'center', padding: 40 },

@@ -78,10 +78,10 @@ function Field({ label, value, onChangeText, ...props }: { label: string; value:
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingTop: 16, paddingBottom: 40 },
   field: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 44 },
-  label: { fontSize: 17, color: Colors.navy, width: 110 },
-  input: { flex: 1, fontSize: 17, color: Colors.navy, paddingVertical: 12 },
+  label: { fontSize: 17, color: Colors.black, width: 110 },
+  input: { flex: 1, fontSize: 17, color: Colors.black, paddingVertical: 12 },
   footer: { paddingHorizontal: 20, marginTop: 8 },
 });

@@ -120,16 +120,16 @@ export default function SessionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: Colors.offWhite },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: Colors.bg },
   main: { flex: 3 },
   mainContent: { paddingBottom: 40 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.navy },
-  panel: { flex: 2, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: Colors.border, backgroundColor: Colors.offWhite },
+  title: { fontSize: 28, fontWeight: '700', color: Colors.black },
+  panel: { flex: 2, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: Colors.border, backgroundColor: Colors.bg },
   panelContent: { paddingBottom: 40 },
   panelHeader: { alignItems: 'center', paddingVertical: 24 },
-  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.navy, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.black, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   initials: { fontSize: 22, fontWeight: '700', color: Colors.white },
-  panelName: { fontSize: 20, fontWeight: '700', color: Colors.navy, marginBottom: 6 },
-  notesInput: { fontSize: 17, color: Colors.navy, padding: 16, minHeight: 100, textAlignVertical: 'top' },
+  panelName: { fontSize: 20, fontWeight: '700', color: Colors.black, marginBottom: 6 },
+  notesInput: { fontSize: 17, color: Colors.black, padding: 16, minHeight: 100, textAlignVertical: 'top' },
 });

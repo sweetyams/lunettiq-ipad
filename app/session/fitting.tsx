@@ -11,7 +11,7 @@ import type { TryOnPhoto } from '../../lib/types';
 const VERDICTS = ['loved', 'liked', 'unsure', 'rejected'] as const;
 const VERDICT_ICONS: Record<string, { icon: string; color: string }> = {
   loved: { icon: 'heart', color: Colors.error },
-  liked: { icon: 'thumbs-up', color: Colors.green },
+  liked: { icon: 'thumbs-up', color: Colors.primary },
   unsure: { icon: 'question-circle', color: Colors.muted },
   rejected: { icon: 'thumbs-down', color: Colors.muted },
 };
@@ -114,8 +114,8 @@ export default function FittingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.offWhite, padding: 20 },
-  body: { fontSize: 17, color: Colors.navy, textAlign: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg, padding: 20 },
+  body: { fontSize: 17, color: Colors.black, textAlign: 'center' },
   cameraWrap: { flex: 3 },
   camera: { flex: 1 },
   captureBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 20, paddingHorizontal: 20 },
@@ -123,18 +123,18 @@ const styles = StyleSheet.create({
   shutter: { width: 72, height: 72, borderRadius: 36, borderWidth: 4, borderColor: Colors.white, alignItems: 'center', justifyContent: 'center' },
   shutterInner: { width: 58, height: 58, borderRadius: 29, backgroundColor: Colors.white },
   count: { position: 'absolute', right: 20, bottom: 32, color: Colors.white, fontSize: 15, fontWeight: '600' },
-  bottom: { flex: 2, backgroundColor: Colors.offWhite },
+  bottom: { flex: 2, backgroundColor: Colors.bg },
   shelf: { maxHeight: 90, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   shelfContent: { padding: 10, gap: 8 },
   thumb: { width: 70, height: 70, borderRadius: 8, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
-  thumbSelected: { borderColor: Colors.navy },
+  thumbSelected: { borderColor: Colors.black },
   thumbImg: { width: '100%', height: '100%' },
   verdictDot: { position: 'absolute', bottom: 2, right: 2, backgroundColor: Colors.white, borderRadius: 8, padding: 2 },
   detail: { flex: 1 },
   detailContent: { paddingTop: 8 },
   verdictRow: { flexDirection: 'row', padding: 12, gap: 8 },
   verdictBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, minHeight: 44 },
-  verdictActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  verdictLabel: { fontSize: 12, marginTop: 4, color: Colors.navy, fontWeight: '600' },
-  notesInput: { fontSize: 17, color: Colors.navy, padding: 16, minHeight: 80, textAlignVertical: 'top' },
+  verdictActive: { backgroundColor: Colors.black, borderColor: Colors.black },
+  verdictLabel: { fontSize: 12, marginTop: 4, color: Colors.black, fontWeight: '600' },
+  notesInput: { fontSize: 17, color: Colors.black, padding: 16, minHeight: 80, textAlignVertical: 'top' },
 });

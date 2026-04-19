@@ -67,7 +67,7 @@ export default function AppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
   empty: { fontSize: 17, color: Colors.muted, textAlign: 'center', marginTop: 60 },
 });

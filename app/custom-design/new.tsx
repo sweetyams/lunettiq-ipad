@@ -89,14 +89,14 @@ function Field({ label, value, onChangeText, placeholder }: { label: string; val
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
   photoRow: { maxHeight: 110 },
   photoThumb: { width: 90, height: 90, borderRadius: 10 },
   photoActions: { flexDirection: 'row', gap: 10, padding: 16 },
   field: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 44 },
-  label: { fontSize: 17, color: Colors.navy, width: 90 },
-  input: { flex: 1, fontSize: 17, color: Colors.navy, paddingVertical: 12 },
-  notesInput: { fontSize: 17, color: Colors.navy, padding: 16, minHeight: 80, textAlignVertical: 'top' },
+  label: { fontSize: 17, color: Colors.black, width: 90 },
+  input: { flex: 1, fontSize: 17, color: Colors.black, paddingVertical: 12 },
+  notesInput: { fontSize: 17, color: Colors.black, padding: 16, minHeight: 80, textAlignVertical: 'top' },
   footer: { paddingHorizontal: 20, marginTop: 12 },
 });

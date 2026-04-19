@@ -94,9 +94,9 @@ function HomeContent() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.offWhite },
-  brand: { fontSize: 40, fontWeight: '700', color: Colors.navy },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg },
+  brand: { fontSize: 40, fontWeight: '700', color: Colors.black, letterSpacing: -1 },
   tagline: { fontSize: 17, color: Colors.muted, marginTop: 4 },
 });

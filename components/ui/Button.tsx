@@ -9,9 +9,9 @@ interface Props {
 }
 
 export function Button({ title, onPress, variant = 'primary', style }: Props) {
-  const bg = variant === 'primary' ? Colors.navy : variant === 'secondary' ? Colors.green : 'transparent';
-  const textColor = variant === 'outline' ? Colors.navy : Colors.white;
-  const border = variant === 'outline' ? { borderWidth: 1, borderColor: Colors.navy } : {};
+  const bg = variant === 'primary' ? Colors.black : variant === 'secondary' ? Colors.primary : 'transparent';
+  const textColor = variant === 'outline' ? Colors.primary : Colors.white;
+  const border = variant === 'outline' ? { borderWidth: 1.5, borderColor: Colors.primary } : {};
 
   return (
     <Pressable onPress={onPress} style={[styles.btn, { backgroundColor: bg }, border, style]}>
@@ -21,6 +21,6 @@ export function Button({ title, onPress, variant = 'primary', style }: Props) {
 }
 
 const styles = StyleSheet.create({
-  btn: { minHeight: 44, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  btn: { minHeight: 44, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   text: { fontSize: 17, fontWeight: '600' },
 });

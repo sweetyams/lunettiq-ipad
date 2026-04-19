@@ -53,16 +53,16 @@ export default function ProductsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   bar: { padding: 16 },
   filters: { marginTop: 10 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.white, marginRight: 8, borderWidth: 1, borderColor: Colors.border, minHeight: 44, justifyContent: 'center' },
-  chipActive: { backgroundColor: Colors.navy, borderColor: Colors.navy },
-  chipText: { fontSize: 15, color: Colors.navy },
+  chipActive: { backgroundColor: Colors.black, borderColor: Colors.black },
+  chipText: { fontSize: 15, color: Colors.black },
   chipTextActive: { color: Colors.white },
   grid: { paddingHorizontal: 16 },
   card: { backgroundColor: Colors.white, borderRadius: 10, marginBottom: 12, marginRight: 8, overflow: 'hidden' },
   img: { width: '100%', aspectRatio: 1, backgroundColor: Colors.border },
-  title: { fontSize: 15, fontWeight: '600', color: Colors.navy, padding: 8, paddingBottom: 2 },
+  title: { fontSize: 15, fontWeight: '600', color: Colors.black, padding: 8, paddingBottom: 2 },
   price: { fontSize: 15, color: Colors.muted, paddingHorizontal: 8, paddingBottom: 8 },
 });

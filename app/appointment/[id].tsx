@@ -69,7 +69,7 @@ export default function AppointmentDetail() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  screen: { flex: 1, backgroundColor: Colors.bg },
   content: { paddingBottom: 40 },
   actions: { gap: 12, paddingHorizontal: 20, marginTop: 12 },
 });

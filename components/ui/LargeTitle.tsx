@@ -21,6 +21,6 @@ export function LargeTitle({ title, subtitle, trailing }: Props) {
 
 const styles = StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 34, fontWeight: '700', color: Colors.navy },
+  title: { fontSize: 34, fontWeight: '700', color: Colors.black, letterSpacing: 0.4 },
   subtitle: { fontSize: 17, color: Colors.muted, marginTop: 2 },
 });
