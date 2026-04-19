@@ -48,7 +48,7 @@ export default function ProductsScreen() {
       {clientId && (
         <View style={styles.contextBanner}>
           <Text style={styles.contextText}>Browsing for client — tap a product to recommend</Text>
-          <Button title="Dismiss" onPress={() => router.setParams({ clientId: '' })} variant="outline" small />
+          <Button title="✕ Cancel" onPress={() => router.replace('/(tabs)/products')} variant="outline" small />
         </View>
       )}
       {/* Search + Filters */}
