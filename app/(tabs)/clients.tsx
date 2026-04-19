@@ -95,7 +95,7 @@ export default function ClientsScreen() {
             <Text style={styles.previewEmptyText}>Select a client to preview</Text>
           </View>
         ) : (
-          <PreviewPanel client={preview} onOpen={() => router.push(`/client/${preview.shopifyCustomerId}`)} onSession={() => router.push(`/session/${preview.shopifyCustomerId}`)} />
+          <PreviewPanel client={preview} onOpen={() => router.push(`/client/${preview.shopifyCustomerId || selected?.shopifyCustomerId}`)} onSession={() => router.push(`/session/${preview.shopifyCustomerId || selected?.shopifyCustomerId}`)} />
         )}
       </View>
     </View>
