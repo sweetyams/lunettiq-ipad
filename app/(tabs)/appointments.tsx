@@ -33,7 +33,7 @@ export default function AppointmentsScreen() {
           {inProgress.map((a, i) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="clock-o" onPress={() => router.push(`/session/${a.clientId}`)} />
+              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="clock-o" onPress={() => router.push(`/session/${a.clientId}`)} />
             </View>
           ))}
         </Section>
@@ -44,7 +44,7 @@ export default function AppointmentsScreen() {
           {upcoming.map((a, i) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="calendar-o" onPress={() => router.push(`/appointment/${a.id}`)} />
+              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="calendar-o" onPress={() => router.push(`/appointment/${a.id}`)} />
             </View>
           ))}
         </Section>
@@ -55,7 +55,7 @@ export default function AppointmentsScreen() {
           {completed.map((a, i) => (
             <View key={a.id}>
               {i > 0 && <Separator />}
-              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} detail={a.status} icon="check-circle" accessory="none" />
+              <Row title={a.clientName || a.client?.firstName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} detail={a.status} icon="check-circle" accessory="none" />
             </View>
           ))}
         </Section>

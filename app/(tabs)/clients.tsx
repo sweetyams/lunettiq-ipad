@@ -34,8 +34,8 @@ export default function ClientsScreen() {
         ItemSeparatorComponent={Separator}
         renderItem={({ item }) => (
           <Row
-            title={`${item.firstName} ${item.lastName}`}
-            subtitle={item.email}
+            title={`${item.firstName || ''} ${item.lastName || ''}`.trim() || item.email || 'Unknown'}
+            subtitle={item.email || ''}
             detail={item.tier}
             onPress={() => router.push(`/client/${item.shopifyCustomerId}`)}
           />

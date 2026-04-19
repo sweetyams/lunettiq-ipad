@@ -58,8 +58,8 @@ function HomeContent() {
       {next && (
         <Section title="Next Up">
           <Row
-            title={next.clientName || 'Client'}
-            subtitle={`${next.startTime} · ${next.type}`}
+            title={next.clientName || next.client?.firstName ? `${next.client?.firstName || ''} ${next.client?.lastName || ''}`.trim() : 'Client'}
+            subtitle={`${next.startTime || ''} · ${next.type || 'appointment'}`}
             icon="calendar"
             onPress={() => router.push(`/appointment/${next.id}`)}
           />
@@ -78,11 +78,11 @@ function HomeContent() {
 
       <Section title="Recent Clients">
         {recent.map((c, i) => (
-          <View key={c.shopifyCustomerId}>
+          <View key={c.shopifyCustomerId || i}>
             {i > 0 && <Separator />}
             <Row
-              title={`${c.firstName} ${c.lastName}`}
-              subtitle={c.email}
+              title={`${c.firstName || ''} ${c.lastName || ''}`.trim() || c.email || 'Unknown'}
+              subtitle={c.email || ''}
               detail={c.tier}
               onPress={() => router.push(`/client/${c.shopifyCustomerId}`)}
             />
