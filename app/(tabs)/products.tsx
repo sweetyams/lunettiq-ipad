@@ -20,8 +20,8 @@ export default function ProductsScreen() {
   const { products } = useApi();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const cols = width > 1000 ? 4 : 3;
-  const [data, setData] = useState<Product[]>([]);
+  const cols = 2;
+  const [data, setData] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(0);
 
@@ -54,7 +54,9 @@ export default function ProductsScreen() {
         columnWrapperStyle={{ gap: 10 }}
         renderItem={({ item }) => (
           <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push(`/product/${item.id}`)}>
-            {item.images?.[0] && <Image source={{ uri: item.images[0].src }} style={styles.img} />}
+            {(item.imageUrl || item.images?.[0]?.src || item.images?.[0]) ? (
+              <Image source={{ uri: item.imageUrl || item.images?.[0]?.src || item.images?.[0] }} style={styles.img} />
+            ) : <View style={styles.img} />}
             <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
             <Text style={styles.price}>{item.variants?.[0]?.price ? `$${item.variants[0].price}` : ''}</Text>
           </Pressable>
