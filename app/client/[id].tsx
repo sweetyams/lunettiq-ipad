@@ -12,7 +12,7 @@ type Tab = 'timeline' | 'orders' | 'appointments' | 'second_sight';
 
 export default function ClientDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { clients } = useApi();
+  const { clients, request: apiRequest } = useApi();
   const router = useRouter();
   const [client, setClient] = useState<any>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -129,12 +129,44 @@ export default function ClientDetail() {
 
         <SectionLabel style={{ marginTop: 20 }}>Suggestions</SectionLabel>
         <View style={styles.suggestionsGrid}>
-          {suggestions.slice(0, 4).map((p: any) => (
-            <Pressable key={p.id || p.shopifyProductId} onPress={() => router.push(`/product/${p.shopifyProductId || p.id}`)} style={styles.suggestionCard}>
-              {p.imageUrl && <Image source={{ uri: p.imageUrl }} style={styles.suggestionImg} />}
-              <Text style={styles.suggestionTitle} numberOfLines={1}>{p.title}</Text>
-            </Pressable>
-          ))}
+          {suggestions.slice(0, 4).map((s: any) => {
+            const product = s.product || s;
+            const reasons = s.matchReasons || [];
+            const pid = product.shopifyProductId || product.id;
+            return (
+              <View key={pid} style={styles.suggestionCard}>
+                {/* Like / Dismiss buttons */}
+                <View style={styles.suggestionActions}>
+                  <Pressable onPress={() => {
+                    apiRequest(`/api/crm/clients/${id}/suggestions/dismiss`, { method: 'POST', body: { productId: pid, sentiment: 'like' } }).catch(() => {});
+                    setSuggestions((prev) => prev.filter((x: any) => (x.product?.shopifyProductId || x.shopifyProductId || x.id) !== pid));
+                  }} style={styles.suggestionActionBtn}>
+                    <Text style={styles.suggestionActionText}>♥</Text>
+                  </Pressable>
+                  <Pressable onPress={() => {
+                    apiRequest(`/api/crm/clients/${id}/suggestions/dismiss`, { method: 'POST', body: { productId: pid } }).catch(() => {});
+                    setSuggestions((prev) => prev.filter((x: any) => (x.product?.shopifyProductId || x.shopifyProductId || x.id) !== pid));
+                  }} style={styles.suggestionActionBtn}>
+                    <Text style={styles.suggestionActionText}>×</Text>
+                  </Pressable>
+                </View>
+                <Pressable onPress={() => router.push({ pathname: `/product/${pid}` as any, params: { clientId: id } })}>
+                  {product.imageUrl && <Image source={{ uri: product.imageUrl }} style={styles.suggestionImg} />}
+                  <View style={styles.suggestionBody}>
+                    <Text style={styles.suggestionTitle} numberOfLines={1}>{product.title}</Text>
+                    <Text style={styles.suggestionMeta}>{product.vendor}{product.priceMin ? ` · $${product.priceMin}` : ''}</Text>
+                    {reasons.length > 0 && (
+                      <View style={styles.reasonRow}>
+                        {reasons.slice(0, 2).map((r: string) => (
+                          <View key={r} style={styles.reasonBadge}><Text style={styles.reasonText}>{r}</Text></View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+              </View>
+            );
+          })}
           {suggestions.length === 0 && <Text style={styles.muted}>No suggestions yet.</Text>}
         </View>
 
@@ -398,9 +430,17 @@ const styles = StyleSheet.create({
   fitLabel: { fontSize: 12, color: Colors.muted },
   fitValue: { fontSize: 12, fontWeight: '600', color: Colors.navy },
   suggestionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  suggestionCard: { width: '47%', backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, overflow: 'hidden' },
+  suggestionCard: { width: '47%', backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, overflow: 'hidden', position: 'relative' as const },
+  suggestionActions: { position: 'absolute' as const, top: 4, right: 4, zIndex: 10, flexDirection: 'row', gap: 4 },
+  suggestionActionBtn: { width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+  suggestionActionText: { color: Colors.white, fontSize: 13 },
   suggestionImg: { width: '100%', aspectRatio: 1, backgroundColor: Colors.cream },
-  suggestionTitle: { fontSize: 11, fontWeight: '500', color: Colors.navy, padding: 6 },
+  suggestionBody: { padding: 6 },
+  suggestionTitle: { fontSize: 11, fontWeight: '500', color: Colors.navy },
+  suggestionMeta: { fontSize: 10, color: Colors.muted, marginTop: 1 },
+  reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 3, marginTop: 4 },
+  reasonBadge: { backgroundColor: Colors.primaryLight, paddingHorizontal: 5, paddingVertical: 1, borderRadius: 2 },
+  reasonText: { fontSize: 9, fontWeight: '500', color: Colors.primary },
   actionsBlock: { marginTop: 20, gap: 8 },
   noteModal: { marginTop: 16, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, padding: 14, borderRadius: 2 },
   noteModalTitle: { fontSize: 13, fontWeight: '700', color: Colors.navy, marginBottom: 8 },
