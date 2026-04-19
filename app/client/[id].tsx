@@ -151,12 +151,9 @@ export default function ClientDetail() {
         {showNote && (
           <NoteModal
             onSave={async (note) => {
-              await clients.addTimeline(id!, { type: 'note', notes: note });
+              await clients.addTimeline(id!, { type: 'note', subject: 'Staff note', body: note });
               setShowNote(false);
-              // Refresh timeline
-              clients.get(id!).then((res: any) => {
-                if (res?.timeline) setTimeline(res.timeline);
-              }).catch(() => {});
+              clients.timeline(id!).then((t) => setTimeline(Array.isArray(t) ? t : [])).catch(() => {});
             }}
             onCancel={() => setShowNote(false)}
           />

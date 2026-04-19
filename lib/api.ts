@@ -62,7 +62,9 @@ export function useApi() {
       request<any>(`/api/crm/clients/${id}`, { method: 'PATCH', body }),
     timeline: (id: string) => request<any[]>(`/api/crm/clients/${id}/timeline`),
     addTimeline: (id: string, body: Record<string, unknown>) =>
-      request<any>(`/api/crm/clients/${id}/timeline`, { method: 'POST', body }),
+      request<any>('/api/crm/interactions', { method: 'POST', body: { shopifyCustomerId: id, ...body } }),
+    recommend: (id: string, body: Record<string, unknown>) =>
+      request<any>(`/api/crm/clients/${id}/recommend`, { method: 'POST', body }),
     suggestions: (id: string, limit = 10) =>
       request<any[]>(`/api/crm/clients/${id}/suggestions`, { params: { limit } }),
     tryOnSessions: (id: string) => request<any[]>(`/api/crm/clients/${id}/tryon-sessions`),

@@ -127,7 +127,7 @@ export default function ProductDetail() {
           <>
             <Button title="Recommend to Client" onPress={async () => {
               try {
-                await clients.addTimeline(clientId, { type: 'recommendation', productId: id, productTitle: product.title });
+                await clients.recommend(clientId, { productId: id, productTitle: product.title });
                 Alert.alert('Recommended', `${product.title} recommended to client.`, [{ text: 'OK', onPress: () => router.back() }]);
               } catch (e: any) { Alert.alert('Error', e.message); }
             }} variant="secondary" />
