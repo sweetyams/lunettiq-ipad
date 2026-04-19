@@ -15,6 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "isTabletOnly": true,
       "bundleIdentifier": "com.anonymous.lunettiq-tab"
     },
     "android": {
