@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
@@ -6,6 +6,7 @@ import { SearchBar } from '../../components/ui/SearchBar';
 import { SectionLabel } from '../../components/ui/List';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
 import Colors from '../../constants/Colors';
 
 export default function ClientsScreen() {
@@ -13,62 +14,180 @@ export default function ClientsScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load recent on mount, search on type
+  // Fetch on mount + debounced search
   useEffect(() => {
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => {
-      setLoading(true);
-      clients.list({ q: query || undefined, limit: 30 })
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      clients.list({ q: query || undefined, limit: 50 })
         .then((r) => setResults(Array.isArray(r) ? r : []))
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }, query ? 250 : 0);
+        .catch(console.error);
+    }, query ? 300 : 0);
   }, [query]);
 
+  // Load preview when selected
+  useEffect(() => {
+    if (!selected) { setPreview(null); return; }
+    clients.get(selected.shopifyCustomerId).then(setPreview).catch(console.error);
+  }, [selected]);
+
+  const tierVariant = (tags: string[]) => {
+    if (tags?.some((t: string) => t.includes('III') || t.includes('3'))) return 'tier3';
+    if (tags?.some((t: string) => t.includes('II') || t.includes('2'))) return 'tier2';
+    return 'tier1';
+  };
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
+    <View style={styles.container}>
+      {/* Left: Client list (40%) */}
+      <View style={styles.listPane}>
+        <View style={styles.listHeader}>
           <SearchBar value={query} onChangeText={setQuery} placeholder="Search by name, email, phone…" />
         </View>
-        <Button title="+ New client" onPress={() => router.push('/client/new')} small style={{ marginLeft: 12 }} />
-      </View>
-      <SectionLabel style={{ paddingHorizontal: 20, marginTop: 4 }}>
-        {query ? `${results.length} result${results.length !== 1 ? 's' : ''}` : 'All clients'}
-      </SectionLabel>
-      <FlatList
-        data={results}
-        keyExtractor={(c) => c.shopifyCustomerId || c.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/client/${item.shopifyCustomerId}`)} style={styles.row}>
-            <View style={styles.avatar}>
-              <Text style={styles.initial}>{(item.firstName || item.email || '?')[0].toUpperCase()}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{`${item.firstName || ''} ${item.lastName || ''}`.trim() || item.email}</Text>
-              <Text style={styles.meta}>{item.email || ''}{item.phone ? ` · ${item.phone}` : ''}</Text>
-            </View>
-            {item.tier && <Badge label={item.tier} variant={item.tier === 'Tier III' ? 'tier3' : item.tier === 'Tier II' ? 'tier2' : 'tier1'} />}
+        <View style={styles.listMeta}>
+          <SectionLabel>{query ? `${results.length} results` : 'All clients'}</SectionLabel>
+          <Pressable onPress={() => router.push('/client/new')}>
+            <Text style={styles.addBtn}>+ New</Text>
           </Pressable>
+        </View>
+        <FlatList
+          data={results}
+          keyExtractor={(c) => c.shopifyCustomerId}
+          renderItem={({ item }) => {
+            const isSelected = selected?.shopifyCustomerId === item.shopifyCustomerId;
+            return (
+              <Pressable
+                onPress={() => setSelected(item)}
+                onLongPress={() => router.push(`/client/${item.shopifyCustomerId}`)}
+                style={[styles.row, isSelected && styles.rowSelected]}
+              >
+                <View style={styles.rowAvatar}>
+                  <Text style={styles.rowInitial}>{(item.firstName || item.email || '?')[0].toUpperCase()}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowName}>{`${item.firstName || ''} ${item.lastName || ''}`.trim() || item.email}</Text>
+                  <Text style={styles.rowMeta}>
+                    {item.email || ''}{item.orderCount ? ` · ${item.orderCount} orders` : ''}
+                  </Text>
+                </View>
+                {item.tier && <Badge label={item.tier} variant={tierVariant(item.tags || [])} />}
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={<Text style={styles.empty}>No clients found</Text>}
+        />
+      </View>
+
+      {/* Right: Preview (60%) */}
+      <View style={styles.previewPane}>
+        {!preview ? (
+          <View style={styles.previewEmpty}>
+            <Text style={styles.previewEmptyText}>Select a client to preview</Text>
+          </View>
+        ) : (
+          <PreviewPanel client={preview} onOpen={() => router.push(`/client/${preview.shopifyCustomerId}`)} onSession={() => router.push(`/session/${preview.shopifyCustomerId}`)} />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>{loading ? 'Loading…' : 'No clients found'}</Text>}
-      />
+      </View>
+    </View>
+  );
+}
+
+function PreviewPanel({ client, onOpen, onSession }: { client: any; onOpen: () => void; onSession: () => void }) {
+  const name = `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.email;
+  const fit = client.metafields?.fitProfile || client.metafields?.custom || {};
+  const prefs = client.metafields?.preferences || {};
+  const orders = client.orders || [];
+
+  return (
+    <View style={styles.preview}>
+      {/* Header */}
+      <View style={styles.previewHeader}>
+        <View style={styles.previewAvatar}>
+          <Text style={styles.previewAvatarText}>{(client.firstName || '?')[0]}{(client.lastName || '')[0]}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.previewName}>{name}</Text>
+          {client.tier && <Badge label={client.tier} variant="tier3" />}
+          <Text style={styles.previewContact}>{client.email}{client.phone ? ` · ${client.phone}` : ''}</Text>
+        </View>
+      </View>
+
+      {/* Preferences + Fit */}
+      <View style={styles.previewSections}>
+        <View style={styles.previewSection}>
+          <SectionLabel>Preferences</SectionLabel>
+          <View style={styles.tagRow}>
+            {(prefs.shapes || prefs.stated || []).map((p: string) => (
+              <View key={p} style={styles.prefTag}><Text style={styles.prefTagText}>{p}</Text></View>
+            ))}
+            {(prefs.shapes || prefs.stated || []).length === 0 && <Text style={styles.muted}>None stated</Text>}
+          </View>
+        </View>
+        <View style={styles.previewSection}>
+          <SectionLabel>Fit Profile</SectionLabel>
+          <Text style={styles.fitText}>
+            {fit.faceShape || fit.face_shape || '—'} · {fit.frameWidth || fit.frame_width ? `${fit.frameWidth || fit.frame_width}mm` : '—'}
+          </Text>
+        </View>
+      </View>
+
+      {/* Recent orders */}
+      {orders.length > 0 && (
+        <View style={styles.previewSection}>
+          <SectionLabel>Recent Orders</SectionLabel>
+          {orders.slice(0, 3).map((o: any) => (
+            <View key={o.id || o.shopifyOrderId} style={styles.orderRow}>
+              <Text style={styles.orderText}>{o.product || o.lineItems?.[0]?.title || 'Order'}</Text>
+              <Text style={styles.muted}>{o.date || ''}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Actions */}
+      <View style={styles.previewActions}>
+        <Button title="Open Profile" onPress={onOpen} />
+        <Button title="Start Session" onPress={onSession} variant="secondary" />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 8 },
-  list: { paddingHorizontal: 20 },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, padding: 12, marginBottom: 1, gap: 12, minHeight: 52 },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
-  initial: { fontSize: 13, fontWeight: '700', color: Colors.navy },
-  name: { fontSize: 14, fontWeight: '600', color: Colors.navy },
-  meta: { fontSize: 12, color: Colors.muted, marginTop: 1 },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: Colors.bg },
+  // List pane
+  listPane: { width: '40%', borderRightWidth: 1, borderRightColor: Colors.border, backgroundColor: Colors.white },
+  listHeader: { padding: 16, paddingBottom: 8 },
+  listMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 4 },
+  addBtn: { fontSize: 13, fontWeight: '600', color: Colors.primary },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, gap: 12, borderLeftWidth: 3, borderLeftColor: 'transparent' },
+  rowSelected: { backgroundColor: Colors.bg, borderLeftColor: Colors.primary },
+  rowAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  rowInitial: { fontSize: 13, fontWeight: '700', color: Colors.navy },
+  rowName: { fontSize: 14, fontWeight: '600', color: Colors.navy },
+  rowMeta: { fontSize: 12, color: Colors.muted, marginTop: 1 },
   empty: { fontSize: 14, color: Colors.muted, textAlign: 'center', marginTop: 40 },
+  // Preview pane
+  previewPane: { flex: 1, backgroundColor: Colors.bg },
+  previewEmpty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  previewEmptyText: { fontSize: 14, color: Colors.muted },
+  preview: { flex: 1, padding: 24 },
+  previewHeader: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  previewAvatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.cream, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  previewAvatarText: { fontSize: 18, fontWeight: '700', color: Colors.navy },
+  previewName: { fontSize: 20, fontWeight: '600', color: Colors.navy, marginBottom: 4 },
+  previewContact: { fontSize: 12, color: Colors.muted, marginTop: 6 },
+  previewSections: { flexDirection: 'row', gap: 24, marginBottom: 20 },
+  previewSection: { flex: 1, marginBottom: 16 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  prefTag: { backgroundColor: Colors.primaryLight, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 2 },
+  prefTagText: { fontSize: 11, fontWeight: '500', color: Colors.primary },
+  fitText: { fontSize: 14, fontWeight: '600', color: Colors.navy },
+  muted: { fontSize: 12, color: Colors.muted },
+  orderRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 },
+  orderText: { fontSize: 13, fontWeight: '500', color: Colors.navy },
+  previewActions: { flexDirection: 'row', gap: 10, marginTop: 'auto', paddingTop: 20 },
 });
