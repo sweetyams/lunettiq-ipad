@@ -19,6 +19,7 @@ export default function ClientDetail() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [tab, setTab] = useState<Tab>('timeline');
   const [error, setError] = useState<string | null>(null);
+  const [showNote, setShowNote] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -140,10 +141,26 @@ export default function ClientDetail() {
         {/* Actions */}
         <View style={styles.actionsBlock}>
           <Button title="Start Try-On" onPress={() => router.push(`/session/${id}`)} variant="secondary" />
-          <Button title="Log Note" onPress={() => {}} variant="outline" small />
-          <Button title="Recommend" onPress={() => {}} variant="outline" small />
-          <Button title="Book Appointment" onPress={() => {}} variant="outline" small />
+          <Button title="Log Note" onPress={() => setShowNote(true)} variant="outline" small />
+          <Button title="Recommend" onPress={() => router.push({ pathname: '/(tabs)/products', params: { clientId: id } })} variant="outline" small />
+          <Button title="Second Sight" onPress={() => router.push({ pathname: '/second-sight/new', params: { clientId: id } })} variant="outline" small />
+          <Button title="Custom Design" onPress={() => router.push({ pathname: '/custom-design/new', params: { clientId: id } })} variant="outline" small />
         </View>
+
+        {/* Note Modal */}
+        {showNote && (
+          <NoteModal
+            onSave={async (note) => {
+              await clients.addTimeline(id!, { type: 'note', notes: note });
+              setShowNote(false);
+              // Refresh timeline
+              clients.get(id!).then((res: any) => {
+                if (res?.timeline) setTimeline(res.timeline);
+              }).catch(() => {});
+            }}
+            onCancel={() => setShowNote(false)}
+          />
+        )}
       </ScrollView>
     </View>
   );
@@ -293,6 +310,28 @@ function EditField({ label, value, onChangeText, keyboardType }: { label: string
   );
 }
 
+function NoteModal({ onSave, onCancel }: { onSave: (note: string) => void; onCancel: () => void }) {
+  const [text, setText] = useState('');
+  return (
+    <View style={styles.noteModal}>
+      <Text style={styles.noteModalTitle}>Add Note</Text>
+      <TextInput
+        style={styles.noteInput}
+        value={text}
+        onChangeText={setText}
+        placeholder="Type your note…"
+        placeholderTextColor={Colors.muted}
+        multiline
+        autoFocus
+      />
+      <View style={styles.noteActions}>
+        <Button title="Cancel" onPress={onCancel} variant="outline" small />
+        <Button title="Save" onPress={() => text.trim() && onSave(text.trim())} small />
+      </View>
+    </View>
+  );
+}
+
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statRow}>
@@ -366,6 +405,10 @@ const styles = StyleSheet.create({
   suggestionImg: { width: '100%', aspectRatio: 1, backgroundColor: Colors.cream },
   suggestionTitle: { fontSize: 11, fontWeight: '500', color: Colors.navy, padding: 6 },
   actionsBlock: { marginTop: 20, gap: 8 },
+  noteModal: { marginTop: 16, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, padding: 14, borderRadius: 2 },
+  noteModalTitle: { fontSize: 13, fontWeight: '700', color: Colors.navy, marginBottom: 8 },
+  noteInput: { fontSize: 13, color: Colors.navy, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, padding: 8, minHeight: 60, textAlignVertical: 'top' },
+  noteActions: { flexDirection: 'row', gap: 8, marginTop: 10, justifyContent: 'flex-end' },
   muted: { fontSize: 12, color: Colors.muted },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   editBtn: { fontSize: 12, fontWeight: '600', color: Colors.primary },
