@@ -5,7 +5,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
+import { LargeTitle } from '../../components/ui/LargeTitle';
+import { Section, Row, Separator } from '../../components/ui/List';
+import { Badge } from '../../components/ui/Badge';
 import Colors from '../../constants/Colors';
 import type { Appointment, Client } from '../../lib/types';
 
@@ -13,7 +15,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function HomeScreen() {
   const { isSignedIn, isLoaded } = useAuth();
-  if (!isLoaded) return <Text style={styles.loading}>Loading...</Text>;
+  if (!isLoaded) return null;
   if (!isSignedIn) return <SignIn />;
   return <HomeContent />;
 }
@@ -29,64 +31,72 @@ function SignIn() {
   return (
     <View style={styles.center}>
       <Text style={styles.brand}>Lunettiq</Text>
-      <Button title="Sign in with Google" onPress={onGoogle} />
+      <Text style={styles.tagline}>iPad for your store</Text>
+      <Button title="Sign in with Google" onPress={onGoogle} style={{ marginTop: 32 }} />
     </View>
   );
 }
 
 function HomeContent() {
-  const { apiFetch } = useApi();
+  const { clients, appointments } = useApi();
   const router = useRouter();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [recentClients, setRecentClients] = useState<Client[]>([]);
+  const [appts, setAppts] = useState<Appointment[]>([]);
+  const [recent, setRecent] = useState<Client[]>([]);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
-    apiFetch<Appointment[]>(`/api/crm/appointments?date=${today}`).then(setAppointments).catch(console.error);
-    apiFetch<Client[]>('/api/crm/clients?limit=5&sort=updatedAt&dir=desc').then(setRecentClients).catch(console.error);
+    appointments.list({ date: today }).then(setAppts).catch(console.error);
+    clients.list({ limit: 5 }).then(setRecent).catch(console.error);
   }, []);
 
-  const next = appointments.find((a) => a.status === 'scheduled' || a.status === 'confirmed');
+  const next = appts.find((a) => a.status === 'scheduled' || a.status === 'confirmed');
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Card style={styles.mb}>
-        <Text style={styles.h2}>Today's Appointments</Text>
-        <Text style={styles.big}>{appointments.length}</Text>
-        {next && <Text style={styles.sub}>{next.startTime} — {next.clientName || 'Client'} ({next.type})</Text>}
-      </Card>
+      <LargeTitle title="Today" subtitle={`${appts.length} appointment${appts.length !== 1 ? 's' : ''}`} />
 
-      <Text style={styles.h2}>Quick Actions</Text>
-      <View style={styles.actions}>
-        <Button title="Search Client" onPress={() => router.push('/(tabs)/clients')} style={styles.actionBtn} />
-        <Button title="New Client" onPress={() => router.push('/client/new')} variant="secondary" style={styles.actionBtn} />
-        <Button title="Browse Products" onPress={() => router.push('/(tabs)/products')} variant="outline" style={styles.actionBtn} />
-        <Button title="Second Sight" onPress={() => router.push('/second-sight/new')} variant="outline" style={styles.actionBtn} />
-      </View>
+      {next && (
+        <Section title="Next Up">
+          <Row
+            title={next.clientName || 'Client'}
+            subtitle={`${next.startTime} · ${next.type}`}
+            icon="calendar"
+            onPress={() => router.push(`/appointment/${next.id}`)}
+          />
+        </Section>
+      )}
 
-      <Text style={[styles.h2, styles.mt]}>Recent Clients</Text>
-      {recentClients.map((c) => (
-        <Card key={c.shopifyCustomerId} style={styles.mb}>
-          <Text style={styles.body} onPress={() => router.push(`/client/${c.shopifyCustomerId}`)}>{c.firstName} {c.lastName}</Text>
-          <Text style={styles.sub}>{c.email}</Text>
-        </Card>
-      ))}
+      <Section title="Quick Actions">
+        <Row title="Search Client" icon="search" onPress={() => router.push('/(tabs)/clients')} />
+        <Separator />
+        <Row title="New Client" icon="user-plus" onPress={() => router.push('/client/new')} />
+        <Separator />
+        <Row title="Browse Products" icon="shopping-bag" onPress={() => router.push('/(tabs)/products')} />
+        <Separator />
+        <Row title="Start Second Sight" icon="refresh" onPress={() => router.push('/second-sight/new')} />
+      </Section>
+
+      <Section title="Recent Clients">
+        {recent.map((c, i) => (
+          <View key={c.shopifyCustomerId}>
+            {i > 0 && <Separator />}
+            <Row
+              title={`${c.firstName} ${c.lastName}`}
+              subtitle={c.email}
+              detail={c.tier}
+              onPress={() => router.push(`/client/${c.shopifyCustomerId}`)}
+            />
+          </View>
+        ))}
+      </Section>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.offWhite },
-  content: { padding: 20 },
+  content: { paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.offWhite },
-  brand: { fontSize: 32, fontWeight: '700', color: Colors.navy, marginBottom: 24 },
-  loading: { padding: 32, fontSize: 17, color: Colors.muted },
-  h2: { fontSize: 22, fontWeight: '700', color: Colors.navy, marginBottom: 8 },
-  big: { fontSize: 48, fontWeight: '700', color: Colors.green },
-  sub: { fontSize: 15, color: Colors.muted, marginTop: 4 },
-  body: { fontSize: 17, color: Colors.navy, fontWeight: '600' },
-  mb: { marginBottom: 12 },
-  mt: { marginTop: 20 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  actionBtn: { minWidth: 160 },
+  brand: { fontSize: 40, fontWeight: '700', color: Colors.navy },
+  tagline: { fontSize: 17, color: Colors.muted, marginTop: 4 },
 });

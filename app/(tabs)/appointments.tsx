@@ -1,67 +1,73 @@
 import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { LargeTitle } from '../../components/ui/LargeTitle';
+import { Section, Row, Separator } from '../../components/ui/List';
+import { Badge } from '../../components/ui/Badge';
 import Colors from '../../constants/Colors';
 import type { Appointment } from '../../lib/types';
 
+const STATUS_VARIANT = { scheduled: 'default', confirmed: 'success', in_progress: 'warning', completed: 'success', no_show: 'error', cancelled: 'error' } as const;
+
 export default function AppointmentsScreen() {
-  const { apiFetch } = useApi();
+  const { appointments } = useApi();
   const router = useRouter();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appts, setAppts] = useState<Appointment[]>([]);
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
-    apiFetch<Appointment[]>(`/api/crm/appointments?date=${today}`).then(setAppointments).catch(console.error);
+    appointments.list({ date: today }).then(setAppts).catch(console.error);
   }, []);
 
-  const checkIn = (apt: Appointment) => {
-    apiFetch(`/api/crm/appointments/${apt.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'in_progress' }) })
-      .then(() => setAppointments((prev) => prev.map((a) => a.id === apt.id ? { ...a, status: 'in_progress' } : a)))
-      .catch(console.error);
-  };
+  const upcoming = appts.filter((a) => a.status === 'scheduled' || a.status === 'confirmed');
+  const inProgress = appts.filter((a) => a.status === 'in_progress');
+  const completed = appts.filter((a) => a.status === 'completed' || a.status === 'no_show');
 
   return (
-    <View style={styles.screen}>
-      <FlatList
-        data={appointments}
-        keyExtractor={(a) => a.id}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No appointments today</Text>}
-        renderItem={({ item }) => (
-          <Card style={styles.mb}>
-            <View style={styles.row}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.clientName || 'Client'}</Text>
-                <Text style={styles.time}>{item.startTime} — {item.endTime}</Text>
-                <Text style={styles.type}>{item.type} · {item.status}</Text>
-              </View>
-              <View style={styles.actions}>
-                {(item.status === 'scheduled' || item.status === 'confirmed') && (
-                  <Button title="Check In" onPress={() => checkIn(item)} variant="secondary" />
-                )}
-                {item.status === 'in_progress' && (
-                  <Button title="Start Session" onPress={() => router.push(`/session/${item.clientId}`)} />
-                )}
-              </View>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <LargeTitle title="Appointments" subtitle={new Date().toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })} />
+
+      {inProgress.length > 0 && (
+        <Section title="In Progress">
+          {inProgress.map((a, i) => (
+            <View key={a.id}>
+              {i > 0 && <Separator />}
+              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="clock-o" onPress={() => router.push(`/session/${a.clientId}`)} />
             </View>
-          </Card>
-        )}
-      />
-    </View>
+          ))}
+        </Section>
+      )}
+
+      {upcoming.length > 0 && (
+        <Section title="Upcoming">
+          {upcoming.map((a, i) => (
+            <View key={a.id}>
+              {i > 0 && <Separator />}
+              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} icon="calendar-o" onPress={() => router.push(`/appointment/${a.id}`)} />
+            </View>
+          ))}
+        </Section>
+      )}
+
+      {completed.length > 0 && (
+        <Section title="Completed">
+          {completed.map((a, i) => (
+            <View key={a.id}>
+              {i > 0 && <Separator />}
+              <Row title={a.clientName || 'Client'} subtitle={`${a.startTime} · ${a.type}`} detail={a.status} icon="check-circle" accessory="none" />
+            </View>
+          ))}
+        </Section>
+      )}
+
+      {appts.length === 0 && <Text style={styles.empty}>No appointments today</Text>}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.offWhite },
-  list: { padding: 16 },
-  mb: { marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: 17, fontWeight: '700', color: Colors.navy },
-  time: { fontSize: 15, color: Colors.navy, marginTop: 4 },
-  type: { fontSize: 15, color: Colors.muted, marginTop: 2 },
-  actions: { gap: 8 },
-  empty: { fontSize: 17, color: Colors.muted, textAlign: 'center', marginTop: 40 },
+  content: { paddingBottom: 40 },
+  empty: { fontSize: 17, color: Colors.muted, textAlign: 'center', marginTop: 60 },
 });

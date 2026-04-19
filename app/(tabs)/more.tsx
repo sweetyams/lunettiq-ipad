@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
+import { LargeTitle } from '../../components/ui/LargeTitle';
+import { Section, Row, Separator } from '../../components/ui/List';
 import { useAppStore } from '../../lib/store';
 import Colors from '../../constants/Colors';
 
@@ -12,29 +12,29 @@ export default function MoreScreen() {
   const { syncQueue, isOnline } = useAppStore();
 
   return (
-    <View style={styles.screen}>
-      <Card style={styles.mb}>
-        <Text style={styles.h2}>Sync Status</Text>
-        <View style={styles.row}>
-          <View style={[styles.dot, { backgroundColor: isOnline ? Colors.success : Colors.error }]} />
-          <Text style={styles.body}>{isOnline ? 'Online' : 'Offline'}</Text>
-        </View>
-        {syncQueue.length > 0 && <Text style={styles.sub}>{syncQueue.length} pending changes</Text>}
-      </Card>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <LargeTitle title="More" />
 
-      <Button title="Second Sight Intake" onPress={() => router.push('/second-sight/new')} style={styles.mb} />
-      <Button title="Custom Design" onPress={() => router.push('/custom-design/new')} variant="secondary" style={styles.mb} />
-      <Button title="Sign Out" onPress={() => signOut()} variant="outline" />
-    </View>
+      <Section title="Tools">
+        <Row title="Second Sight Intake" icon="refresh" onPress={() => router.push('/second-sight/new')} />
+        <Separator />
+        <Row title="Custom Design" icon="pencil" onPress={() => router.push('/custom-design/new')} />
+      </Section>
+
+      <Section title="Status">
+        <Row title="Connection" detail={isOnline ? 'Online' : 'Offline'} icon="wifi" accessory="none" />
+        <Separator />
+        <Row title="Pending Sync" detail={`${syncQueue.length}`} icon="cloud-upload" accessory="none" />
+      </Section>
+
+      <Section title="Account">
+        <Row title="Sign Out" icon="sign-out" onPress={() => signOut()} accessory="none" destructive />
+      </Section>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.offWhite, padding: 20 },
-  mb: { marginBottom: 16 },
-  h2: { fontSize: 20, fontWeight: '700', color: Colors.navy, marginBottom: 8 },
-  body: { fontSize: 17, color: Colors.navy },
-  sub: { fontSize: 15, color: Colors.muted, marginTop: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
+  screen: { flex: 1, backgroundColor: Colors.offWhite },
+  content: { paddingBottom: 40 },
 });
