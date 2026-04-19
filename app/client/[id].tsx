@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Section, Row, Separator } from '../../components/ui/List';
@@ -49,9 +49,20 @@ export default function ClientDetail() {
 
       {/* Contact */}
       <Section title="Contact">
-        <Row title="Email" detail={client.email} icon="envelope" accessory="none" />
+        <Row title="Email" detail={client.email || '—'} icon="envelope" onPress={client.email ? () => Linking.openURL(`mailto:${client.email}`) : undefined} accessory={client.email ? 'disclosure' : 'none'} />
         <Separator />
-        <Row title="Phone" detail={client.phone || '—'} icon="phone" accessory="none" />
+        <Row title="Phone" detail={client.phone || '—'} icon="phone" onPress={client.phone ? () => Linking.openURL(`tel:${client.phone}`) : undefined} accessory={client.phone ? 'disclosure' : 'none'} />
+      </Section>
+
+      {/* More Actions */}
+      <Section title="Actions">
+        <Row title="Start Session" icon="play-circle" onPress={() => router.push(`/session/${id}`)} />
+        <Separator />
+        <Row title="Second Sight Intake" icon="refresh" onPress={() => router.push({ pathname: '/second-sight/new', params: { clientId: id } })} />
+        <Separator />
+        <Row title="Custom Design" icon="pencil" onPress={() => router.push({ pathname: '/custom-design/new', params: { clientId: id } })} />
+        <Separator />
+        <Row title="Add Note" icon="sticky-note" onPress={() => {}} />
       </Section>
 
       {/* Fit Profile */}
