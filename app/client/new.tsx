@@ -2,23 +2,22 @@ import { useState } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
-import { Section, Row, Separator } from '../../components/ui/List';
 import { Button } from '../../components/ui/Button';
+import { Card } from '../../components/ui/Card';
+import { SectionLabel } from '../../components/ui/List';
 import Colors from '../../constants/Colors';
-import type { Client } from '../../lib/types';
 
 export default function NewClient() {
   const { clients } = useApi();
   const router = useRouter();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
-  const [dupes, setDupes] = useState<Client[]>([]);
+  const [dupes, setDupes] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
   const set = (key: string, val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
-    // Duplicate check on email
     if (key === 'email' && val.length > 4) {
-      clients.list({ q: val, limit: 3 }).then(setDupes).catch(() => {});
+      clients.list({ q: val, limit: 3 }).then((r) => setDupes(Array.isArray(r) ? r : [])).catch(() => {});
     }
   };
 
@@ -38,37 +37,44 @@ export default function NewClient() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardDismissMode="on-drag">
-      <Section title="Required">
-        <Field label="First Name" value={form.firstName} onChangeText={(v) => set('firstName', v)} autoFocus />
-        <Separator />
-        <Field label="Last Name" value={form.lastName} onChangeText={(v) => set('lastName', v)} />
-        <Separator />
-        <Field label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" />
-      </Section>
+      <SectionLabel>Required</SectionLabel>
+      <Card style={styles.formCard}>
+        <FormField label="First Name" value={form.firstName} onChangeText={(v) => set('firstName', v)} autoFocus />
+        <View style={styles.divider} />
+        <FormField label="Last Name" value={form.lastName} onChangeText={(v) => set('lastName', v)} />
+        <View style={styles.divider} />
+        <FormField label="Email" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
+      </Card>
 
       {dupes.length > 0 && (
-        <Section title="Possible Duplicates">
-          {dupes.map((d, i) => (
-            <View key={d.shopifyCustomerId}>
-              {i > 0 && <Separator />}
-              <Row title={`${d.firstName} ${d.lastName}`} subtitle={d.email} onPress={() => router.replace(`/client/${d.shopifyCustomerId}`)} />
-            </View>
-          ))}
-        </Section>
+        <>
+          <SectionLabel style={{ marginTop: 20 }}>Possible Duplicates</SectionLabel>
+          <Card style={styles.formCard}>
+            {dupes.map((d, i) => (
+              <View key={d.shopifyCustomerId}>
+                {i > 0 && <View style={styles.divider} />}
+                <Text onPress={() => router.replace(`/client/${d.shopifyCustomerId}`)} style={styles.dupeRow}>
+                  {`${d.firstName || ''} ${d.lastName || ''}`.trim()} — {d.email}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        </>
       )}
 
-      <Section title="Optional">
-        <Field label="Phone" value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
-      </Section>
+      <SectionLabel style={{ marginTop: 20 }}>Optional</SectionLabel>
+      <Card style={styles.formCard}>
+        <FormField label="Phone" value={form.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
+      </Card>
 
       <View style={styles.footer}>
-        <Button title={saving ? 'Saving...' : 'Create Client'} onPress={save} />
+        <Button title={saving ? 'Saving…' : 'Create Client'} onPress={save} />
       </View>
     </ScrollView>
   );
 }
 
-function Field({ label, value, onChangeText, ...props }: { label: string; value: string; onChangeText: (t: string) => void; [k: string]: any }) {
+function FormField({ label, value, onChangeText, ...props }: { label: string; value: string; onChangeText: (t: string) => void; [k: string]: any }) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -79,9 +85,12 @@ function Field({ label, value, onChangeText, ...props }: { label: string; value:
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg },
-  content: { paddingTop: 16, paddingBottom: 40 },
-  field: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, minHeight: 44 },
-  label: { fontSize: 17, color: Colors.black, width: 110 },
-  input: { flex: 1, fontSize: 17, color: Colors.black, paddingVertical: 12 },
-  footer: { paddingHorizontal: 20, marginTop: 8 },
+  content: { padding: 24, maxWidth: 500 },
+  formCard: { padding: 0 },
+  field: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, height: 48 },
+  label: { fontSize: 14, fontWeight: '500', color: Colors.navy, width: 100 },
+  input: { flex: 1, fontSize: 14, color: Colors.navy },
+  divider: { height: 1, backgroundColor: Colors.border, marginLeft: 16 },
+  dupeRow: { padding: 14, fontSize: 13, color: Colors.primary },
+  footer: { marginTop: 24 },
 });
