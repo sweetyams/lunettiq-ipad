@@ -95,21 +95,43 @@ export default function ClientDetail() {
         </View>
         <ScrollView style={styles.centerScroll} contentContainerStyle={styles.centerContent}>
           {tab === 'timeline' && (
-            timeline.length === 0
-              ? <Text style={styles.muted}>No activity yet.</Text>
-              : timeline.map((entry: any, i: number) => (
+            <>
+              {/* Visual recommendations from timeline */}
+              {timeline.filter((e: any) => e.type === 'recommendation' || e.type === 'recommended').length > 0 && (
+                <View style={{ marginBottom: 20 }}>
+                  <SectionLabel>Recommendations</SectionLabel>
+                  <View style={styles.recsGrid}>
+                    {timeline.filter((e: any) => e.type === 'recommendation' || e.type === 'recommended').map((entry: any, i: number) => {
+                      const meta = entry.metadata || {};
+                      return (
+                        <Card key={entry.id || i} style={styles.recCard} onPress={meta.productId ? () => router.push(`/product/${meta.productId}` as any) : undefined}>
+                          <View style={styles.recContent}>
+                            <Text style={styles.recTitle}>{meta.productTitle || entry.subject || 'Product'}</Text>
+                            <Text style={styles.recMeta}>{entry.occurredAt ? new Date(entry.occurredAt).toLocaleDateString() : ''}</Text>
+                          </View>
+                        </Card>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+              {/* Timeline entries */}
+              {timeline.length === 0
+                ? <Text style={styles.muted}>No activity yet.</Text>
+                : timeline.map((entry: any, i: number) => (
                 <View key={entry.id || i} style={styles.timelineRow}>
                   <View style={styles.timelineDotCol}>
                     <View style={styles.dot} />
                     {i < timeline.length - 1 && <View style={styles.timelineLine} />}
                   </View>
                   <View style={styles.timelineBody}>
-                    <Text style={styles.timelineDate}>{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : ''}</Text>
+                    <Text style={styles.timelineDate}>{entry.createdAt || entry.occurredAt ? new Date(entry.createdAt || entry.occurredAt).toLocaleDateString() : ''}</Text>
                     <Text style={styles.timelineType}>{entry.type || 'Interaction'}</Text>
-                    {entry.notes && <Text style={styles.muted}>{entry.notes}</Text>}
+                    {(entry.notes || entry.body || entry.subject) && <Text style={styles.muted}>{entry.body || entry.subject || entry.notes}</Text>}
                   </View>
                 </View>
-              ))
+              ))}
+            </>
           )}
           {tab === 'orders' && (
             (client.orders || []).length === 0
@@ -426,6 +448,11 @@ const styles = StyleSheet.create({
   // Orders
   orderCard: { padding: 12, marginBottom: 8 },
   orderTitle: { fontSize: 14, fontWeight: '600', color: Colors.navy },
+  recsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  recCard: { padding: 12, minWidth: 150 },
+  recContent: {},
+  recTitle: { fontSize: 13, fontWeight: '600', color: Colors.navy },
+  recMeta: { fontSize: 11, color: Colors.muted, marginTop: 2 },
   // Right
   rightCol: { width: '25%', backgroundColor: Colors.bg },
   rightContent: { padding: 16 },
