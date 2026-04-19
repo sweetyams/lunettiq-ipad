@@ -13,7 +13,7 @@ export default function ProductDetail() {
   const { products } = useApi();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<any>(null);
 
   useEffect(() => {
     if (id) products.get(id).then(setProduct).catch(console.error);
@@ -21,7 +21,7 @@ export default function ProductDetail() {
 
   if (!product) return null;
 
-  const mainImage = product.images?.[0]?.src;
+  const mainImage = product.imageUrl || product.images?.[0]?.src || product.images?.[0];
   const variant = product.variants?.[0];
 
   return (
@@ -33,14 +33,14 @@ export default function ProductDetail() {
         <Text style={styles.vendor}>{product.vendor}</Text>
         {variant && <Text style={styles.price}>${variant.price}</Text>}
         <View style={styles.tags}>
-          {(product.tags || []).slice(0, 4).map((t) => <Badge key={t} label={t} />)}
+          {(product.tags || []).slice(0, 4).map((t: string) => <Badge key={t} label={t} />)}
         </View>
       </View>
 
       {/* Variants */}
       {(product.variants || []).length > 1 && (
         <Section title="Variants">
-          {(product.variants || []).map((v, i) => (
+          {(product.variants || []).map((v: any, i: number) => (
             <View key={v.id}>
               {i > 0 && <Separator />}
               <Row

@@ -49,11 +49,11 @@ export default function ProductsScreen() {
         data={data}
         numColumns={cols}
         key={cols}
-        keyExtractor={(p) => p.id}
+        keyExtractor={(p) => p.shopifyProductId || p.id}
         contentContainerStyle={styles.grid}
         columnWrapperStyle={{ gap: 10 }}
         renderItem={({ item }) => (
-          <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push(`/product/${item.id}`)}>
+          <Pressable style={[styles.card, { width: cardWidth }]} onPress={() => router.push(`/product/${item.shopifyProductId || item.id}`)}>
             {(item.imageUrl || item.images?.[0]?.src || item.images?.[0]) ? (
               <Image source={{ uri: item.imageUrl || item.images?.[0]?.src || item.images?.[0] }} style={styles.img} />
             ) : <View style={styles.img} />}
