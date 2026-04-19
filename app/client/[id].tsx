@@ -25,15 +25,16 @@ export default function ClientDetail() {
 
   const fit = client.metafields?.fitProfile;
   const prefs = client.metafields?.preferences;
+  const initials = `${(client.firstName || '?')[0]}${(client.lastName || '?')[0]}`;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {/* Identity */}
       <View style={styles.identity}>
         <View style={styles.avatar}>
-          <Text style={styles.initials}>{client.firstName[0]}{client.lastName[0]}</Text>
+          <Text style={styles.initials}>{initials}</Text>
         </View>
-        <Text style={styles.name}>{client.firstName} {client.lastName}</Text>
+        <Text style={styles.name}>{client.firstName || ''} {client.lastName || ''}</Text>
         <View style={styles.badges}>
           {client.tier && <Badge label={client.tier} variant="success" />}
           {client.tags?.slice(0, 3).map((t) => <Badge key={t} label={t} />)}
