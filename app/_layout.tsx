@@ -64,7 +64,7 @@ function AppShell() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerStyle: { backgroundColor: '#F2F2F7' }, headerTintColor: '#000000', headerBackTitle: '' }}>
+      <Stack screenOptions={{ headerStyle: { backgroundColor: '#F7F7F7' }, headerTintColor: '#0A0A0A', headerBackTitle: ' ', headerBackButtonDisplayMode: 'minimal' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
         <Stack.Screen name="client/new" options={{ title: 'New Client', presentation: 'modal' }} />
