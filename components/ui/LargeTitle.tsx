@@ -1,13 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Colors from '../../constants/Colors';
 
-interface Props {
-  title: string;
-  subtitle?: string;
-  trailing?: React.ReactNode;
-}
-
-export function LargeTitle({ title, subtitle, trailing }: Props) {
+export function LargeTitle({ title, subtitle, trailing }: { title: string; subtitle?: string; trailing?: React.ReactNode }) {
   return (
     <View style={styles.container}>
       <View style={{ flex: 1 }}>
@@ -20,7 +14,7 @@ export function LargeTitle({ title, subtitle, trailing }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
-  title: { fontSize: 34, fontWeight: '700', color: Colors.black, letterSpacing: 0.4 },
-  subtitle: { fontSize: 17, color: Colors.muted, marginTop: 2 },
+  container: { flexDirection: 'row', alignItems: 'flex-end', paddingBottom: 8 },
+  title: { fontSize: 28, fontWeight: '300', color: Colors.navy, letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, color: Colors.muted, marginTop: 4 },
 });
