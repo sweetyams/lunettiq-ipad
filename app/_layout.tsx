@@ -76,7 +76,7 @@ function RootLayoutNav() {
   return (
     <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerStyle: { backgroundColor: '#F2F2F7' }, headerTintColor: '#000000', headerBackTitleVisible: false }}>
+        <Stack screenOptions={{ headerStyle: { backgroundColor: '#F2F2F7' }, headerTintColor: '#000000', headerBackTitle: '' }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
           <Stack.Screen name="client/new" options={{ title: 'New Client', presentation: 'modal' }} />

@@ -9,7 +9,7 @@ import type { Session } from './types';
  */
 export function useSessionAutoSave(sessionData: Partial<Session> | null) {
   const { currentSession, updateSession } = useAppStore();
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!sessionData) return;

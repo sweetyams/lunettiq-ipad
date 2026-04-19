@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { useAppStore } from '../../lib/store';
-import { Button } from '../../components/ui/Button';
-import Colors from '../../constants/Colors';
+import { useAppStore } from '../lib/store';
+import { Button } from '../components/ui/Button';
+import Colors from '../constants/Colors';
 
 export default function ShiftHandoff() {
   const { userId } = useAuth();
