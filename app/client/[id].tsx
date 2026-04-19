@@ -149,14 +149,20 @@ export default function ClientDetail() {
   );
 }
 
+const SHAPE_OPTIONS = ['Round', 'Square', 'Aviator', 'Cat-eye', 'Rectangular', 'Oval', 'Browline', 'Geometric'];
+const MATERIAL_OPTIONS = ['Acetate', 'Metal', 'Titanium', 'Wood', 'Horn', 'Mixed'];
+const COLOUR_OPTIONS = ['Black', 'Tortoise', 'Gold', 'Silver', 'Clear', 'Blue', 'Red', 'Green', 'Pink', 'White'];
+
 function EditablePreferences({ id, prefs, derived, clients: api }: { id: string; prefs: any; derived: any; clients: any }) {
   const [editing, setEditing] = useState(false);
-  const [stated, setStated] = useState((prefs.shapes || prefs.stated || []).join(', '));
-  const [avoid, setAvoid] = useState((prefs.avoid || []).join(', '));
+  const [shapes, setShapes] = useState<string[]>(prefs.shapes || []);
+  const [materials, setMaterials] = useState<string[]>(prefs.materials || []);
+  const [colours, setColours] = useState<string[]>(prefs.colours || []);
+  const [avoid, setAvoid] = useState<string[]>(prefs.avoid || []);
 
   const save = async () => {
-    const value = JSON.stringify({ stated: stated.split(',').map((s: string) => s.trim()).filter(Boolean), avoid: avoid.split(',').map((s: string) => s.trim()).filter(Boolean) });
-    await api.update(id, { metafields: { preferences: { value, type: 'json' } } });
+    const value = JSON.stringify({ shapes, materials, colours, avoid });
+    await api.update(id, { metafields: { preferences_json: { value, type: 'json' } } });
     setEditing(false);
   };
 
@@ -170,26 +176,19 @@ function EditablePreferences({ id, prefs, derived, clients: api }: { id: string;
       </View>
       <Card style={styles.cardPad}>
         {editing ? (
-          <>
-            <Text style={styles.prefSubLabel}>Preferred (comma-separated)</Text>
-            <TextInput style={styles.editInput} value={stated} onChangeText={setStated} placeholder="Round, Acetate, Dark tones" placeholderTextColor={Colors.muted} />
-            <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Avoid (comma-separated)</Text>
-            <TextInput style={styles.editInput} value={avoid} onChangeText={setAvoid} placeholder="Metal, Square" placeholderTextColor={Colors.muted} />
-          </>
+          <View style={{ gap: 12 }}>
+            <ChipSelect label="Shapes" options={SHAPE_OPTIONS} selected={shapes} onChange={setShapes} />
+            <ChipSelect label="Materials" options={MATERIAL_OPTIONS} selected={materials} onChange={setMaterials} />
+            <ChipSelect label="Colours" options={COLOUR_OPTIONS} selected={colours} onChange={setColours} />
+            <ChipSelect label="Avoid" options={[...SHAPE_OPTIONS, ...MATERIAL_OPTIONS]} selected={avoid} onChange={setAvoid} variant="avoid" />
+            <Pressable onPress={() => setEditing(false)}><Text style={styles.muted}>Cancel</Text></Pressable>
+          </View>
         ) : (
           <>
-            <Text style={styles.prefSubLabel}>Stated</Text>
-            <View style={styles.tagRow}>
-              {(prefs.shapes || prefs.stated || []).length > 0
-                ? (prefs.shapes || prefs.stated || []).map((p: string) => <View key={p} style={styles.prefTag}><Text style={styles.prefTagText}>{p}</Text></View>)
-                : <Text style={styles.muted}>None — tap Edit</Text>}
-            </View>
-            <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Avoid</Text>
-            <View style={styles.tagRow}>
-              {(prefs.avoid || []).length > 0
-                ? (prefs.avoid || []).map((p: string) => <View key={p} style={styles.avoidTag}><Text style={styles.avoidTagText}>{p}</Text></View>)
-                : <Text style={styles.muted}>None</Text>}
-            </View>
+            <TagDisplay label="Shapes" items={shapes} />
+            <TagDisplay label="Materials" items={materials} />
+            <TagDisplay label="Colours" items={colours} />
+            {avoid.length > 0 && <TagDisplay label="Avoid" items={avoid} variant="avoid" />}
             {derived?.topShapes && (
               <>
                 <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Derived</Text>
@@ -203,6 +202,43 @@ function EditablePreferences({ id, prefs, derived, clients: api }: { id: string;
         )}
       </Card>
     </>
+  );
+}
+
+function ChipSelect({ label, options, selected, onChange, variant }: { label: string; options: string[]; selected: string[]; onChange: (v: string[]) => void; variant?: string }) {
+  const toggle = (opt: string) => {
+    onChange(selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt]);
+  };
+  return (
+    <View>
+      <Text style={styles.prefSubLabel}>{label}</Text>
+      <View style={styles.chipGrid}>
+        {options.map(o => {
+          const active = selected.includes(o);
+          return (
+            <Pressable key={o} onPress={() => toggle(o)} style={[styles.chipTag, active && (variant === 'avoid' ? styles.chipAvoidActive : styles.chipActive)]}>
+              <Text style={[styles.chipTagText, active && styles.chipTagTextActive]}>{o}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function TagDisplay({ label, items, variant }: { label: string; items: string[]; variant?: string }) {
+  if (items.length === 0) return null;
+  return (
+    <View style={{ marginBottom: 8 }}>
+      <Text style={styles.prefSubLabel}>{label}</Text>
+      <View style={styles.tagRow}>
+        {items.map(p => (
+          <View key={p} style={variant === 'avoid' ? styles.avoidTag : styles.prefTag}>
+            <Text style={variant === 'avoid' ? styles.avoidTagText : styles.prefTagText}>{p}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -334,6 +370,12 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   editBtn: { fontSize: 12, fontWeight: '600', color: Colors.primary },
   editInput: { fontSize: 13, color: Colors.navy, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, padding: 8, marginTop: 4 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chipTag: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 2, backgroundColor: Colors.cream, minHeight: 28, justifyContent: 'center' },
+  chipActive: { backgroundColor: Colors.navy },
+  chipAvoidActive: { backgroundColor: Colors.error },
+  chipTagText: { fontSize: 12, color: Colors.navy },
+  chipTagTextActive: { color: Colors.white },
   editFieldRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   editFieldLabel: { fontSize: 12, color: Colors.muted, width: 100 },
   editFieldInput: { flex: 1, fontSize: 13, color: Colors.navy, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, padding: 6 },
