@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Pressable, Image, StyleSheet, Linking } from 'react-native';
+import { ScrollView, View, Text, Pressable, Image, TextInput, StyleSheet, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Card } from '../../components/ui/Card';
@@ -123,38 +123,8 @@ export default function ClientDetail() {
 
       {/* RIGHT COLUMN — Intelligence (25%) */}
       <ScrollView style={styles.rightCol} contentContainerStyle={styles.rightContent}>
-        <SectionLabel>Preferences</SectionLabel>
-        <Card style={styles.cardPad}>
-          <Text style={styles.prefSubLabel}>Stated</Text>
-          <View style={styles.tagRow}>
-            {(prefs.shapes || prefs.stated || []).length > 0
-              ? (prefs.shapes || prefs.stated || []).map((p: string) => <View key={p} style={styles.prefTag}><Text style={styles.prefTagText}>{p}</Text></View>)
-              : <Text style={styles.muted}>None</Text>}
-          </View>
-          <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Avoid</Text>
-          <View style={styles.tagRow}>
-            {(prefs.avoid || []).length > 0
-              ? (prefs.avoid || []).map((p: string) => <View key={p} style={styles.avoidTag}><Text style={styles.avoidTagText}>{p}</Text></View>)
-              : <Text style={styles.muted}>None</Text>}
-          </View>
-          {derived.topShapes && (
-            <>
-              <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Derived (from purchases)</Text>
-              <View style={styles.tagRow}>
-                {(derived.topShapes || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
-                {(derived.topMaterials || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
-              </View>
-            </>
-          )}
-        </Card>
-
-        <SectionLabel style={{ marginTop: 20 }}>Fit Profile</SectionLabel>
-        <Card style={styles.cardPad}>
-          <FitRow label="Face shape" value={fit.faceShape || fit.face_shape || '—'} />
-          <FitRow label="Frame width" value={fit.frameWidth || fit.frame_width ? `${fit.frameWidth || fit.frame_width}mm` : '—'} />
-          <FitRow label="Bridge" value={fit.bridge ? `${fit.bridge}mm` : '—'} />
-          <FitRow label="Temple" value={fit.templeLength || fit.temple ? `${fit.templeLength || fit.temple}mm` : '—'} />
-        </Card>
+        <EditablePreferences id={id!} prefs={prefs} derived={derived} clients={clients} />
+        <EditableFitProfile id={id!} fit={fit} clients={clients} />
 
         <SectionLabel style={{ marginTop: 20 }}>Suggestions</SectionLabel>
         <View style={styles.suggestionsGrid}>
@@ -175,6 +145,114 @@ export default function ClientDetail() {
           <Button title="Book Appointment" onPress={() => {}} variant="outline" small />
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function EditablePreferences({ id, prefs, derived, clients: api }: { id: string; prefs: any; derived: any; clients: any }) {
+  const [editing, setEditing] = useState(false);
+  const [stated, setStated] = useState((prefs.shapes || prefs.stated || []).join(', '));
+  const [avoid, setAvoid] = useState((prefs.avoid || []).join(', '));
+
+  const save = async () => {
+    const value = JSON.stringify({ stated: stated.split(',').map((s: string) => s.trim()).filter(Boolean), avoid: avoid.split(',').map((s: string) => s.trim()).filter(Boolean) });
+    await api.update(id, { metafields: { preferences: { value, type: 'json' } } });
+    setEditing(false);
+  };
+
+  return (
+    <>
+      <View style={styles.sectionHeader}>
+        <SectionLabel>Preferences</SectionLabel>
+        <Pressable onPress={() => editing ? save() : setEditing(true)}>
+          <Text style={styles.editBtn}>{editing ? 'Save' : 'Edit'}</Text>
+        </Pressable>
+      </View>
+      <Card style={styles.cardPad}>
+        {editing ? (
+          <>
+            <Text style={styles.prefSubLabel}>Preferred (comma-separated)</Text>
+            <TextInput style={styles.editInput} value={stated} onChangeText={setStated} placeholder="Round, Acetate, Dark tones" placeholderTextColor={Colors.muted} />
+            <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Avoid (comma-separated)</Text>
+            <TextInput style={styles.editInput} value={avoid} onChangeText={setAvoid} placeholder="Metal, Square" placeholderTextColor={Colors.muted} />
+          </>
+        ) : (
+          <>
+            <Text style={styles.prefSubLabel}>Stated</Text>
+            <View style={styles.tagRow}>
+              {(prefs.shapes || prefs.stated || []).length > 0
+                ? (prefs.shapes || prefs.stated || []).map((p: string) => <View key={p} style={styles.prefTag}><Text style={styles.prefTagText}>{p}</Text></View>)
+                : <Text style={styles.muted}>None — tap Edit</Text>}
+            </View>
+            <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Avoid</Text>
+            <View style={styles.tagRow}>
+              {(prefs.avoid || []).length > 0
+                ? (prefs.avoid || []).map((p: string) => <View key={p} style={styles.avoidTag}><Text style={styles.avoidTagText}>{p}</Text></View>)
+                : <Text style={styles.muted}>None</Text>}
+            </View>
+            {derived?.topShapes && (
+              <>
+                <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Derived</Text>
+                <View style={styles.tagRow}>
+                  {(derived.topShapes || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
+                  {(derived.topMaterials || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
+                </View>
+              </>
+            )}
+          </>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function EditableFitProfile({ id, fit, clients: api }: { id: string; fit: any; clients: any }) {
+  const [editing, setEditing] = useState(false);
+  const [faceShape, setFaceShape] = useState(fit.faceShape || fit.face_shape || '');
+  const [frameWidth, setFrameWidth] = useState(String(fit.frameWidth || fit.frame_width || ''));
+  const [bridge, setBridge] = useState(String(fit.bridge || ''));
+  const [temple, setTemple] = useState(String(fit.templeLength || fit.temple || ''));
+
+  const save = async () => {
+    const value = JSON.stringify({ face_shape: faceShape, frame_width: frameWidth, bridge, temple });
+    await api.update(id, { metafields: { fit_profile: { value, type: 'json' } } });
+    setEditing(false);
+  };
+
+  return (
+    <>
+      <View style={[styles.sectionHeader, { marginTop: 20 }]}>
+        <SectionLabel>Fit Profile</SectionLabel>
+        <Pressable onPress={() => editing ? save() : setEditing(true)}>
+          <Text style={styles.editBtn}>{editing ? 'Save' : 'Edit'}</Text>
+        </Pressable>
+      </View>
+      <Card style={styles.cardPad}>
+        {editing ? (
+          <View style={{ gap: 8 }}>
+            <EditField label="Face shape" value={faceShape} onChangeText={setFaceShape} />
+            <EditField label="Frame width (mm)" value={frameWidth} onChangeText={setFrameWidth} keyboardType="numeric" />
+            <EditField label="Bridge (mm)" value={bridge} onChangeText={setBridge} keyboardType="numeric" />
+            <EditField label="Temple (mm)" value={temple} onChangeText={setTemple} keyboardType="numeric" />
+          </View>
+        ) : (
+          <>
+            <FitRow label="Face shape" value={faceShape || '—'} />
+            <FitRow label="Frame width" value={frameWidth ? `${frameWidth}mm` : '—'} />
+            <FitRow label="Bridge" value={bridge ? `${bridge}mm` : '—'} />
+            <FitRow label="Temple" value={temple ? `${temple}mm` : '—'} />
+          </>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function EditField({ label, value, onChangeText, keyboardType }: { label: string; value: string; onChangeText: (t: string) => void; keyboardType?: string }) {
+  return (
+    <View style={styles.editFieldRow}>
+      <Text style={styles.editFieldLabel}>{label}</Text>
+      <TextInput style={styles.editFieldInput} value={value} onChangeText={onChangeText} keyboardType={keyboardType as any} placeholderTextColor={Colors.muted} />
     </View>
   );
 }
@@ -253,4 +331,10 @@ const styles = StyleSheet.create({
   suggestionTitle: { fontSize: 11, fontWeight: '500', color: Colors.navy, padding: 6 },
   actionsBlock: { marginTop: 20, gap: 8 },
   muted: { fontSize: 12, color: Colors.muted },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  editBtn: { fontSize: 12, fontWeight: '600', color: Colors.primary },
+  editInput: { fontSize: 13, color: Colors.navy, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, padding: 8, marginTop: 4 },
+  editFieldRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  editFieldLabel: { fontSize: 12, color: Colors.muted, width: 100 },
+  editFieldInput: { flex: 1, fontSize: 13, color: Colors.navy, borderWidth: 1, borderColor: Colors.border, borderRadius: 2, padding: 6 },
 });
