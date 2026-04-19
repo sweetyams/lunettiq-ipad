@@ -31,7 +31,14 @@ export default function ClientsScreen() {
   // Load preview when selected
   useEffect(() => {
     if (!selected) { setPreview(null); return; }
-    clients.get(selected.shopifyCustomerId).then(setPreview).catch(console.error);
+    clients.get(selected.shopifyCustomerId).then((res: any) => {
+      // API returns { client, orders, ... } or flat object
+      if (res?.client) {
+        setPreview({ ...res.client, orders: res.orders || [] });
+      } else {
+        setPreview(res);
+      }
+    }).catch(console.error);
   }, [selected]);
 
   const tierVariant = (tags: string[]) => {
