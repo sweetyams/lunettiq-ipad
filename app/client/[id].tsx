@@ -50,8 +50,9 @@ export default function ClientDetail() {
   if (!client) return null;
 
   const name = `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.email;
-  const fit = client.metafields?.fitProfile || client.metafields?.custom || {};
-  const prefs = client.metafields?.preferences || {};
+  const meta = (client.metafields?.custom || client.metafields || {}) as Record<string, any>;
+  const fit = (() => { try { return meta.fit_profile ? JSON.parse(meta.fit_profile) : {}; } catch { return {}; } })();
+  const prefs = (() => { try { return meta.preferences_json ? JSON.parse(meta.preferences_json) : (client.metafields?.preferences || {}); } catch { return {}; } })();
   const derived = client.derivedPreferences || {};
 
   return (
@@ -137,9 +138,18 @@ export default function ClientDetail() {
             (client.orders || []).length === 0
               ? <Text style={styles.muted}>No orders.</Text>
               : (client.orders || []).map((o: any, i: number) => (
-                <Card key={o.id || i} style={styles.orderCard}>
-                  <Text style={styles.orderTitle}>{o.product || o.lineItems?.[0]?.title || 'Order'}</Text>
-                  <Text style={styles.muted}>{o.date || o.createdAt || ''}{o.price ? ` · ${o.price}` : ''}</Text>
+                <Card key={o.shopifyOrderId || i} style={styles.orderCard}>
+                  <Text style={styles.orderTitle}>
+                    {o.lineItems?.[0]?.title || o.lineItems?.[0]?.name || `Order #${o.orderNumber || ''}`}
+                  </Text>
+                  <Text style={styles.muted}>
+                    {o.processedAt ? new Date(o.processedAt).toLocaleDateString() : ''}
+                    {o.orderNumber ? ` · #${o.orderNumber}` : ''}
+                    {o.totalPrice ? ` · $${o.totalPrice}` : ''}
+                  </Text>
+                  {o.lineItems?.length > 1 && (
+                    <Text style={[styles.muted, { marginTop: 2 }]}>+ {o.lineItems.length - 1} more item{o.lineItems.length > 2 ? 's' : ''}</Text>
+                  )}
                 </Card>
               ))
           )}
