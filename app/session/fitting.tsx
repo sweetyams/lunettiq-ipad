@@ -5,6 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Button } from '../../components/ui/Button';
 import { Section, Row, Separator } from '../../components/ui/List';
+import { useAppStore } from '../../lib/store';
+import { useSessionAutoSave } from '../../lib/useSessionAutoSave';
 import Colors from '../../constants/Colors';
 import type { TryOnPhoto } from '../../lib/types';
 
@@ -23,6 +25,10 @@ export default function FittingScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [photos, setPhotos] = useState<TryOnPhoto[]>([]);
   const [selected, setSelected] = useState<TryOnPhoto | null>(null);
+  const { addPhoto: queuePhoto } = useAppStore();
+
+  // Auto-save session state every 30s
+  useSessionAutoSave(photos.length > 0 ? { framesTried: photos.map((p) => ({ productId: '', photos: [p.uri], verdict: p.verdict, notes: p.notes })) } as any : null);
 
   if (!permission?.granted) {
     return (
@@ -36,13 +42,12 @@ export default function FittingScreen() {
   const capture = async () => {
     const photo = await cameraRef.current?.takePictureAsync({ quality: 0.8 });
     if (!photo) return;
-    const newPhoto: TryOnPhoto = {
-      id: Date.now().toString(),
-      sessionId: sessionId || '',
-      uri: photo.uri,
-    };
+    const id = Date.now().toString();
+    const newPhoto: TryOnPhoto = { id, sessionId: sessionId || '', uri: photo.uri };
     setPhotos((prev) => [...prev, newPhoto]);
     setSelected(newPhoto);
+    // Queue for background upload
+    queuePhoto({ id, localUri: photo.uri, clientId: clientId || '', sessionId: sessionId || '', status: 'pending' });
   };
 
   const updatePhoto = (id: string, updates: Partial<TryOnPhoto>) => {

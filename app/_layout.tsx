@@ -13,6 +13,7 @@ import { tokenCache } from '../lib/auth';
 import { useNetworkStatus } from '../lib/useNetwork';
 import { useBiometricLock } from '../lib/useBiometric';
 import { useSyncQueue } from '../lib/useSyncQueue';
+import { usePhotoUploader } from '../lib/usePhotoUploader';
 
 const CLERK_KEY = 'pk_test_c3VidGxlLXN1bmJlYW0tMTcuY2xlcmsuYWNjb3VudHMuZGV2JA';
 
@@ -57,6 +58,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   useNetworkStatus();
   useSyncQueue();
+  usePhotoUploader();
   const { locked, authenticate } = useBiometricLock();
 
   if (locked) {
@@ -84,6 +86,7 @@ function RootLayoutNav() {
           <Stack.Screen name="second-sight/new" options={{ title: 'Second Sight', presentation: 'modal' }} />
           <Stack.Screen name="custom-design/new" options={{ title: 'Custom Design', presentation: 'modal' }} />
           <Stack.Screen name="product/[id]" options={{ title: 'Product' }} />
+          <Stack.Screen name="handoff" options={{ title: 'Shift Handoff', presentation: 'modal' }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>

@@ -16,6 +16,8 @@ export default function MoreScreen() {
       <LargeTitle title="More" />
 
       <Section title="Tools">
+        <Row title="Pass to Colleague" icon="exchange" onPress={() => router.push('/handoff')} />
+        <Separator />
         <Row title="Second Sight Intake" icon="refresh" onPress={() => router.push('/second-sight/new')} />
         <Separator />
         <Row title="Custom Design" icon="pencil" onPress={() => router.push('/custom-design/new')} />

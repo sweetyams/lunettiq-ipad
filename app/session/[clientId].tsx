@@ -36,9 +36,22 @@ export default function SessionScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'End', style: 'destructive', onPress: async () => {
-          if (notes) {
-            await clients.addTimeline(clientId!, { type: 'session_note', notes, sessionId }).catch(console.error);
-          }
+          // Log session outcome
+          await clients.addTimeline(clientId!, {
+            type: 'session_end',
+            notes: notes || undefined,
+            sessionId,
+            outcome,
+          }).catch(console.error);
+
+          // Trigger summary email
+          await clients.addTimeline(clientId!, {
+            type: 'session_summary_email',
+            sessionId,
+            outcome,
+            sendEmail: true,
+          }).catch(console.error);
+
           setSession(null);
           router.back();
         },
