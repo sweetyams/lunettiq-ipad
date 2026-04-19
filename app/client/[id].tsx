@@ -18,26 +18,36 @@ export default function ClientDetail() {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [tab, setTab] = useState<Tab>('timeline');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
+    setError(null);
     clients.get(id).then((res: any) => {
-      // API returns { client, orders, timeline, intakes, appointments, preferences }
       if (res?.client) {
-        setClient({ ...res.client, orders: res.orders || [], appointments: res.appointments || [] });
+        setClient({
+          ...res.client,
+          orders: res.orders || [],
+          appointments: res.appointments || [],
+          derivedPreferences: res.preferences || null,
+        });
         setTimeline(Array.isArray(res.timeline) ? res.timeline : []);
-      } else {
+      } else if (res?.shopifyCustomerId || res?.firstName) {
         setClient(res);
+      } else {
+        setError('Could not load client');
       }
-    }).catch(console.error);
-    clients.suggestions(id, 6).then((s) => setSuggestions(Array.isArray(s) ? s : [])).catch(console.error);
+    }).catch((e) => setError(e.message));
+    clients.suggestions(id, 6).then((s) => setSuggestions(Array.isArray(s) ? s : [])).catch(() => {});
   }, [id]);
 
+  if (error) return <View style={styles.container}><Text style={{ padding: 40, color: Colors.error }}>{error}</Text></View>;
   if (!client) return null;
 
   const name = `${client.firstName || ''} ${client.lastName || ''}`.trim() || client.email;
   const fit = client.metafields?.fitProfile || client.metafields?.custom || {};
   const prefs = client.metafields?.preferences || {};
+  const derived = client.derivedPreferences || {};
 
   return (
     <View style={styles.container}>
@@ -115,7 +125,7 @@ export default function ClientDetail() {
       <ScrollView style={styles.rightCol} contentContainerStyle={styles.rightContent}>
         <SectionLabel>Preferences</SectionLabel>
         <Card style={styles.cardPad}>
-          <Text style={styles.prefSubLabel}>Preferred</Text>
+          <Text style={styles.prefSubLabel}>Stated</Text>
           <View style={styles.tagRow}>
             {(prefs.shapes || prefs.stated || []).length > 0
               ? (prefs.shapes || prefs.stated || []).map((p: string) => <View key={p} style={styles.prefTag}><Text style={styles.prefTagText}>{p}</Text></View>)
@@ -127,6 +137,15 @@ export default function ClientDetail() {
               ? (prefs.avoid || []).map((p: string) => <View key={p} style={styles.avoidTag}><Text style={styles.avoidTagText}>{p}</Text></View>)
               : <Text style={styles.muted}>None</Text>}
           </View>
+          {derived.topShapes && (
+            <>
+              <Text style={[styles.prefSubLabel, { marginTop: 10 }]}>Derived (from purchases)</Text>
+              <View style={styles.tagRow}>
+                {(derived.topShapes || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
+                {(derived.topMaterials || []).map((p: string) => <View key={p} style={styles.derivedTag}><Text style={styles.derivedTagText}>{p}</Text></View>)}
+              </View>
+            </>
+          )}
         </Card>
 
         <SectionLabel style={{ marginTop: 20 }}>Fit Profile</SectionLabel>
@@ -223,6 +242,8 @@ const styles = StyleSheet.create({
   prefTagText: { fontSize: 11, fontWeight: '500', color: Colors.primary },
   avoidTag: { backgroundColor: Colors.errorLight, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 2 },
   avoidTagText: { fontSize: 11, fontWeight: '500', color: Colors.error },
+  derivedTag: { backgroundColor: Colors.goldLight, paddingHorizontal: 9, paddingVertical: 3, borderRadius: 2 },
+  derivedTagText: { fontSize: 11, fontWeight: '500', color: Colors.gold },
   fitRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   fitLabel: { fontSize: 12, color: Colors.muted },
   fitValue: { fontSize: 12, fontWeight: '600', color: Colors.navy },
