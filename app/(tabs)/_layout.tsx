@@ -3,6 +3,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
 import { AppStatusBar } from '@/components/ui/StatusBar';
+import { SessionBar } from '@/components/ui/SessionBar';
 import Colors from '@/constants/Colors';
 
 function TabIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
@@ -13,6 +14,7 @@ export default function TabLayout() {
   return (
     <View style={{ flex: 1 }}>
       <AppStatusBar />
+      <SessionBar />
       <Tabs
         screenOptions={{
           headerShown: false,

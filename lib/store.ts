@@ -17,7 +17,18 @@ interface HandoffEntry {
   clientId?: string;
 }
 
+interface ActiveClientSession {
+  clientId: string;
+  clientName: string;
+  startedAt: string;
+}
+
 interface AppState {
+  // Active client session (persistent bar)
+  activeSession: ActiveClientSession | null;
+  startClientSession: (clientId: string, clientName: string) => void;
+  endClientSession: () => void;
+
   // Session
   currentSession: Session | null;
   setSession: (session: Session | null) => void;
@@ -50,6 +61,10 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
+  activeSession: null,
+  startClientSession: (clientId, clientName) => set({ activeSession: { clientId, clientName, startedAt: new Date().toISOString() } }),
+  endClientSession: () => set({ activeSession: null }),
+
   currentSession: null,
   setSession: (session) => set({ currentSession: session }),
   updateSession: (updates) => set((s) => ({

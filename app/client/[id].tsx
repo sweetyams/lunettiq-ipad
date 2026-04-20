@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, View, Text, Pressable, Image, TextInput, StyleSheet, Linking, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
+import { useAppStore } from '../../lib/store';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -13,6 +14,7 @@ type Tab = 'timeline' | 'orders' | 'appointments' | 'second_sight';
 export default function ClientDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { clients, request: apiRequest } = useApi();
+  const { startClientSession } = useAppStore();
   const router = useRouter();
   const [client, setClient] = useState<any>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
@@ -208,7 +210,7 @@ export default function ClientDetail() {
 
         {/* Actions */}
         <View style={styles.actionsBlock}>
-          <Button title="Start Try-On" onPress={() => router.push(`/session/${id}`)} variant="secondary" />
+          <Button title="Start Session" onPress={() => { startClientSession(id!, name); }} variant="secondary" />
           <Button title="Log Note" onPress={() => setShowNote(true)} variant="outline" small />
           <Button title="Recommend" onPress={() => router.push({ pathname: '/(tabs)/products', params: { clientId: id } })} variant="outline" small />
           <Button title="Second Sight" onPress={() => router.push({ pathname: '/second-sight/new', params: { clientId: id } })} variant="outline" small />

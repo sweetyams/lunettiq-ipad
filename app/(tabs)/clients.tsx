@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
+import { useAppStore } from '../../lib/store';
 import { SearchBar } from '../../components/ui/SearchBar';
 import { SectionLabel } from '../../components/ui/List';
 import { Badge } from '../../components/ui/Badge';
@@ -11,6 +12,7 @@ import Colors from '../../constants/Colors';
 
 export default function ClientsScreen() {
   const { clients } = useApi();
+  const { startClientSession } = useAppStore();
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
@@ -95,7 +97,11 @@ export default function ClientsScreen() {
             <Text style={styles.previewEmptyText}>Select a client to preview</Text>
           </View>
         ) : (
-          <PreviewPanel client={preview} onOpen={() => router.push(`/client/${preview.shopifyCustomerId || selected?.shopifyCustomerId}`)} onSession={() => router.push(`/session/${preview.shopifyCustomerId || selected?.shopifyCustomerId}`)} />
+          <PreviewPanel client={preview} onOpen={() => router.push(`/client/${preview.shopifyCustomerId || selected?.shopifyCustomerId}`)} onSession={() => {
+            const cid = preview.shopifyCustomerId || selected?.shopifyCustomerId;
+            const cname = `${preview.firstName || ''} ${preview.lastName || ''}`.trim() || preview.email;
+            startClientSession(cid, cname);
+          }} />
         )}
       </View>
     </View>
