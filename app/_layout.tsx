@@ -6,6 +6,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -65,7 +66,7 @@ function AppShell() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <View style={{ flex: 1 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#0A0A0A' }} edges={['top']}>
         <SessionBar />
         <Stack screenOptions={{ headerStyle: { backgroundColor: '#F7F7F7' }, headerTintColor: '#0A0A0A', headerBackTitle: ' ', headerBackButtonDisplayMode: 'minimal' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -80,7 +81,7 @@ function AppShell() {
         <Stack.Screen name="handoff" options={{ title: 'Shift Handoff', presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
-      </View>
+      </SafeAreaView>
     </ThemeProvider>
   );
 }
