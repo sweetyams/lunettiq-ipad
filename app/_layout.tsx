@@ -14,6 +14,7 @@ import { useNetworkStatus } from '../lib/useNetwork';
 import { useBiometricLock } from '../lib/useBiometric';
 import { useSyncQueue } from '../lib/useSyncQueue';
 import { usePhotoUploader } from '../lib/usePhotoUploader';
+import { SessionBar } from '../components/ui/SessionBar';
 
 const CLERK_KEY = 'pk_test_c3VidGxlLXN1bmJlYW0tMTcuY2xlcmsuYWNjb3VudHMuZGV2JA';
 
@@ -64,7 +65,9 @@ function AppShell() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerStyle: { backgroundColor: '#F7F7F7' }, headerTintColor: '#0A0A0A', headerBackTitle: ' ', headerBackButtonDisplayMode: 'minimal' }}>
+      <View style={{ flex: 1 }}>
+        <SessionBar />
+        <Stack screenOptions={{ headerStyle: { backgroundColor: '#F7F7F7' }, headerTintColor: '#0A0A0A', headerBackTitle: ' ', headerBackButtonDisplayMode: 'minimal' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="client/[id]" options={{ title: 'Client' }} />
         <Stack.Screen name="client/new" options={{ title: 'New Client', presentation: 'modal' }} />
@@ -77,6 +80,7 @@ function AppShell() {
         <Stack.Screen name="handoff" options={{ title: 'Shift Handoff', presentation: 'modal' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
+      </View>
     </ThemeProvider>
   );
 }
