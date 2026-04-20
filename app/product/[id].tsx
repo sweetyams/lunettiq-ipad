@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, View, Text, Image, StyleSheet, Alert } from 'react-native';
+import { ScrollView, View, Text, Image, Pressable, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApi } from '../../lib/api';
 import { Card } from '../../components/ui/Card';
@@ -13,6 +13,7 @@ export default function ProductDetail() {
   const { products, clients } = useApi();
   const router = useRouter();
   const [product, setProduct] = useState<any>(null);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   useEffect(() => {
     if (id) products.get(id).then(setProduct).catch(console.error);
@@ -125,13 +126,34 @@ export default function ProductDetail() {
       <View style={styles.actions}>
         {clientId ? (
           <>
-            <Button title="Recommend to Client" onPress={async () => {
+            {/* Variant selector */}
+            {variants.length > 0 && (
+              <View style={styles.variantPicker}>
+                <Text style={styles.variantPickerLabel}>Select variant to recommend</Text>
+                <View style={styles.variantChips}>
+                  {variants.map((v: any) => {
+                    const isSelected = selectedVariant?.shopifyVariantId === v.shopifyVariantId;
+                    const inStock = (v.inventoryQuantity || 0) > 0;
+                    return (
+                      <Pressable key={v.shopifyVariantId || v.title} onPress={() => setSelectedVariant(v)} style={[styles.variantChip, isSelected && styles.variantChipSelected, !inStock && styles.variantChipOos]}>
+                        <Text style={[styles.variantChipText, isSelected && styles.variantChipTextSelected]}>{v.title || 'Default'}</Text>
+                        {v.price && <Text style={[styles.variantChipPrice, isSelected && styles.variantChipTextSelected]}>${v.price}</Text>}
+                        {!inStock && <Text style={styles.variantOosLabel}>Out of stock</Text>}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+            <Button title={selectedVariant ? `Recommend ${selectedVariant.title || product.title}` : 'Select a variant to recommend'} onPress={async () => {
+              if (!selectedVariant && variants.length > 0) { Alert.alert('Select variant', 'Pick a colour/variant first.'); return; }
               try {
-                await clients.recommend(clientId, { productId: id, productTitle: product.title });
-                Alert.alert('Recommended', `${product.title} recommended to client.`, [{ text: 'OK', onPress: () => router.replace(`/client/${clientId}`) }]);
+                const title = selectedVariant ? `${product.title} — ${selectedVariant.title}` : product.title;
+                await clients.recommend(clientId, { productId: id, productTitle: title });
+                Alert.alert('Recommended', `${title} recommended to client.`, [{ text: 'OK', onPress: () => router.replace(`/client/${clientId}`) }]);
               } catch (e: any) { Alert.alert('Error', e.message); }
             }} variant="secondary" />
-            <Button title="Add to Session" onPress={() => clientId ? router.replace(`/client/${clientId}`) : router.back()} variant="outline" />
+            <Button title="Add to Session" onPress={() => router.replace(`/client/${clientId}`)} variant="outline" />
           </>
         ) : (
           <>
@@ -181,5 +203,15 @@ const styles = StyleSheet.create({
   variantStockCell: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
   miniDot: { width: 5, height: 5, borderRadius: 3 },
   description: { fontSize: 13, color: Colors.muted, lineHeight: 20 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors.border },
+  actions: { gap: 10, marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: Colors.border },
+  variantPicker: { marginBottom: 12 },
+  variantPickerLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, color: Colors.muted, textTransform: 'uppercase', marginBottom: 8 },
+  variantChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  variantChip: { borderWidth: 1, borderColor: Colors.border, borderRadius: 2, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: Colors.white, minWidth: 80 },
+  variantChipSelected: { borderColor: Colors.primary, backgroundColor: Colors.primaryLight },
+  variantChipOos: { opacity: 0.5 },
+  variantChipText: { fontSize: 13, fontWeight: '600', color: Colors.navy },
+  variantChipTextSelected: { color: Colors.primary },
+  variantChipPrice: { fontSize: 11, color: Colors.muted, marginTop: 2 },
+  variantOosLabel: { fontSize: 10, color: Colors.error, marginTop: 2 },
 });
