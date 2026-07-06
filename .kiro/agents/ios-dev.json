@@ -1,0 +1,13 @@
+{
+  "name": "ios-dev",
+  "description": "Lunettiq iPad app — Expo + React Native + WatermelonDB. Consumes Foundry API.",
+  "tools": ["*"],
+  "resources": [
+    "file://.kiro/steering/**/*.md",
+    "skill://.kiro/templates/**/*.md"
+  ],
+  "hooks": {},
+  "includeMcpJson": true,
+  "model": "claude-sonnet-4",
+  "welcomeMessage": "Lunettiq iPad agent ready. Expo Router + TanStack Query + WatermelonDB. Say 'create feature X' to start a buildflow, or 'use #10-foundry-api' for the API contract."
+}
