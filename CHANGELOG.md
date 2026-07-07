@@ -1,5 +1,22 @@
 # Changelog
 
+## [2024-07-07] — Appointments/Today Feature
+
+### Added
+- Appointments/Today feature (HOME-01 screen implementation)
+- `src/api/appointments.types.ts` with appointment data types and list parameters
+- `src/api/useAppointments.ts` with TanStack Query hooks for fetching and updating appointments
+- `src/ui/AppointmentCard.tsx` component with status styling, privacy mode, and action buttons
+- Updated `app/(app)/home/index.tsx` to show today's appointments in split-view layout
+- Quick actions panel with navigation to clients, products, and new client creation
+- Loading, error, and empty states for appointment list
+- Pull-to-refresh functionality for appointment data
+- Privacy mode support (hides client names and notes in client-visible mode)
+
+### Changed
+- Updated API barrel exports to include appointment hooks and types
+- Updated UI barrel exports to include AppointmentCard component
+
 ## [2024-07-07] — Client Timeline (Interactions) Feature
 
 ### Added

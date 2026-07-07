@@ -12,15 +12,15 @@ export function Button({ variant, onPress, disabled = false, children, loading =
   const baseClasses = 'p-md rounded-md min-h-[44px] min-w-[44px] flex-row items-center justify-center';
   
   const variantClasses = {
-    primary: 'bg-navy',
-    secondary: 'bg-warmGrey',
-    ghost: 'bg-transparent',
+    primary: 'bg-green',
+    secondary: 'bg-navy',
+    ghost: 'bg-transparent border border-warmGrey',
     danger: 'bg-error',
   };
 
   const textClasses = {
     primary: 'text-white',
-    secondary: 'text-charcoal',
+    secondary: 'text-white',
     ghost: 'text-navy',
     danger: 'text-white',
   };

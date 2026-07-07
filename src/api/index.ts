@@ -6,3 +6,5 @@ export { useProducts, useProduct } from './useProducts';
 export type { Product, ProductDetail, ProductVariant, ProductImage, ProductListParams } from './products.types';
 export { useInteractions, useCreateInteraction } from './useInteractions';
 export type { Interaction, CreateInteractionParams, InteractionListResponse } from './interactions.types';
+export { useAppointments, useUpdateAppointment } from './useAppointments';
+export type { Appointment, AppointmentListParams } from './appointments.types';

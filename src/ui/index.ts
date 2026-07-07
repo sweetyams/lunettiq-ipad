@@ -7,3 +7,4 @@ export { SearchBar } from './SearchBar';
 export { ClientCard } from './ClientCard';
 export { ProductCard } from './ProductCard';
 export { TimelineEntry } from './TimelineEntry';
+export { AppointmentCard } from './AppointmentCard';
