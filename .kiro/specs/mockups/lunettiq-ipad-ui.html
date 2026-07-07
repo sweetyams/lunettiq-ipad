@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunettiq iPad — UI Spec Mockup</title>
+<style>
+  :root{
+    --ink:#0A153D; --ink-2:#5C5C5C; --ink-3:#9B9B9B;
+    --accent:#005D23; --canvas:#F5F2EC; --surface:#FFFFFF; --sunken:#EDEAE2;
+    --hairline:#E5E5E5; --danger:#C41E3A; --warning:#D4A017; --info:#2D4A8A;
+    --v-loved:#005D23; --v-liked:#2D4A8A; --v-unsure:#D4A017; --v-rejected:#9B9B9B;
+    --r-card:12px; --r-btn:10px; --r-thumb:8px;
+    --disp:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{font-family:var(--disp);background:#101223;color:var(--ink);padding:24px 16px 64px}
+  h1,h2,h3,h4{font-weight:700;letter-spacing:-0.01em}
+
+  /* ===== demo chrome ===== */
+  .demo-head{max-width:1200px;margin:0 auto 20px;color:#F5F2EC;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+  .demo-head h1{font-size:20px;font-weight:700}
+  .demo-head .sub{font-size:13px;color:#9aa0c0;margin-top:2px}
+  .demo-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .demo-tabs{display:flex;gap:4px;background:#1c1f38;border-radius:12px;padding:4px}
+  .demo-tabs button{border:0;background:transparent;color:#9aa0c0;font:600 13px var(--disp);padding:8px 14px;border-radius:9px;cursor:pointer}
+  .demo-tabs button.on{background:#F5F2EC;color:#0A153D}
+  .privacy-demo{display:flex;align-items:center;gap:8px;background:#1c1f38;border-radius:12px;padding:8px 14px;cursor:pointer;user-select:none}
+  .privacy-demo span{font:600 13px var(--disp);color:#9aa0c0}
+  .pswitch{width:42px;height:26px;border-radius:13px;background:#3a3f63;position:relative;transition:.2s}
+  .pswitch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+  body.client .pswitch{background:var(--accent)}
+  body.client .pswitch::after{left:19px}
+
+  .stage{max-width:1200px;margin:0 auto}
+  .panel{display:none}
+  .panel.on{display:block}
+
+  /* ===== iPad frame ===== */
+  .ipad-wrap{width:100%;}
+  .ipad{width:1366px;transform-origin:top left;background:var(--canvas);border-radius:24px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5);border:10px solid #0b0d1a}
+  .screen{height:1004px;display:flex;flex-direction:column;position:relative}
+
+  /* mode strip */
+  .modestrip{height:6px;background:var(--ink);flex:none;position:relative;transition:.15s}
+  body.client .modestrip{background:var(--accent);height:22px}
+  .modestrip .lbl{display:none}
+  body.client .modestrip .lbl{display:block;color:#fff;font:600 11px/22px var(--disp);letter-spacing:.12em;text-align:center}
+
+  /* top bar */
+  .topbar{flex:none;height:60px;display:flex;align-items:center;gap:14px;padding:0 32px;background:rgba(245,242,236,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--hairline)}
+  .topbar .title{font:700 22px var(--disp);letter-spacing:-.01em}
+  .topbar .spacer{flex:1}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:6px 12px;font:500 13px var(--disp);color:var(--ink)}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+  .sync{display:inline-flex;align-items:center;gap:6px;font:500 13px var(--disp);color:var(--ink-2)}
+  .sync .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  .eye{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--surface);border:1px solid var(--hairline);cursor:pointer}
+  .eye svg{width:20px;height:20px;fill:var(--ink)}
+  body.client .eye{background:var(--accent);border-color:var(--accent)}
+  body.client .eye svg{fill:#fff}
+
+  .content{flex:1;overflow:hidden;display:flex;gap:24px;padding:24px 32px}
+
+  /* tab bar */
+  .tabbar{flex:none;height:64px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-top:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;gap:88px}
+  .tabbar .t{display:flex;flex-direction:column;align-items:center;gap:3px;font:500 11px var(--disp);color:var(--ink-3)}
+  .tabbar .t.on{color:var(--ink)}
+  .tabbar .t svg{width:22px;height:22px;fill:currentColor}
+
+  /* privacy helpers */
+  body.client [data-staff]{display:none!important}
+  [data-client]{display:none!important}
+  body.client [data-client]{display:flex!important}
+  body.client [data-client].blk{display:block!important}
+
+  /* ===== shared components ===== */
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 20px;border-radius:var(--r-btn);font:600 15px var(--disp);cursor:pointer;border:0}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.secondary{background:var(--ink);color:#fff}
+  .btn.tertiary{background:transparent;color:var(--ink);border:1px solid var(--hairline)}
+  .btn.destructive{background:transparent;color:var(--danger)}
+  .btn.sm{height:34px;padding:0 14px;font-size:13px}
+  .btn:active{transform:scale(.96)}
+  .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font:600 11px var(--disp);letter-spacing:.06em;text-transform:uppercase}
+  .badge.tier{background:var(--ink);color:#fff}
+  .badge.warn{background:#FBF3DC;color:#8a6a0a}
+  .badge.ok{background:#E3EFE7;color:var(--accent)}
+  .badge.mut{background:var(--sunken);color:var(--ink-2)}
+  .pill{display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:var(--r-btn);border:1px solid var(--hairline);background:var(--surface);font:600 12px var(--disp);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+  .pill.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .stockdot{width:8px;height:8px;border-radius:50%}
+  .fitbadge{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 9px;font:600 11px var(--disp)}
+  .fitbadge.good{background:#E3EFE7;color:var(--accent)}
+  .fitbadge.mid{background:#FBF3DC;color:#8a6a0a}
+  .fitbadge.bad{background:var(--sunken);color:var(--ink-3)}
+
+  /* product card */
+  .pcard{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);overflow:hidden;cursor:pointer;transition:transform .12s}
+  .pcard:active{transform:scale(.97)}
+  .pcard .img{aspect-ratio:1/1;background:var(--sunken);display:flex;align-items:center;justify-content:center;position:relative}
+  .pcard .img svg{width:72%;}
+  .pcard .fitb{position:absolute;top:10px;left:10px}
+  .pcard .meta{padding:12px 14px 14px}
+  .pcard .nm{font:600 16px var(--disp);letter-spacing:-.01em}
+  .pcard .cl{font:400 12px var(--disp);color:var(--ink-2);margin-top:2px}
+  .pcard .row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+  .pcard .pr{font:500 16px var(--disp);font-variant-numeric:tabular-nums}
+  .taprice{font:500 12px var(--disp);color:var(--ink-2);border:1px solid var(--hairline);border-radius:999px;padding:3px 10px}
+  .pcard.owned{opacity:.65}
+
+  /* appointment card */
+  .acard{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:16px 18px;position:relative;display:flex;flex-direction:column;gap:8px}
+  .acard.live{border-left:3px solid var(--accent)}
+  .acard .l1{display:flex;align-items:baseline;gap:12px}
+  .acard .tm{font:700 20px var(--disp);font-variant-numeric:tabular-nums}
+  .acard .nm{font:600 17px var(--disp)}
+  .acard .l2{font:400 13px var(--disp);color:var(--ink-2)}
+  .acard .l3{display:flex;align-items:center;gap:10px;margin-top:2px}
+  .acard .acts{display:flex;gap:8px;margin-top:6px}
+  .holds{display:inline-flex;align-items:center;gap:5px;font:500 12px var(--disp);color:var(--ink-2)}
+
+  /* verdict control */
+  .vctl{display:inline-flex;border:1px solid var(--hairline);border-radius:var(--r-btn);overflow:hidden;background:var(--surface)}
+  .vctl .v{width:52px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-right:1px solid var(--hairline)}
+  .vctl .v:last-child{border-right:0}
+  .vctl .v svg{width:18px;height:18px;fill:var(--ink-3)}
+  .vctl .v.on.loved{background:var(--v-loved)} .vctl .v.on.liked{background:var(--v-liked)}
+  .vctl .v.on.unsure{background:var(--v-unsure)} .vctl .v.on.rejected{background:var(--v-rejected)}
+  .vctl .v.on svg{fill:#fff}
+
+  /* shelf thumbnail */
+  .thumb{width:120px;flex:none;cursor:pointer}
+  .thumb .ph{width:120px;height:88px;border-radius:var(--r-thumb);background:linear-gradient(135deg,#c9c2b2,#a89f8a);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .thumb .ph svg{width:64%;opacity:.9}
+  .thumb .vd{position:absolute;top:6px;right:6px;width:12px;height:12px;border-radius:50%;border:2px solid #fff}
+  .thumb .star{position:absolute;top:6px;left:6px;color:#fff;font-size:12px;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .thumb .cap{font:500 11px var(--disp);color:var(--ink-2);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .thumb.sel .ph{outline:3px solid var(--accent);outline-offset:1px}
+  .thumb .unl{position:absolute;bottom:6px;left:6px;background:#FBF3DC;color:#8a6a0a;font:600 9px var(--disp);letter-spacing:.06em;border-radius:999px;padding:2px 7px;text-transform:uppercase}
+
+  /* section labels */
+  .eyebrow{font:600 11px var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
+  .h-disp{font:700 34px var(--disp);letter-spacing:-.02em}
+  .subdate{font:400 15px var(--disp);color:var(--ink-2);margin-top:2px}
+
+  /* client context panel */
+  .cpanel{width:492px;flex:none;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+  .cpanel .idcard{padding:18px}
+  .cpanel .idrow{display:flex;align-items:center;gap:14px}
+  .avatar{width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font:700 18px var(--disp)}
+  .kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--hairline);font:400 14px var(--disp)}
+  .kv:last-child{border-bottom:0}
+  .kv .k{color:var(--ink-2)} .kv .v{font-weight:500}
+  .sec{padding:16px 18px}
+  .sec h4{font:600 15px var(--disp);margin-bottom:8px}
+  .lockmsg{display:flex;align-items:center;gap:8px;color:var(--ink-3);font:500 13px var(--disp);padding:14px;background:var(--sunken);border-radius:8px}
+
+  /* left work panel */
+  .work{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;overflow:auto;padding-bottom:8px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .filters{display:flex;gap:8px;overflow:auto;padding:2px 0 14px}
+  .search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-btn);height:44px;padding:0 16px;color:var(--ink-3);font:400 15px var(--disp);margin-bottom:12px}
+  .ctxhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ctxhead .t{font:600 15px var(--disp)}
+
+  /* fitting */
+  .fitscreen{flex:1;display:flex;flex-direction:column;background:#0d0f1c;position:relative;overflow:hidden}
+  .feed{flex:1;position:relative;background:radial-gradient(ellipse at 50% 42%,#3d4258 0%,#23263a 55%,#15172a 100%);display:flex;align-items:center;justify-content:center}
+  .guide{width:300px;height:380px;border:2px dashed rgba(255,255,255,.28);border-radius:150px 150px 120px 120px}
+  .feed .cnt{position:absolute;top:18px;right:24px;color:#fff;font:500 14px "SF Mono",ui-monospace,monospace;background:rgba(0,0,0,.35);border-radius:999px;padding:5px 12px}
+  .feed .exit{position:absolute;top:16px;left:24px;color:#fff;font:600 14px var(--disp);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.35);border-radius:999px;padding:7px 14px}
+  .feed .mirror{position:absolute;bottom:120px;left:24px;color:#fff;font:600 12px var(--disp);background:rgba(0,0,0,.35);border-radius:999px;padding:7px 14px;display:flex;gap:6px;align-items:center}
+  .feed .scan{position:absolute;bottom:18px;left:24px;color:#fff;font:600 12px var(--disp);background:rgba(0,0,0,.35);border-radius:999px;padding:9px 16px;display:flex;gap:8px;align-items:center}
+  .shutter{position:absolute;right:36px;top:50%;transform:translateY(-50%);width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.35);background-clip:padding-box;cursor:pointer}
+  .shelf{flex:none;background:var(--sunken);border-top:1px solid var(--hairline);padding:12px 24px;display:flex;gap:14px;align-items:flex-start;overflow-x:auto}
+  .shelf .cmp{flex:none;align-self:center;margin-left:8px}
+
+  /* sheet (product detail) */
+  .dim{position:absolute;inset:0;background:rgba(10,21,61,.32);display:flex;align-items:flex-end;z-index:5}
+  .sheet{background:var(--surface);border-radius:14px 14px 0 0;width:100%;height:76%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -12px 48px rgba(0,0,0,.25)}
+  .grabber{width:40px;height:5px;border-radius:3px;background:var(--hairline);margin:10px auto 4px;flex:none}
+  .sheet .body{flex:1;overflow:auto;display:flex;gap:32px;padding:16px 40px 20px}
+  .hero{width:46%;flex:none}
+  .hero .big{aspect-ratio:1/1;background:var(--sunken);border-radius:var(--r-card);display:flex;align-items:center;justify-content:center}
+  .hero .big svg{width:78%}
+  .swatches{display:flex;gap:10px;margin-top:14px}
+  .sw{width:36px;height:36px;border-radius:50%;border:1px solid var(--hairline);cursor:pointer}
+  .sw.on{outline:3px solid var(--ink);outline-offset:2px}
+  .pinfo{flex:1;min-width:0}
+  .pinfo .fam{font:700 28px var(--disp);letter-spacing:-.02em}
+  .pinfo .coll{font:600 11px var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+  .pinfo .price{font:500 22px var(--disp);font-variant-numeric:tabular-nums;margin-top:6px}
+  .fitband{margin:16px 0;padding:14px 16px;background:#E3EFE7;border-radius:var(--r-card)}
+  .fitband .t{font:600 14px var(--disp);color:var(--accent)}
+  .rangebar{height:8px;border-radius:4px;background:var(--hairline);margin-top:10px;position:relative}
+  .rangebar .ideal{position:absolute;left:30%;width:34%;top:0;bottom:0;background:#bcd8c5;border-radius:4px}
+  .rangebar .this{position:absolute;left:44%;width:3px;top:-4px;bottom:-4px;background:var(--accent);border-radius:2px}
+  .dims{width:100%;border-collapse:collapse;margin-top:8px}
+  .dims td{padding:8px 0;border-bottom:1px solid var(--hairline);font:400 14px var(--disp)}
+  .dims td:last-child{text-align:right;font-family:"SF Mono",ui-monospace,monospace;font-size:13px}
+  .invrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--hairline);font:400 14px var(--disp)}
+  .actionbar{flex:none;display:flex;gap:10px;justify-content:flex-end;padding:14px 40px;border-top:1px solid var(--hairline);background:rgba(255,255,255,.92);backdrop-filter:blur(8px)}
+
+  /* ===== spec-sheet sections (foundations & components) ===== */
+  .specsheet{background:var(--canvas);border-radius:20px;padding:40px;color:var(--ink)}
+  .specsheet h2{font-size:24px;margin-bottom:6px}
+  .specsheet .lead{color:var(--ink-2);font-size:14px;margin-bottom:28px;max-width:640px}
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:36px}
+  .swatch{border-radius:12px;overflow:hidden;border:1px solid var(--hairline);background:var(--surface)}
+  .swatch .c{height:64px}
+  .swatch .m{padding:10px 12px}
+  .swatch .n{font:600 13px var(--disp)}
+  .swatch .h{font:400 11px "SF Mono",ui-monospace,monospace;color:var(--ink-2)}
+  .typerow{display:flex;align-items:baseline;gap:24px;padding:14px 0;border-bottom:1px solid var(--hairline)}
+  .typerow .tag{width:110px;flex:none;font:400 11px "SF Mono",ui-monospace,monospace;color:var(--ink-2)}
+  .comprow{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;padding:20px 0;border-bottom:1px solid var(--hairline)}
+  .comprow .lab{width:170px;flex:none}
+  .comprow .lab .n{font:600 14px var(--disp)}
+  .comprow .lab .d{font:400 12px var(--disp);color:var(--ink-2);margin-top:3px}
+  .comprow .ex{display:flex;flex-wrap:wrap;gap:12px;align-items:center;flex:1}
+  .note{font:400 12px var(--disp);color:var(--ink-2)}
+  .qa{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:8px}
+  .qa .q{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:14px 16px;font:400 13px/1.5 var(--disp)}
+  .qa .q b{font-weight:600}
+  .footer-note{max-width:1200px;margin:20px auto 0;color:#9aa0c0;font:400 12px var(--disp)}
+  svg{display:block}
+</style>
+</head>
+<body>
+
+<!-- ============ DEMO CHROME ============ -->
+<div class="demo-head">
+  <div>
+    <h1>Lunettiq iPad — UI Spec Mockup</h1>
+    <div class="sub">Companion to 12-design-system.md · 13-navigation-states.md · 14-golden-flows.md — rendered at 1366×1024 pt</div>
+  </div>
+  <div class="demo-controls">
+    <div class="demo-tabs" id="tabs">
+      <button data-p="p-found" class="on">Foundations</button>
+      <button data-p="p-comp">Components</button>
+      <button data-p="p-today">Today</button>
+      <button data-p="p-session">Session</button>
+      <button data-p="p-fitting">Fitting</button>
+      <button data-p="p-detail">Product detail</button>
+    </div>
+    <div class="privacy-demo" onclick="document.body.classList.toggle('client')">
+      <span>Staff</span><div class="pswitch"></div><span>Client-visible</span>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+
+<!-- ============ FOUNDATIONS ============ -->
+<section class="panel on" id="p-found">
+  <div class="specsheet">
+    <h2>Colour tokens</h2>
+    <p class="lead">Semantic only — components never touch hex. One green per screen: <b>accent</b> marks the single most important affirmative action and nothing else.</p>
+    <div class="swgrid">
+      <div class="swatch"><div class="c" style="background:#0A153D"></div><div class="m"><div class="n">ink</div><div class="h">#0A153D</div></div></div>
+      <div class="swatch"><div class="c" style="background:#5C5C5C"></div><div class="m"><div class="n">ink-secondary</div><div class="h">#5C5C5C</div></div></div>
+      <div class="swatch"><div class="c" style="background:#005D23"></div><div class="m"><div class="n">accent</div><div class="h">#005D23</div></div></div>
+      <div class="swatch"><div class="c" style="background:#F5F2EC"></div><div class="m"><div class="n">canvas</div><div class="h">#F5F2EC</div></div></div>
+      <div class="swatch"><div class="c" style="background:#FFFFFF;border-bottom:1px solid #E5E5E5"></div><div class="m"><div class="n">surface</div><div class="h">#FFFFFF</div></div></div>
+      <div class="swatch"><div class="c" style="background:#EDEAE2"></div><div class="m"><div class="n">surface-sunken</div><div class="h">#EDEAE2</div></div></div>
+      <div class="swatch"><div class="c" style="background:#C41E3A"></div><div class="m"><div class="n">danger</div><div class="h">#C41E3A</div></div></div>
+      <div class="swatch"><div class="c" style="background:#D4A017"></div><div class="m"><div class="n">warning</div><div class="h">#D4A017</div></div></div>
+      <div class="swatch"><div class="c" style="background:#2D4A8A"></div><div class="m"><div class="n">info</div><div class="h">#2D4A8A</div></div></div>
+    </div>
+
+    <h2>Type scale</h2>
+    <p class="lead">Helvetica Now Display for identity (headings, product names, prices — rendered here in Helvetica Neue as a proxy), Helvetica Neue for UI, SF Mono for SKUs. Body minimum 17 pt; client-visible mode bumps to 19 pt.</p>
+    <div style="margin-bottom:36px">
+      <div class="typerow"><div class="tag">display-xl 34</div><div style="font:700 34px var(--disp);letter-spacing:-.02em">Marie Dupont</div></div>
+      <div class="typerow"><div class="tag">display-l 28</div><div style="font:700 28px var(--disp);letter-spacing:-.02em">Draper — Tortoise</div></div>
+      <div class="typerow"><div class="tag">price 22</div><div style="font:500 22px var(--disp);font-variant-numeric:tabular-nums">$395</div></div>
+      <div class="typerow"><div class="tag">body 17</div><div style="font:400 17px/24px var(--disp)">Prefers round acetate in warm tones. Avoids oversized frames.</div></div>
+      <div class="typerow"><div class="tag">caption 14</div><div style="font:400 14px var(--disp);color:var(--ink-2)">Last fitting · March 14, 2026 · Plateau</div></div>
+      <div class="typerow"><div class="tag">label 13</div><div style="font:600 13px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Signature Collection</div></div>
+      <div class="typerow"><div class="tag">mono 15</div><div style="font:400 15px 'SF Mono',ui-monospace,monospace">LNQ-DRP-TRT</div></div>
+    </div>
+
+    <h2>The hybrid rule</h2>
+    <p class="lead">Structure and behaviour are iOS-native. Content and identity are Lunettiq.</p>
+    <div class="qa">
+      <div class="q"><b>Stays native:</b> sheets with grabbers and detents, blur-material bars, SF Symbols, system springs, native switches and keyboards, system haptics.</div>
+      <div class="q"><b>Gets branded:</b> all type, all colour, buttons (never tint-blue), editorial photo treatment, empty-state line art, 12 pt max radius with continuous curvature.</div>
+      <div class="q"><b>Nothing decorative moves.</b> Motion communicates state or hierarchy only. Reduce Motion turns every spring into a 150 ms crossfade.</div>
+      <div class="q"><b>Photography wins.</b> When a screen contains a product or fitting photo, the photo gets the area and the chrome shrinks around it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPONENTS ============ -->
+<section class="panel" id="p-comp">
+  <div class="specsheet">
+    <h2>Component library</h2>
+    <p class="lead">Sixteen components build all 28 V1 screens. Toggle Client-visible (top right) to see privacy behaviour live on every component below.</p>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">Button</div><div class="d">Primary is the one green per screen. Pressed = 0.96 scale.</div></div>
+      <div class="ex">
+        <button class="btn primary">Start fitting</button>
+        <button class="btn secondary">Open profile</button>
+        <button class="btn tertiary">Cancel</button>
+        <button class="btn tertiary" style="opacity:.4">Disabled</button>
+        <button class="btn destructive">Delete photo</button>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">ProductCard</div><div class="d">Price and stock hide in client-visible mode; fit badge stays.</div></div>
+      <div class="ex" style="max-width:560px">
+        <div class="pcard" style="width:170px">
+          <div class="img"><span class="fitb"><span class="fitbadge good">✓ Fit</span></span>
+            <svg viewBox="0 0 120 44"><g fill="none" stroke="#6b4f2e" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/></g></svg>
+          </div>
+          <div class="meta"><div class="nm">Draper</div><div class="cl">Tortoise · 3 colours</div>
+            <div class="row"><span class="pr" data-staff>$395</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--accent)" data-staff></span></div>
+          </div>
+        </div>
+        <div class="pcard owned" style="width:170px">
+          <div class="img"><svg viewBox="0 0 120 44"><g fill="none" stroke="#1c2f56" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="6"/><rect x="70" y="8" width="44" height="30" rx="6"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+          <div class="meta"><div class="nm">Senna <span class="badge mut" style="margin-left:4px">Owns</span></div><div class="cl">Navy · 4 colours</div>
+            <div class="row"><span class="pr" data-staff>$425</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--warning)" data-staff></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">AppointmentCard</div><div class="d">In-progress gains the accent edge. Client-visible shows time + type only.</div></div>
+      <div class="ex" style="flex-direction:column;align-items:stretch;max-width:460px">
+        <div class="acard live">
+          <div class="l1"><span class="tm">10:00</span><span class="nm" data-staff>Marie Dupont</span></div>
+          <div class="l2">Fitting · 45 min · Plateau</div>
+          <div class="l3"><span class="badge ok">In progress</span><span class="holds" data-staff>⏳ 3 frames held</span></div>
+        </div>
+        <div class="acard">
+          <div class="l1"><span class="tm">11:30</span><span class="nm" data-staff>J-P. Tremblay</span></div>
+          <div class="l2">Eye exam · 30 min · Plateau</div>
+          <div class="l3"><span class="badge mut">Scheduled</span></div>
+          <div class="acts" data-staff><button class="btn sm secondary">Check in</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">VerdictControl</div><div class="d">Loved · liked · unsure · rejected. Rejected is grey — it's data, not an error. No emoji.</div></div>
+      <div class="ex">
+        <div class="vctl">
+          <div class="v on loved"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.5C.5 8 2.5 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.5 0 5.5 3.5 4 7-2.5 4.6-10 9.5-10 9.5z"/></svg></div>
+          <div class="v"><svg viewBox="0 0 24 24"><path d="M2 10h4v11H2zM8 21h8.5a3 3 0 0 0 2.9-2.2l1.5-6A3 3 0 0 0 18 9h-4V5a2.7 2.7 0 0 0-2.7-2.7L8 10z"/></svg></div>
+          <div class="v"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 15.2a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6zM12 6a3.8 3.8 0 0 1 2 7l-1 .8v1.4h-2v-2.4l1.8-1.3A1.8 1.8 0 1 0 10.2 10h-2A3.8 3.8 0 0 1 12 6z"/></svg></div>
+          <div class="v"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM8.4 7l3.6 3.6L15.6 7 17 8.4 13.4 12l3.6 3.6-1.4 1.4-3.6-3.6L8.4 17 7 15.6 10.6 12 7 8.4z"/></svg></div>
+        </div>
+        <span class="note">One tap sets the verdict and writes the interaction (feeds the suggestions score).</span>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">ShelfThumbnail</div><div class="d">Linked, unlinked, no-photo (consent declined), selected-for-compare.</div></div>
+      <div class="ex">
+        <div class="thumb"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#3a2c18" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="vd" style="background:var(--v-loved)"></span><span class="star">★</span></div><div class="cap">Draper · Tortoise</div></div>
+        <div class="thumb"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#111" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="4"/><rect x="70" y="8" width="44" height="30" rx="4"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="unl">Unlinked</span></div><div class="cap">Photo 4</div></div>
+        <div class="thumb sel"><div class="ph" style="background:var(--surface);border:1px solid var(--hairline)"><svg viewBox="0 0 120 44"><g fill="none" stroke="#7a1f2b" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="12"/><rect x="70" y="8" width="44" height="30" rx="12"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="vd" style="background:var(--v-liked)"></span></div><div class="cap">Hatley · Oxblood (no photo)</div></div>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">FilterPillRow · FitBadge · StockDot</div><div class="d">Stock hides from clients; fit stays (it's about them).</div></div>
+      <div class="ex">
+        <span class="pill on">Signature</span><span class="pill">Round</span><span class="pill">Acetate</span><span class="pill">In stock here</span>
+        <span class="fitbadge good">✓ Fit</span><span class="fitbadge mid">±3 mm</span><span class="fitbadge bad">Wide</span>
+        <span data-staff style="display:inline-flex;gap:10px;align-items:center"><span class="stockdot" style="background:var(--accent)"></span><span class="stockdot" style="background:var(--warning)"></span><span class="stockdot" style="background:var(--danger)"></span><span class="stockdot" style="background:var(--ink-3)"></span></span>
+      </div>
+    </div>
+
+    <div class="comprow">
+      <div class="lab"><div class="n">SyncIndicator + ModeStrip</div><div class="d">Synced · pending(n) · error · the 2-hour amber banner. Client mode = 6 pt green strip, visible across the room.</div></div>
+      <div class="ex">
+        <span class="sync"><span class="dot"></span>Synced</span>
+        <span class="sync"><span class="dot" style="background:var(--warning)"></span>4 pending</span>
+        <span class="sync"><span class="dot" style="background:var(--danger)"></span>Sync error</span>
+        <span class="badge warn">Offline 2 h — find WiFi to sync 7 changes</span>
+      </div>
+    </div>
+
+    <div class="comprow" style="border-bottom:0">
+      <div class="lab"><div class="n">ConsentModal</div><div class="d">Declining is a first-class path, not a dead end — it routes to the no-photo fitting layout.</div></div>
+      <div class="ex">
+        <div class="card" style="width:400px;padding:22px">
+          <div style="font:700 19px var(--disp);letter-spacing:-.01em">Save today's fitting photos?</div>
+          <div style="font:400 14px/1.5 var(--disp);color:var(--ink-2);margin:8px 0 4px">Photos save to Marie's account so she can review them at home. We ask every visit.</div>
+          <div style="display:flex;gap:8px;margin:10px 0 16px"><span class="pill on" style="height:28px;padding:0 12px">EN</span><span class="pill" style="height:28px;padding:0 12px">FR</span></div>
+          <div style="display:flex;gap:10px"><button class="btn primary" style="flex:1">Client agrees</button><button class="btn tertiary" style="flex:1">No photos this session</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN: TODAY ============ -->
+<section class="panel" id="p-today">
+  <div class="ipad-wrap"><div class="ipad" data-scale><div class="screen">
+    <div class="modestrip"><div class="lbl">CLIENT VIEW</div></div>
+    <div class="topbar">
+      <span class="title">Today</span>
+      <span class="spacer"></span>
+      <span class="sync"><span class="dot"></span>Synced</span>
+      <div class="eye"><svg viewBox="0 0 24 24"><path d="M12 5C5.6 5 1.7 11.2 1.7 11.2s3.9 6.8 10.3 6.8 10.3-6.8 10.3-6.8S18.4 5 12 5zm0 10.5a3.7 3.7 0 1 1 0-7.4 3.7 3.7 0 0 1 0 7.4z"/></svg></div>
+    </div>
+    <div class="content">
+      <div class="work">
+        <div class="h-disp">Tuesday</div>
+        <div class="subdate">July 7 · Plateau · 6 appointments</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:20px;overflow:auto">
+          <div class="acard live">
+            <div class="l1"><span class="tm">10:00</span><span class="nm" data-staff>Marie Dupont</span></div>
+            <div class="l2">Fitting · 45 min</div>
+            <div class="l3"><span class="badge ok">In progress</span><span class="holds" data-staff>⏳ 3 frames held</span><span class="badge tier" data-staff>CULT</span></div>
+            <div class="acts" data-staff><button class="btn sm primary">Start session</button></div>
+          </div>
+          <div class="acard">
+            <div class="l1"><span class="tm">11:30</span><span class="nm" data-staff>Jean-Pierre Tremblay</span></div>
+            <div class="l2">Eye exam · 30 min</div>
+            <div class="l3"><span class="badge mut">Scheduled</span><span class="holds" data-staff>Rx on file · expires 2027-03</span></div>
+            <div class="acts" data-staff><button class="btn sm secondary">Check in</button></div>
+          </div>
+          <div class="acard">
+            <div class="l1"><span class="tm">14:00</span><span class="nm" data-staff>Sophie Martin</span></div>
+            <div class="l2">Second Sight · 20 min</div>
+            <div class="l3"><span class="badge mut">Confirmed</span></div>
+            <div class="acts" data-staff><button class="btn sm secondary">Check in</button></div>
+          </div>
+          <div class="acard" style="opacity:.55">
+            <div class="l1"><span class="tm">09:00</span><span class="nm" data-staff>Léa Fortin</span><span class="badge mut" style="margin-left:auto">Completed</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cpanel">
+        <div class="card sec" data-staff>
+          <div class="eyebrow">Active holds — Plateau</div>
+          <div class="kv"><span class="k">Draper · Tortoise</span><span class="v">Marie D. · 10:00</span></div>
+          <div class="kv"><span class="k">Hatley · Gunmetal</span><span class="v">Marie D. · 10:00</span></div>
+          <div class="kv"><span class="k">Senna · Silver</span><span class="v">Expires 16:00</span></div>
+        </div>
+        <div class="card sec" data-staff>
+          <div class="eyebrow">Recent clients</div>
+          <div class="kv"><span class="v">Camille Roy</span><span class="k">Yesterday</span></div>
+          <div class="kv"><span class="v">Nadia Benali</span><span class="k">Friday</span></div>
+          <div class="kv"><span class="v">Tom Singh</span><span class="k">Friday</span></div>
+        </div>
+        <div class="card sec">
+          <div class="eyebrow">Quick actions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+            <button class="btn tertiary">Search client</button><button class="btn tertiary">New client</button>
+            <button class="btn tertiary">Products</button><button class="btn tertiary">Second Sight</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="t on"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6H10v6H6v-9H3z"/></svg>Home</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>Clients</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V5a4 4 0 0 1 8 0v2"/></svg>Products</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm-2 6h18"/></svg>Appointments</div>
+      <div class="t"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>More</div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ============ SCREEN: SESSION ============ -->
+<section class="panel" id="p-session">
+  <div class="ipad-wrap"><div class="ipad" data-scale><div class="screen">
+    <div class="modestrip"><div class="lbl">CLIENT VIEW</div></div>
+    <div class="topbar">
+      <span class="title">Session</span>
+      <span class="chip"><span class="dot"></span><span data-staff>Marie D. · 12 min</span><span data-client>In session · 12 min</span></span>
+      <span class="spacer"></span>
+      <button class="btn sm primary">Start fitting</button>
+      <button class="btn sm tertiary">End session</button>
+      <span class="sync"><span class="dot" style="background:var(--warning)"></span><span data-staff>2 pending</span></span>
+      <div class="eye"><svg viewBox="0 0 24 24"><path d="M12 5C5.6 5 1.7 11.2 1.7 11.2s3.9 6.8 10.3 6.8 10.3-6.8 10.3-6.8S18.4 5 12 5zm0 10.5a3.7 3.7 0 1 1 0-7.4 3.7 3.7 0 0 1 0 7.4z"/></svg></div>
+    </div>
+    <div class="content">
+      <div class="work">
+        <div class="ctxhead"><span class="t" data-staff>Browsing for Marie</span><span class="t" data-client>Frames for you</span><span class="badge ok">Best match</span></div>
+        <div class="search">Search frames…</div>
+        <div class="filters">
+          <span class="pill on">Round</span><span class="pill on">Acetate</span><span class="pill">Signature</span><span class="pill">Sun</span><span class="pill" data-staff>In stock here</span><span class="pill">Warm tones</span>
+        </div>
+        <div class="grid4">
+          <div class="pcard"><div class="img"><span class="fitb"><span class="fitbadge good">✓ Fit</span></span><svg viewBox="0 0 120 44"><g fill="none" stroke="#6b4f2e" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Draper</div><div class="cl">Tortoise · 3 colours</div><div class="row"><span class="pr" data-staff>$395</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--accent)" data-staff></span></div></div></div>
+          <div class="pcard"><div class="img"><span class="fitb"><span class="fitbadge good">✓ Fit</span></span><svg viewBox="0 0 120 44"><g fill="none" stroke="#555f6e" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="15"/><rect x="70" y="8" width="44" height="30" rx="15"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Hatley</div><div class="cl">Gunmetal · 2 colours</div><div class="row"><span class="pr" data-staff>$445</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--accent)" data-staff></span></div></div></div>
+          <div class="pcard"><div class="img"><span class="fitb"><span class="fitbadge mid">±3 mm</span></span><svg viewBox="0 0 120 44"><g fill="none" stroke="#7a1f2b" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="12"/><rect x="70" y="8" width="44" height="30" rx="12"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Verlaine</div><div class="cl">Oxblood · 3 colours</div><div class="row"><span class="pr" data-staff>$415</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--warning)" data-staff></span></div></div></div>
+          <div class="pcard owned"><div class="img"><svg viewBox="0 0 120 44"><g fill="none" stroke="#1c2f56" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="6"/><rect x="70" y="8" width="44" height="30" rx="6"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Senna <span class="badge mut">Owns</span></div><div class="cl">Navy · 4 colours</div><div class="row"><span class="pr" data-staff>$425</span><span class="taprice" data-client>Tap for price</span></div></div></div>
+          <div class="pcard"><div class="img"><span class="fitb"><span class="fitbadge good">✓ Fit</span></span><svg viewBox="0 0 120 44"><g fill="none" stroke="#3f6b4f" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Aldous</div><div class="cl">Moss · 2 colours</div><div class="row"><span class="pr" data-staff>$385</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--accent)" data-staff></span></div></div></div>
+          <div class="pcard"><div class="img"><span class="fitb"><span class="fitbadge good">✓ Fit</span></span><svg viewBox="0 0 120 44"><g fill="none" stroke="#8a6a3a" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="13"/><rect x="70" y="8" width="44" height="30" rx="13"/><path d="M50 20 Q60 12 70 20"/></g></svg></div>
+            <div class="meta"><div class="nm">Colette</div><div class="cl">Honey · 3 colours</div><div class="row"><span class="pr" data-staff>$395</span><span class="taprice" data-client>Tap for price</span><span class="stockdot" style="background:var(--accent)" data-staff></span></div></div></div>
+        </div>
+      </div>
+      <div class="cpanel">
+        <div class="card idcard">
+          <div class="idrow">
+            <div class="avatar">MD</div>
+            <div>
+              <div style="font:700 20px var(--disp);letter-spacing:-.01em">Marie Dupont</div>
+              <div style="font:400 13px var(--disp);color:var(--ink-2)"><span data-staff>CULT · since 2023 · Plateau</span><span data-client class="blk">Member since 2023</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:14px" data-staff>
+            <div><div class="eyebrow" style="margin:0">LTV</div><div style="font:600 17px var(--disp)">$2,340</div></div>
+            <div><div class="eyebrow" style="margin:0">Orders</div><div style="font:600 17px var(--disp)">5</div></div>
+            <div><div class="eyebrow" style="margin:0">Credits</div><div style="font:600 17px var(--disp)">$40</div></div>
+          </div>
+        </div>
+        <div class="card sec">
+          <h4>Fit profile</h4>
+          <div class="kv"><span class="k">Face shape</span><span class="v">Oval</span></div>
+          <div class="kv"><span class="k">Frame width</span><span class="v">134 mm</span></div>
+          <div class="kv"><span class="k">Bridge</span><span class="v">19 mm</span></div>
+        </div>
+        <div class="card sec">
+          <h4>Preferences</h4>
+          <div class="kv"><span class="k">Loves</span><span class="v">Round · acetate · warm</span></div>
+          <div class="kv"><span class="k">Avoids</span><span class="v">Oversized</span></div>
+          <div class="kv" data-staff><span class="k">Derived</span><span class="v">Round · tortoise · $350–450</span></div>
+        </div>
+        <div class="card sec" data-staff>
+          <h4>Session notes</h4>
+          <div style="font:400 14px/1.5 var(--disp);color:var(--ink-2)">Wants a second pair for work. Screen-heavy days — mention blue light option.</div>
+        </div>
+        <div class="card sec" data-client style="flex-direction:column">
+          <div class="lockmsg">Some panels are hidden in client view</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabbar">
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-4v-6H10v6H6v-9H3z"/></svg>Home</div>
+      <div class="t on"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5z"/></svg>Clients</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V5a4 4 0 0 1 8 0v2"/></svg>Products</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm-2 6h18"/></svg>Appointments</div>
+      <div class="t"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>More</div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ============ SCREEN: FITTING ============ -->
+<section class="panel" id="p-fitting">
+  <div class="ipad-wrap"><div class="ipad" data-scale><div class="screen">
+    <div class="modestrip"><div class="lbl">CLIENT VIEW</div></div>
+    <div class="fitscreen">
+      <div class="feed">
+        <div class="exit">‹ &nbsp;Marie D.</div>
+        <div class="cnt">14 / 20</div>
+        <div class="guide"></div>
+        <div class="mirror">⇋ Mirror preview</div>
+        <div class="scan">▦ Scan barcode</div>
+        <div class="shutter"></div>
+      </div>
+      <div class="shelf">
+        <div class="thumb"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#3a2c18" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="vd" style="background:var(--v-loved)"></span><span class="star">★</span></div><div class="cap">Draper · Tortoise</div></div>
+        <div class="thumb sel"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#2e3542" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="15"/><rect x="70" y="8" width="44" height="30" rx="15"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="vd" style="background:var(--v-liked)"></span></div><div class="cap">Hatley · Gunmetal</div></div>
+        <div class="thumb sel"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#5a1620" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="12"/><rect x="70" y="8" width="44" height="30" rx="12"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="vd" style="background:var(--v-unsure)"></span></div><div class="cap">Verlaine · Oxblood</div></div>
+        <div class="thumb"><div class="ph"><svg viewBox="0 0 120 44"><g fill="none" stroke="#111" stroke-width="4"><rect x="6" y="8" width="44" height="30" rx="4"/><rect x="70" y="8" width="44" height="30" rx="4"/><path d="M50 20 Q60 12 70 20"/></g></svg><span class="unl">Unlinked</span></div><div class="cap">Photo 4</div></div>
+        <div class="cmp"><button class="btn primary">Compare (2)</button></div>
+        <div class="cmp"><button class="btn tertiary" style="background:#fff">Hand to client</button></div>
+      </div>
+    </div>
+  </div></div></div>
+  <p class="footer-note">Fitting mode: TabBar hidden, minimal chrome, 72 pt shutter at thumb reach, rear camera with mirror-preview toggle. Shelf thumbnails carry verdict dots, shortlist stars, unlinked badges. Selecting 2–4 enables Compare. Consent-declined sessions swap the camera for a frame-logging canvas — the shelf and everything downstream is identical.</p>
+</section>
+
+<!-- ============ SCREEN: PRODUCT DETAIL ============ -->
+<section class="panel" id="p-detail">
+  <div class="ipad-wrap"><div class="ipad" data-scale><div class="screen">
+    <div class="modestrip"><div class="lbl">CLIENT VIEW</div></div>
+    <div class="topbar" style="filter:blur(1px);opacity:.7">
+      <span class="title">Products</span><span class="spacer"></span><span class="sync"><span class="dot"></span></span>
+    </div>
+    <div style="flex:1;position:relative;overflow:hidden">
+      <div class="dim">
+        <div class="sheet">
+          <div class="grabber"></div>
+          <div class="body">
+            <div class="hero">
+              <div class="big"><svg viewBox="0 0 120 44"><g fill="none" stroke="#6b4f2e" stroke-width="3.6"><rect x="6" y="8" width="44" height="30" rx="14"/><rect x="70" y="8" width="44" height="30" rx="14"/><path d="M50 20 Q60 12 70 20"/><path d="M6 20 L1 16 M114 20 L119 16"/></g></svg></div>
+              <div class="swatches">
+                <div class="sw on" style="background:linear-gradient(135deg,#6b4f2e,#3a2c18)"></div>
+                <div class="sw" style="background:#111"></div>
+                <div class="sw" style="background:linear-gradient(135deg,#8a2434,#5a1620)"></div>
+              </div>
+            </div>
+            <div class="pinfo">
+              <div class="coll">Signature Collection</div>
+              <div class="fam">Draper — Tortoise</div>
+              <div style="font:400 12px 'SF Mono',ui-monospace,monospace;color:var(--ink-3);margin-top:4px" data-staff>LNQ-DRP-TRT</div>
+              <div class="price" data-staff>$395</div>
+              <button class="btn sm tertiary" data-client style="margin-top:8px">Tap for price</button>
+              <div class="fitband">
+                <div class="t">Good fit for Marie — 135 mm, her range is 132–136</div>
+                <div class="rangebar"><div class="ideal"></div><div class="this"></div></div>
+              </div>
+              <table class="dims">
+                <tr><td>Frame width</td><td>135 mm</td></tr>
+                <tr><td>Lens width</td><td>47 mm</td></tr>
+                <tr><td>Bridge</td><td>21 mm</td></tr>
+                <tr><td>Temple</td><td>145 mm</td></tr>
+              </table>
+              <div data-staff style="display:block;margin-top:18px">
+                <div class="eyebrow">Inventory — Plateau</div>
+                <div class="invrow"><span>Tortoise · LNQ-DRP-TRT</span><span style="display:flex;gap:8px;align-items:center"><span class="stockdot" style="background:var(--accent)"></span>3 on hand · 2 available</span></div>
+                <div class="invrow"><span>Black · LNQ-DRP-BLK</span><span style="display:flex;gap:8px;align-items:center"><span class="stockdot" style="background:var(--danger)"></span>0 here · 4 at Mile End</span></div>
+                <div class="invrow" style="border-bottom:0"><span style="color:var(--ink-2)">1 hold · try_on_hold · expires Thu 14:00</span><span></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="actionbar">
+            <button class="btn tertiary">Add to wishlist</button>
+            <button class="btn tertiary" data-staff>Recommend</button>
+            <button class="btn primary">Try in fitting</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+  <p class="footer-note">Product detail as a native 70% detent sheet over the browser. The fit band stays in client view (it's about the client); price, SKU, inventory and holds are staff-only. "Try in fitting" is the screen's single green action.</p>
+</section>
+
+</div>
+
+<script>
+  // demo tab switching
+  const tabs=document.getElementById('tabs');
+  tabs.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id===b.dataset.p));
+    scaleAll();
+  });
+  // scale 1366pt frames to fit
+  function scaleAll(){
+    document.querySelectorAll('[data-scale]').forEach(f=>{
+      const w=f.parentElement.clientWidth;
+      const s=Math.min(1,w/1366);
+      f.style.transform=`scale(${s})`;
+      f.parentElement.style.height=(1024+20)*s+'px';
+    });
+  }
+  window.addEventListener('resize',scaleAll);scaleAll();
+</script>
+</body>
+</html>

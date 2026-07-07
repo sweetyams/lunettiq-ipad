@@ -20,7 +20,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     requireFullScreen: false,
     infoPlist: {
       NSCameraUsageDescription: 'Lunettiq uses the camera to capture fitting photos and Second Sight trade-in documentation.',
-      NSPhotoLibraryUsageDescription: 'Lunettiq saves fitting session photos to your device.',
+      NSPhotoLibraryUsageDescription: 'Allow Lunettiq to save fitting photos.',
       UIRequiredDeviceCapabilities: ['armv7', 'camera-flash'],
     },
   },
@@ -28,9 +28,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-camera',
     'expo-secure-store',
-    ['expo-image', { photosPermission: 'Allow Lunettiq to save fitting photos.' }],
-    '@nozbe/watermelondb/expo-plugin',
-    'nativewind/expo',
   ],
   experiments: {
     typedRoutes: true,
