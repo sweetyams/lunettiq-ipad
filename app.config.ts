@@ -6,6 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'lunettiq-ipad',
   version: '0.1.0',
   orientation: 'default',
+  platforms: ['ios'],
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
   scheme: 'lunettiq',
