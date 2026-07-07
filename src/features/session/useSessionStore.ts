@@ -14,6 +14,7 @@ interface SessionState {
   activeClientId: string | null;
   mode: 'discovery' | 'session' | 'fitting';
   sessionId: string | null;
+  sessionStartedAt: number | null;
   framesTried: FrameTried[];
   setClient: (id: string | null) => void;
   setMode: (mode: SessionState['mode']) => void;
@@ -25,12 +26,14 @@ export const useSessionStore = create<SessionState>((set) => ({
   activeClientId: null,
   mode: 'discovery',
   sessionId: null,
+  sessionStartedAt: null,
   framesTried: [],
   
   setClient: (id) => 
     set({ 
       activeClientId: id, 
-      mode: id ? 'session' : 'discovery' 
+      mode: id ? 'session' : 'discovery',
+      sessionStartedAt: id ? Date.now() : null
     }),
   
   setMode: (mode) => set({ mode }),
@@ -45,6 +48,7 @@ export const useSessionStore = create<SessionState>((set) => ({
       activeClientId: null, 
       mode: 'discovery', 
       sessionId: null, 
+      sessionStartedAt: null,
       framesTried: [] 
     }),
 }));

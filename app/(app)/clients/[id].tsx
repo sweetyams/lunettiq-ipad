@@ -1,6 +1,8 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useClient } from '@/src/api/useClients';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { StartSessionButton } from '@/src/features/session/StartSessionButton';
+import { ClientTimeline } from '@/src/features/session/ClientTimeline';
 import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
 
 interface ClientDetailPanelProps {
@@ -38,6 +40,11 @@ export default function ClientDetailPanel({ id }: ClientDetailPanelProps) {
             <Text className="text-white text-captionStrong">{tier}</Text>
           </View>
         )}
+      </View>
+
+      {/* Start Session Button */}
+      <View className="mb-lg">
+        <StartSessionButton clientId={client.shopifyId} clientName={name} />
       </View>
 
       {/* Contact info */}
@@ -103,6 +110,9 @@ export default function ClientDetailPanel({ id }: ClientDetailPanelProps) {
           </View>
         </View>
       )}
+
+      {/* Client Timeline */}
+      <ClientTimeline shopifyCustomerId={client.shopifyId} />
     </ScrollView>
   );
 }
