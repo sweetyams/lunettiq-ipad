@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
-    "prebuild": "expo prebuild --clean"
+    "prebuild": "expo prebuild --clean",
+    "android": "expo run:android"
   },
   "dependencies": {
     "@babel/runtime": "7.29.7",

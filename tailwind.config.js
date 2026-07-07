@@ -16,6 +16,8 @@ module.exports = {
         midGrey: "#6B6B6B",
         white: "#FFFFFF",
         error: "#C53030",
+        warning: "#D4A017",
+        blue: "#2D4A8A",
       },
       spacing: {
         xs: "4px",

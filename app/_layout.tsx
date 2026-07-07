@@ -8,6 +8,7 @@ import { queryClient, api } from '@/src/api/client';
 import { PrivacyModeProvider } from '@/src/features/privacy/PrivacyModeProvider';
 import { SyncProvider } from '@/src/sync/SyncProvider';
 import { tokenCache } from '@/src/api/tokenCache';
+import { ModeStrip } from '@/src/ui';
 
 function InitialLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -47,7 +48,12 @@ function InitialLayout() {
     );
   }
 
-  return <Slot />;
+  return (
+    <View className="flex-1">
+      <ModeStrip />
+      <Slot />
+    </View>
+  );
 }
 
 export default function RootLayout() {

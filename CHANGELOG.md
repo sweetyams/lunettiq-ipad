@@ -1,5 +1,18 @@
 # Changelog
 
+## [2024-07-07] — Privacy Toggle UI & ModeStrip
+
+### Added
+- New component: ModeStrip shows privacy mode at top (2px staff, 22px client with "CLIENT VIEW" text)
+- New component: PrivacyToggle button with Eye/EyeOff icons, 44pt touch target
+- New component: SyncIndicator shows connection status with colored dot + optional count badge  
+- New component: TopBar reusable bar with title, session chip, sync indicator, and privacy toggle
+- Updated ModeStrip integration in root layout to display at very top of app
+- Added warning and blue color tokens to tailwind config
+
+### Changed
+- Updated UI barrel export to include new privacy and sync components
+
 ## [2024-07-07] — Appointments/Today Feature
 
 ### Added
