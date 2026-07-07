@@ -30,6 +30,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     ['expo-image', { photosPermission: 'Allow Lunettiq to save fitting photos.' }],
     '@nozbe/watermelondb/expo-plugin',
+    'nativewind/expo',
   ],
   experiments: {
     typedRoutes: true,
