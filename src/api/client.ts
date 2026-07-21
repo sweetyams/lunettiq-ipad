@@ -137,6 +137,10 @@ class FoundryAPI {
     return this.request<T>('PATCH', path, body);
   }
 
+  put<T>(path: string, body: unknown): Promise<T> {
+    return this.request<T>('PUT', path, body);
+  }
+
   delete<T>(path: string): Promise<T> {
     return this.request<T>('DELETE', path);
   }

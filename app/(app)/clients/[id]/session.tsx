@@ -14,6 +14,7 @@ export default function SessionWorkspaceScreen() {
   const router = useRouter();
   const { activeClientId, activeClientName, mode, startSession, endSession } = useSessionStore();
   const [showEndSession, setShowEndSession] = useState(false);
+  const [aiSearchTerm, setAiSearchTerm] = useState<string | undefined>(undefined);
 
   // Fetch client profile (for name fallback + data)
   const { data: client, isLoading, error } = useClient(clientId);
@@ -86,12 +87,13 @@ export default function SessionWorkspaceScreen() {
             clientId={clientId}
             clientName={clientName}
             onProductPress={handleProductPress}
+            externalSearch={aiSearchTerm}
           />
         </View>
 
         {/* Right panel — client context (492pt equiv / flex-[492]) */}
         <View className="flex-[492]">
-          <ClientContextPanel clientId={clientId} />
+          <ClientContextPanel clientId={clientId} onAiChipPress={setAiSearchTerm} />
         </View>
       </View>
 

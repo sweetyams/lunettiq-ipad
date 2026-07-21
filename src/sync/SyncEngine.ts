@@ -1,4 +1,5 @@
 import { Q } from '@nozbe/watermelondb';
+import { nanoid } from 'nanoid';
 import { database } from '@/src/db';
 import { SyncQueue } from '@/src/db/models';
 import { api } from '@/src/api/client';
@@ -143,14 +144,14 @@ export class SyncEngine {
       if (result.success) {
         await database.write(async () => {
           await item.update(record => {
-            record.status = 'completed';
+            record.status = 'complete';
           });
         });
         console.log(`[SyncEngine] ✓ Completed ${item.operation} ${item.entityType}:${item.entityId}`);
       } else if (result.shouldRetry && item.attempts < this.maxRetries) {
         await database.write(async () => {
           await item.update(record => {
-            record.status = 'retrying';
+            record.status = 'pending';
             record.error = result.error || 'Unknown error';
           });
         });
@@ -192,19 +193,41 @@ export class SyncEngine {
    * Execute the API request for a queue item
    */
   private async executeRequest(item: SyncQueue): Promise<ProcessResult> {
+    const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
+      ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
+
     try {
+      // Get a fresh auth token
+      const token = await api.getTokenForUpload();
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'Idempotency-Key': item.id, // Prevent duplicate processing
+        'X-Found-Surface': 'tablet',
+        'Idempotency-Key': item.idempotencyKey || item.id,
       };
-      
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Construct full URL from the stored endpoint path
+      const url = item.endpoint.startsWith('http')
+        ? item.endpoint
+        : `${BASE_URL}${item.endpoint}`;
+
       // Make the API request
-      const response = await fetch(item.endpoint, {
+      const response = await fetch(url, {
         method: item.method,
         headers,
         body: item.payload ? JSON.stringify(item.payload) : undefined,
         signal: this.abortController?.signal,
       });
+
+      // Check for idempotent replay (cached response from server)
+      const isReplay = response.headers.get('X-Idempotent-Replay') === 'true';
+      if (isReplay) {
+        console.log(`[SyncEngine] Idempotent replay for ${item.entityType}:${item.entityId} — server returned cached response`);
+      }
       
       // Handle response
       if (response.ok) {
@@ -221,7 +244,12 @@ export class SyncEngine {
       }
       
       // Determine if we should retry based on status code
-      const shouldRetry = response.status >= 500 || response.status === 429; // Server errors and rate limits
+      const shouldRetry = response.status >= 500 || response.status === 429;
+
+      // 401: token may have expired — worth one retry with fresh token
+      if (response.status === 401) {
+        return { success: false, shouldRetry: true, error: 'Authentication expired' };
+      }
       
       return {
         success: false,
@@ -277,6 +305,8 @@ export class SyncEngine {
     priority: 'low' | 'normal' | 'high' = 'normal'
   ): Promise<void> {
     try {
+      const idempotencyKey = nanoid();
+
       await database.write(async () => {
         const syncQueue = database.collections.get<SyncQueue>('sync_queue');
         await syncQueue.create((item) => {
@@ -291,6 +321,7 @@ export class SyncEngine {
           item.attempts = 0;
           item.lastAttemptAt = undefined;
           item.error = undefined;
+          item.idempotencyKey = idempotencyKey;
         });
       });
       

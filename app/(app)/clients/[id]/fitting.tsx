@@ -93,6 +93,7 @@ export default function FittingScreen() {
       clientVisible: true,
       capturedAt: Date.now(),
       uploadStatus: 'pending',
+      isShortlisted: false,
     };
 
     addPhoto(sessionPhoto);

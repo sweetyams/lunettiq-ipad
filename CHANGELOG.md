@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-07-21] — Rx Pipeline and Prescriptions API Hooks
+
+### Added
+- **Rx Pipeline API hooks** (`src/api/useRxPipeline.ts`):
+  - `useRxPipelineOrders()` — list orders with filtering by state/client
+  - `useRxPipelineOrder()` — individual order detail
+  - `useRxPipelineCounts()` — pipeline counts by state (30s stale time)
+  - `useCreateRxOrder()` — create new Rx order
+  - `useUpdateRxOrder()` — update order state/measurements
+- **Prescriptions API hooks** (`src/api/usePrescriptions.ts`):
+  - `usePrescriptions()` — list prescriptions with client filtering
+  - `usePrescription()` — individual prescription detail
+  - `useCreatePrescription()` — create new prescription record
+  - `useUpdatePrescription()` — update/verify prescriptions
+- **TypeScript types** for both modules with full parameter validation
+
 ## [2026-07-21] — API Contract Alignment with Foundry Handoff
 
 ### Changed

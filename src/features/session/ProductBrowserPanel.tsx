@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
+import { useFilters } from '@/src/api/useFilters';
 import { ProductCard, SearchBar, FilterPillRow, LoadingState, EmptyState } from '@/src/ui';
 import type { Product, ProductListParams } from '@/src/api/products.types';
 
@@ -27,18 +28,24 @@ interface ProductBrowserPanelProps {
   clientId: string;
   clientName: string;
   onProductPress?: (productId: string) => void;
+  /** External search term injected by AI Stylist chips */
+  externalSearch?: string;
 }
 
 export function ProductBrowserPanel({
   clientId,
   clientName,
   onProductPress,
+  externalSearch,
 }: ProductBrowserPanelProps) {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
   // In session context, panel is ~762pt wide → 3 columns
   const numColumns = 3;
+
+  // Fetch filter taxonomy from API
+  const { data: filterData } = useFilters();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +54,7 @@ export function ProductBrowserPanel({
   // Filter state
   const [selectedStock, setSelectedStock] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>('best-match');
+  const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
   const [offset, setOffset] = useState(0);
 
   // Debounce search
@@ -57,6 +65,13 @@ export function ProductBrowserPanel({
     }, 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
+
+  // Apply external search (from AI Stylist chips)
+  useEffect(() => {
+    if (externalSearch !== undefined && externalSearch !== searchQuery) {
+      setSearchQuery(externalSearch);
+    }
+  }, [externalSearch]);
 
   // Build query params
   const queryParams: ProductListParams = useMemo(() => ({
@@ -91,7 +106,25 @@ export function ProductBrowserPanel({
     const raw = productsResponse?.data ?? [];
     if (!raw.length) return [];
 
-    const sorted = [...raw];
+    // Apply faceted filters locally
+    let filtered = raw;
+    const hasActiveFacets = Object.values(selectedFacets).some((v) => v.length > 0);
+
+    if (hasActiveFacets && filterData?.products) {
+      filtered = raw.filter((product) => {
+        const productId = product.shopifyId ?? product.id;
+        const productFilters = filterData.products[productId];
+        if (!productFilters) return false;
+
+        return Object.entries(selectedFacets).every(([groupCode, values]) => {
+          if (values.length === 0) return true;
+          const productValues = productFilters[groupCode] ?? [];
+          return values.some((v) => productValues.includes(v));
+        });
+      });
+    }
+
+    const sorted = [...filtered];
 
     if (selectedSort === 'best-match' && scoreMap.size > 0) {
       sorted.sort((a, b) => {
@@ -106,7 +139,7 @@ export function ProductBrowserPanel({
     }
 
     return sorted;
-  }, [productsResponse, selectedSort, scoreMap]);
+  }, [productsResponse, selectedSort, scoreMap, selectedFacets, filterData]);
 
   // Handlers
   const handleStockToggle = useCallback((value: string) => {
@@ -118,6 +151,17 @@ export function ProductBrowserPanel({
 
   const handleSortToggle = useCallback((value: string) => {
     setSelectedSort(value);
+  }, []);
+
+  const handleFacetToggle = useCallback((groupCode: string, value: string) => {
+    setSelectedFacets((prev) => {
+      const current = prev[groupCode] ?? [];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [groupCode]: updated };
+    });
+    setOffset(0);
   }, []);
 
   const handleProductPress = useCallback((id: string) => {
@@ -139,6 +183,7 @@ export function ProductBrowserPanel({
     setSearchQuery('');
     setSelectedStock([]);
     setSelectedSort('best-match');
+    setSelectedFacets({});
     setOffset(0);
   }, []);
 
@@ -193,15 +238,29 @@ export function ProductBrowserPanel({
       {/* Filters */}
       <View className="border-b border-border">
         <FilterPillRow
-          filters={STOCK_FILTERS}
-          selected={selectedStock}
-          onToggle={handleStockToggle}
-        />
-        <FilterPillRow
           filters={SORT_OPTIONS}
           selected={[selectedSort]}
           onToggle={handleSortToggle}
         />
+        <FilterPillRow
+          filters={STOCK_FILTERS}
+          selected={selectedStock}
+          onToggle={handleStockToggle}
+        />
+        {/* Faceted filters from API */}
+        {filterData?.groups.map((group) => (
+          <FilterPillRow
+            key={group.id}
+            filters={group.values.map((v) => ({
+              key: `${group.code}-${v.value}`,
+              label: v.label?.en ?? v.value,
+              value: v.value,
+              swatchHex: v.swatchHex,
+            }))}
+            selected={selectedFacets[group.code] ?? []}
+            onToggle={(value) => handleFacetToggle(group.code, value)}
+          />
+        ))}
       </View>
 
       {/* Grid */}

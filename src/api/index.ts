@@ -46,7 +46,6 @@ export type {
   UpdateInteractionParams,
   ClientOrder,
   OrderLineItem,
-  Prescription,
   PrescriptionEye,
   WishlistItem,
   WishlistProduct,
@@ -86,3 +85,33 @@ export type { InteractionListResponse } from './interactions.types';
 // ─── Appointments ────────────────────────────────────────────
 export { useAppointments, useUpdateAppointment } from './useAppointments';
 export type { Appointment, AppointmentListParams } from './appointments.types';
+
+// ─── Rx Pipeline ─────────────────────────────────────────────
+export {
+  useRxPipelineOrders,
+  useRxPipelineOrder,
+  useRxPipelineCounts,
+  useCreateRxOrder,
+  useUpdateRxOrder,
+} from './useRxPipeline';
+export type {
+  RxOrder,
+  RxOrderState,
+  RxMeasurements,
+  RxPipelineCounts,
+  CreateRxOrderPayload,
+  UpdateRxOrderPayload,
+} from './rx-pipeline.types';
+
+// ─── Prescriptions ───────────────────────────────────────────
+export {
+  usePrescriptions,
+  usePrescription,
+  useCreatePrescription,
+  useUpdatePrescription,
+} from './usePrescriptions';
+export type {
+  Prescription as PrescriptionRecord,
+  CreatePrescriptionPayload,
+  UpdatePrescriptionPayload,
+} from './prescriptions.types';

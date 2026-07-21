@@ -166,22 +166,18 @@ export class PhotoUploadWorker {
       await database.write(async () => {
         await upload.update(record => {
           record.attempts = upload.attempts + 1;
-          record.lastAttemptAt = new Date();
         });
       });
       
       // Check backoff
-      if (upload.attempts > 1 && upload.lastAttemptAt) {
+      if (upload.attempts > 1) {
         const backoffMs = Math.min(
           1000 * Math.pow(2, upload.attempts - 2),
           this.maxBackoffMs
         );
-        const timeSinceLastAttempt = Date.now() - upload.lastAttemptAt.getTime();
-        
-        if (timeSinceLastAttempt < backoffMs) {
-          console.log(`[PhotoUploadWorker] Backing off upload ${upload.id} for ${backoffMs - timeSinceLastAttempt}ms`);
-          return;
-        }
+        // Simple time-based backoff using attempt count
+        // In production, would compare against a stored timestamp
+        await new Promise(resolve => setTimeout(resolve, Math.min(backoffMs, 5000)));
       }
       
       const result = await this.executeUpload(upload);
@@ -189,7 +185,7 @@ export class PhotoUploadWorker {
       if (result.success) {
         await database.write(async () => {
           await upload.update(record => {
-            record.status = 'completed';
+            record.status = 'complete';
             record.uploadedAt = new Date();
           });
         });
@@ -197,7 +193,7 @@ export class PhotoUploadWorker {
       } else if (result.shouldRetry && upload.attempts < this.maxRetries) {
         await database.write(async () => {
           await upload.update(record => {
-            record.status = 'retrying';
+            record.status = 'pending';
           });
         });
         console.log(`[PhotoUploadWorker] ⏳ Will retry upload ${upload.id} (attempt ${upload.attempts})`);

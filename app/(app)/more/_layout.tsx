@@ -7,6 +7,7 @@ export default function MoreLayout() {
       <Stack.Screen name="second-sight" />
       <Stack.Screen name="second-sight-demo" />
       <Stack.Screen name="custom-design" />
+      <Stack.Screen name="settings" />
     </Stack>
   );
 }

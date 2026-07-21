@@ -14,6 +14,7 @@ const mockPhoto = (id: string): SessionPhoto => ({
   clientVisible: true,
   capturedAt: Date.now(),
   uploadStatus: 'pending',
+  isShortlisted: false,
 });
 
 describe('useFittingStore', () => {
@@ -65,7 +66,7 @@ describe('useFittingStore', () => {
   it('setVerdict updates photo verdict', () => {
     useFittingStore.getState().addPhoto(mockPhoto('p1'));
     useFittingStore.getState().setVerdict('p1', 'loved');
-    expect(useFittingStore.getState().photos[0].verdict).toBe('loved');
+    expect(useFittingStore.getState().photos[0]!.verdict).toBe('loved');
   });
 
   it('reset clears all state', () => {

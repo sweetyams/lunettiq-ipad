@@ -27,9 +27,10 @@ const VERDICT_ICONS = {
 
 interface ClientContextPanelProps {
   clientId: string;
+  onAiChipPress?: (chip: string) => void;
 }
 
-export function ClientContextPanel({ clientId }: ClientContextPanelProps) {
+export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPanelProps) {
   const { data: client, isLoading, error, refetch } = useClient(clientId);
   const { data: interactionsData } = useInteractions(clientId);
   const mode = usePrivacyStore((s) => s.mode);
@@ -132,7 +133,7 @@ export function ClientContextPanel({ clientId }: ClientContextPanelProps) {
 
       {/* AI Stylist — staff only */}
       {mode === 'staff' && (
-        <AiStylistPanel clientId={clientId} />
+        <AiStylistPanel clientId={clientId} onChipPress={onAiChipPress} />
       )}
 
       {/* Frames Tried This Session */}

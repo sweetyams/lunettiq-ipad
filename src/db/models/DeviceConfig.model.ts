@@ -124,6 +124,6 @@ export class DeviceConfig extends Model {
       });
     }
     
-    return config;
+    return config!;
   }
 }

@@ -65,7 +65,7 @@ describe('useSessionStore', () => {
     useSessionStore.getState().addFrameTried({ id: 'f2', productId: 'p2', productName: 'B', photoIds: [], triedAt: Date.now() });
     useSessionStore.getState().updateFrameVerdict('f2', 'loved');
     const frames = useSessionStore.getState().framesTried;
-    expect(frames[0].verdict).toBeUndefined();
-    expect(frames[1].verdict).toBe('loved');
+    expect(frames[0]!.verdict).toBeUndefined();
+    expect(frames[1]!.verdict).toBe('loved');
   });
 });

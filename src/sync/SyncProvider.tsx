@@ -1,26 +1,11 @@
-import React, { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
+import React, { useEffect, useRef, ReactNode } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { create } from 'zustand';
+import { syncEngine } from './SyncEngine';
+import { PhotoUploadWorker } from './PhotoUploadWorker';
+import { useSyncStore } from './useSyncStore';
 
-// --- Sync Store (inline to avoid import chain issues) ---
-
-interface SyncState {
-  isOnline: boolean;
-  pendingWrites: number;
-  lastSyncAt: number | null;
-  setOnline: (isOnline: boolean) => void;
-  setPendingWrites: (count: number) => void;
-  setLastSyncAt: (timestamp: number) => void;
-}
-
-export const useSyncStore = create<SyncState>((set) => ({
-  isOnline: true,
-  pendingWrites: 0,
-  lastSyncAt: null,
-  setOnline: (isOnline) => set({ isOnline }),
-  setPendingWrites: (count) => set({ pendingWrites: count }),
-  setLastSyncAt: (timestamp) => set({ lastSyncAt: timestamp }),
-}));
+// Singleton photo upload worker
+const photoWorker = new PhotoUploadWorker();
 
 // --- Connectivity Check ---
 
@@ -48,33 +33,63 @@ interface SyncProviderProps {
 
 export function SyncProvider({ children }: SyncProviderProps): React.ReactElement {
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const wasOfflineRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Initial check
     checkConnectivity().then((online) => {
       useSyncStore.getState().setOnline(online);
+      if (online) {
+        // Drain any pending queue items on startup
+        syncEngine.start();
+        photoWorker.start();
+      }
     });
 
     // Check every 30s
     intervalRef.current = setInterval(async () => {
+      const prevOnline = useSyncStore.getState().isOnline;
       const online = await checkConnectivity();
       useSyncStore.getState().setOnline(online);
+
+      // Detect offline → online transition — trigger sync
+      if (online && !prevOnline) {
+        console.log('[SyncProvider] Reconnected — draining sync queue and photo uploads');
+        syncEngine.start();
+        photoWorker.start();
+      }
+
+      // Track offline state for transition detection
+      wasOfflineRef.current = !online;
     }, 30_000);
 
     // App state listener — recheck on foreground
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
       if (state === 'active') {
-        checkConnectivity().then((online) => {
-          useSyncStore.getState().setOnline(online);
-        });
+        const online = await checkConnectivity();
+        const prevOnline = useSyncStore.getState().isOnline;
+        useSyncStore.getState().setOnline(online);
+
+        // On returning to foreground while online, start sync
+        if (online) {
+          syncEngine.start();
+          photoWorker.start();
+        }
+      } else if (state === 'background') {
+        // Stop sync engine when backgrounded to save battery
+        syncEngine.stop();
       }
     });
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       sub.remove();
+      syncEngine.stop();
     };
   }, []);
 
   return <>{children}</>;
 }
+
+// Re-export the store for backward compatibility with existing imports
+export { useSyncStore } from './useSyncStore';

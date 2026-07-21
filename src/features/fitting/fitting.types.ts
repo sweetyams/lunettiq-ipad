@@ -12,6 +12,8 @@ export interface SessionPhoto {
   clientVisible: boolean;
   capturedAt: number;
   uploadStatus: 'pending' | 'uploading' | 'uploaded' | 'failed';
+  isShortlisted: boolean; // true if hold created for this photo's product
+  holdId?: string; // protection ID if hold created
 }
 
 export interface FittingState {

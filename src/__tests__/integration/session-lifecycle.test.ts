@@ -63,6 +63,7 @@ describe('Session lifecycle integration', () => {
       r2Key: null, productId: null, productName: null,
       verdict: null, notes: '', clientVisible: true,
       capturedAt: Date.now(), uploadStatus: 'pending',
+      isShortlisted: false,
     });
     
     // Toggle privacy — photos should remain

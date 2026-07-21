@@ -89,7 +89,7 @@ export const expoTools: McpTool[] = [
         if (entry.isDirectory() || !entry.name.endsWith('.ts')) continue;
         const full = path.join(dir, entry.name);
         const content = fs.readFileSync(full, 'utf8');
-        const fns = [...content.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)].map(m => m[1]);
+        const fns = [...content.matchAll(/export\s+(?:async\s+)?function\s+(\w+)/g)].map(m => m[1]).filter((x): x is string => !!x);
         if (fns.length) endpoints.push({ file: entry.name, functions: fns });
       }
       return text(JSON.stringify(endpoints, null, 2));
@@ -111,8 +111,8 @@ export const expoTools: McpTool[] = [
         // Look for Model class definitions
         const classMatch = content.match(/class\s+(\w+)\s+extends\s+Model/);
         if (classMatch) {
-          const fields = [...content.matchAll(/@(?:field|text|date|json|readonly)\s*\(['"](\w+)['"]\)/g)].map(m => m[1]);
-          models.push({ file: entry.name, name: classMatch[1], fields });
+          const fields = [...content.matchAll(/@(?:field|text|date|json|readonly)\s*\(['"](\w+)['"]\)/g)].map(m => m[1]).filter((x): x is string => !!x);
+          models.push({ file: entry.name, name: classMatch[1]!, fields });
         }
       }
       return text(JSON.stringify(models, null, 2));

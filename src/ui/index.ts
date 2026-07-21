@@ -28,3 +28,4 @@ export { ToastContainer } from './Toast';
 export { useToastStore, toast } from './useToastStore';
 export type { ToastType, ToastMessage } from './useToastStore';
 export { SessionBar } from './SessionBar';
+export { PermissionGate } from './PermissionGate';
