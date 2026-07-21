@@ -3,6 +3,15 @@ inclusion: always
 ---
 # Deploy Safety
 
+## Forbidden Directories (HARD RULE — never read, write, or execute in)
+
+| Path | Reason |
+|------|--------|
+| `/Users/yann/Development/Foundry/foundry/` | Foundry platform repo — separate codebase, separate agent. Never edit, never commit, never run commands in this directory. Provide fix instructions to the user instead. |
+| `/Users/yann/Development/Foundry/foundry/**` | Same — all subdirectories |
+
+**If a fix requires changes in Foundry:** Describe the issue, the file, the line, and the fix in prose. Never apply it.
+
 ## Banned Commands (without explicit user confirmation)
 
 | Command | Why |
