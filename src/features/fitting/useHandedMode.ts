@@ -3,13 +3,11 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useFittingStore } from './useFittingStore';
 
 const HANDED_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-const DOUBLE_TAP_TIMEOUT = 300; // ms between taps for double-tap detection
+const DOUBLE_TAP_TIMEOUT = 500; // ms between taps for double-tap detection
 
 interface HandedModeState {
   isHanded: boolean;
   timedOut: boolean;
-  lastTapTime: number;
-  tapCount: number;
 }
 
 export function useHandedMode() {
@@ -18,12 +16,13 @@ export function useHandedMode() {
   const [state, setState] = useState<HandedModeState>({
     isHanded: handedToClient,
     timedOut: false,
-    lastTapTime: 0,
-    tapCount: 0,
   });
   
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Use refs for tap tracking — state causes stale closure in onPress handler
+  const lastTapTimeRef = useRef<number>(0);
+  const tapCountRef = useRef<number>(0);
 
   // Start timeout when handed to client
   useEffect(() => {
@@ -55,27 +54,34 @@ export function useHandedMode() {
     };
   }, [handedToClient]);
 
-  // Double-tap handler for top edge (called from Pressable onPress)
+  // Double-tap handler — uses refs to avoid stale closure
   const handleTopEdgePress = () => {
     const now = Date.now();
-    const timeSinceLastTap = now - state.lastTapTime;
-    
-    if (timeSinceLastTap < DOUBLE_TAP_TIMEOUT && state.tapCount === 1) {
-      // This is the second tap - trigger exit
+    const timeSinceLastTap = now - lastTapTimeRef.current;
+
+    if (tapCountRef.current === 1 && timeSinceLastTap < DOUBLE_TAP_TIMEOUT) {
+      // Second tap within window — trigger exit
+      tapCountRef.current = 0;
+      lastTapTimeRef.current = 0;
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+        tapTimeoutRef.current = null;
+      }
       handleExitGesture();
-      setState(prev => ({ ...prev, tapCount: 0, lastTapTime: 0 }));
       return;
     }
-    
-    // First tap or timeout exceeded - start counting
-    setState(prev => ({ ...prev, tapCount: 1, lastTapTime: now }));
-    
-    // Clear tap count after timeout
+
+    // First tap — start the window
+    tapCountRef.current = 1;
+    lastTapTimeRef.current = now;
+
     if (tapTimeoutRef.current) {
       clearTimeout(tapTimeoutRef.current);
     }
     tapTimeoutRef.current = setTimeout(() => {
-      setState(prev => ({ ...prev, tapCount: 0, lastTapTime: 0 }));
+      tapCountRef.current = 0;
+      lastTapTimeRef.current = 0;
+      tapTimeoutRef.current = null;
     }, DOUBLE_TAP_TIMEOUT);
   };
 

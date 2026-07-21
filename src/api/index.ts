@@ -115,3 +115,27 @@ export type {
   CreatePrescriptionPayload,
   UpdatePrescriptionPayload,
 } from './prescriptions.types';
+
+// ─── Multi-Pair Recommendations ─────────────────────────────
+export {
+  useMultiPairRecommendations,
+  useAcceptRecommendation,
+  useMultiPairQuestionnaire,
+  useSaveQuestionnaire,
+  useInsuranceProfile,
+  useSaveInsurance,
+  useUpdateInsurance,
+  useMultiPairSettings,
+} from './useMultiPair';
+export type {
+  MultiPairRecommendation,
+  MultiPairProduct,
+  MultiPairQuestionnaire,
+  QuestionnaireAnswer,
+  InsuranceProfile,
+  MultiPairSettings,
+  SaveQuestionnairePayload,
+  AcceptRecommendationPayload,
+  SaveInsurancePayload,
+  UpdateInsurancePayload,
+} from './multi-pair.types';

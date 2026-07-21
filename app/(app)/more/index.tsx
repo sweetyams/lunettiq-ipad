@@ -1,7 +1,8 @@
 import { View, Text, Pressable } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { Settings, ArrowUpDown, Palette, LogOut } from 'lucide-react-native';
+import { Settings, ArrowUpDown, Palette, LogOut, ClipboardList, FileCheck } from 'lucide-react-native';
+import { PermissionGate } from '@/src/ui/PermissionGate';
 
 export default function MoreScreen() {
   const { signOut } = useAuth();
@@ -15,22 +16,41 @@ export default function MoreScreen() {
       </View>
 
       <View className="p-xl gap-sm">
+        {/* Rx & Optical */}
         <View className="bg-bg-surface rounded-lg border border-border">
-          <Pressable 
+          <PermissionGate permission="org:rx-pipeline:read">
+            <Pressable
+              onPress={() => router.push('/more/rx-pipeline')}
+              className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]"
+            >
+              <ClipboardList color="#1A1A1A" size={18} />
+              <Text className="text-body text-text-primary ml-md flex-1">Rx Pipeline</Text>
+            </Pressable>
+          </PermissionGate>
+          <PermissionGate permission="org:rx:verify">
+            <Pressable
+              onPress={() => router.push('/more/rx-approvals')}
+              className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]"
+            >
+              <FileCheck color="#1A1A1A" size={18} />
+              <Text className="text-body text-text-primary ml-md flex-1">Rx Approvals</Text>
+            </Pressable>
+          </PermissionGate>
+          <Pressable
             onPress={() => router.push('/more/second-sight')}
             className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]"
           >
             <ArrowUpDown color="#1A1A1A" size={18} />
             <Text className="text-body text-text-primary ml-md flex-1">Second Sight</Text>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => router.push('/more/custom-design')}
             className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]"
           >
             <Palette color="#1A1A1A" size={18} />
             <Text className="text-body text-text-primary ml-md flex-1">Custom Designs</Text>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => router.push('/more/settings')}
             className="flex-row items-center px-lg py-md min-h-[44px]"
           >

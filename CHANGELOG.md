@@ -1,20 +1,33 @@
 # Changelog
 
-## [2026-07-21] — Rx Pipeline and Prescriptions API Hooks
+## [2026-07-21] — Phase 5 & 6: Offline Sync, Push, Rx Workflows, Full API Coverage
 
-### Added
-- **Rx Pipeline API hooks** (`src/api/useRxPipeline.ts`):
-  - `useRxPipelineOrders()` — list orders with filtering by state/client
-  - `useRxPipelineOrder()` — individual order detail
-  - `useRxPipelineCounts()` — pipeline counts by state (30s stale time)
-  - `useCreateRxOrder()` — create new Rx order
-  - `useUpdateRxOrder()` — update order state/measurements
-- **Prescriptions API hooks** (`src/api/usePrescriptions.ts`):
-  - `usePrescriptions()` — list prescriptions with client filtering
-  - `usePrescription()` — individual prescription detail
-  - `useCreatePrescription()` — create new prescription record
-  - `useUpdatePrescription()` — update/verify prescriptions
-- **TypeScript types** for both modules with full parameter validation
+### Added — Phase 5 (Critical Infrastructure)
+- **Offline sync wiring** — `useInitialSync` now persists products/appointments to WatermelonDB via `database.batch()`. `useIncrementalSync` persists on 5min/24h intervals.
+- **Offline fallback hooks** (`src/sync/useOfflineFallback.ts`) — `useOfflineProducts`, `useOfflineClients`, `useOfflineAppointments`, `useOfflineClient` read from WatermelonDB when network fails
+- **Offline write hook** (`src/sync/useOfflineWrite.ts`) — `useOfflineMutation` enqueues to sync_queue when offline, calls API directly when online
+- **SyncProvider reconnect** — triggers `SyncEngine.start()` and `PhotoUploadWorker.start()` on offline→online transition and app foreground
+- **Push notifications** — `usePushSetup` hook registers Expo push token on login, deregisters on logout. `PushProvider` handles foreground notifications as toasts
+- **Inventory protections** — `useCreateProtection`, `useExtendProtection`, `useReleaseProtection`, `useResolveBarcode` hooks
+- **Shortlist with hold** — `useShortlistWithHold` creates 48h try_on_hold when shortlisting in fitting mode
+- **Camera integration** — Fitting screen now renders real `CaptureView` component (was placeholder)
+- **Idempotency keys** — `SyncEngine.executeRequest` includes `Authorization`, `X-Found-Surface`, `Idempotency-Key` headers. Uses `nanoid` for unique keys
+- **Permission gating** — `usePermissions` hook reads Clerk JWT org_permissions. `PermissionGate` component for conditional rendering
+- **Settings screen** — `app/(app)/more/settings.tsx` with sync status, cache stats, account info, force sync, about section
+
+### Added — Phase 6 (Optical Workflows)
+- **Loyalty Credits** — `useLoyaltyBalance`, `useIssueCredit` hooks + types
+- **Rx Pipeline** — `useRxPipelineOrders`, `useRxPipelineCounts`, `useCreateRxOrder`, `useUpdateRxOrder` + pipeline list screen with state filters
+- **Rx Approvals** — 13 hooks covering full state machine (claim, release, sign-off, return, reject, heartbeat, checklist, readiness) + approval queue screen
+- **Prescriptions** — `usePrescriptions`, `usePrescription`, `useCreatePrescription`, `useUpdatePrescription` hooks
+- **Multi-Pair** — 8 hooks for recommendations, questionnaires, insurance profiles, settings
+- **Insurance Receipts** — `useReceipts`, `useReceipt`, `useSendReceipt`, `useRegenerateReceipt` hooks
+
+### Changed
+- `SyncProvider` now imports and triggers SyncEngine/PhotoUploadWorker (was passive connectivity check only)
+- `SyncEngine.enqueue()` generates nanoid idempotency keys
+- More screen navigation updated with Rx Pipeline and Rx Approvals (permission-gated)
+- Fitting screen `SessionPhoto` type now includes `isShortlisted` and `holdId` fields
 
 ## [2026-07-21] — API Contract Alignment with Foundry Handoff
 
