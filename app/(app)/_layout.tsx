@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import { Home, Users, Package, Calendar, MoreHorizontal } from 'lucide-react-native';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { HandedToClientView } from '@/src/features/fitting/HandedToClientView';
 import { SessionBar } from '@/src/ui/SessionBar';
 
 export default function AppLayout() {
@@ -11,6 +12,11 @@ export default function AppLayout() {
 
   // Hide TabBar in fitting and handed modes
   const hideTabBar = mode === 'fitting' || handedToClient;
+
+  // HANDED mode: full-screen takeover — client cannot navigate away
+  if (handedToClient) {
+    return <HandedToClientView />;
+  }
 
   return (
     <View className="flex-1">
