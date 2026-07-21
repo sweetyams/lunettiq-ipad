@@ -4,6 +4,7 @@ interface FilterOption {
   key: string;
   label: string;
   value: string;
+  swatchHex?: string | null;
 }
 
 interface FilterPillRowProps {
@@ -32,7 +33,7 @@ export function FilterPillRow({ filters, selected, onToggle, disabled = false }:
             accessibilityRole="button"
             accessibilityLabel={`${filter.label} filter${isSelected ? ', selected' : ''}`}
             accessibilityState={{ selected: isSelected, disabled }}
-            className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full items-center justify-center border ${
+            className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full flex-row items-center justify-center border ${
               disabled
                 ? 'border-border opacity-40'
                 : isSelected
@@ -40,6 +41,14 @@ export function FilterPillRow({ filters, selected, onToggle, disabled = false }:
                   : 'border-border bg-bg-elevated'
             }`}
           >
+            {/* Colour swatch dot */}
+            {filter.swatchHex && (
+              <View
+                className={`w-4 h-4 rounded-full mr-xs border ${isSelected ? 'border-white/50' : 'border-border'}`}
+                style={{ backgroundColor: filter.swatchHex }}
+                accessibilityLabel={`${filter.label} colour swatch`}
+              />
+            )}
             <Text
               className={`text-caption font-medium ${
                 disabled

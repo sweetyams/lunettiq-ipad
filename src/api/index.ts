@@ -11,6 +11,14 @@ export type {
   ScoredProduct,
   ProductInteractionType, CreateProductInteractionParams, ProductInteraction,
 } from './products.types';
+export { useFilters } from './useFilters';
+export type { FilterGroup, FilterValue, ProductFilterMap, FiltersResponse } from './filters.types';
+export { useProductFamily } from './useProductFamily';
+export type { ProductSibling, ProductFamilyResponse } from './families.types';
+export { useAiStylist } from './useAiStylist';
+export type { AiStylistRequest, AiStylistResponse } from './aiStylist.types';
+export { useProductEnhancement } from './useProductEnhancement';
+export type { ProductEnhancement, BodySection } from './enhancements.types';
 export { useInteractions, useCreateInteraction } from './useInteractions';
 export type { Interaction, CreateInteractionParams, InteractionListResponse } from './interactions.types';
 export { useAppointments, useUpdateAppointment } from './useAppointments';

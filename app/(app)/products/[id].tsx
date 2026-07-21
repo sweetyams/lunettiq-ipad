@@ -6,9 +6,11 @@ import { ChevronLeft, Heart, Star } from 'lucide-react-native';
 import { useProduct } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useCreateProductInteraction } from '@/src/api/useProductInteractions';
+import { useProductEnhancement } from '@/src/api/useProductEnhancement';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { LoadingState, ErrorState, EmptyState, Button, FitBadge, StockDot } from '@/src/ui';
+import { ColourSiblings } from '@/src/ui/ColourSiblings';
 import type { ProductVariant } from '@/src/api/products.types';
 
 // --- Variant Chip ---
@@ -90,6 +92,7 @@ export default function ProductDetailScreen() {
 
   const { data: product, isLoading, error, refetch } = useProduct(id ?? '');
   const { data: suggestions } = useSuggestions(activeClientId, { limit: 50 });
+  const { data: enhancement } = useProductEnhancement(product?.shopifyId ?? null);
   const logInteraction = useCreateProductInteraction();
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -285,6 +288,14 @@ export default function ProductDetailScreen() {
           </View>
         )}
 
+        {/* Colour Siblings from Product Family */}
+        {product.shopifyId && (
+          <ColourSiblings
+            productId={product.shopifyId}
+            currentHandle={product.handle}
+          />
+        )}
+
         {/* Dimensions */}
         {product.metafields && Object.keys(product.metafields).length > 0 && (
           <DimensionsTable metafields={product.metafields} />
@@ -297,6 +308,36 @@ export default function ProductDetailScreen() {
             <Text className="text-body text-text-primary leading-relaxed">{description}</Text>
           </View>
         ) : null}
+
+        {/* Product Enhancements — Fitting Guidance */}
+        {enhancement?.fittingGuidance?.en && (
+          <View className="p-lg bg-bg-elevated border-b border-border">
+            <Text className="text-bodyStrong text-text-primary mb-md">Fitting Guidance</Text>
+            <Text className="text-body text-text-primary leading-relaxed">
+              {enhancement.fittingGuidance.en}
+            </Text>
+          </View>
+        )}
+
+        {/* Product Enhancements — Brand Story */}
+        {enhancement?.story?.en && (
+          <View className="p-lg bg-bg-elevated border-b border-border">
+            <Text className="text-bodyStrong text-text-primary mb-md">Story</Text>
+            <Text className="text-body text-text-primary leading-relaxed">
+              {enhancement.story.en}
+            </Text>
+          </View>
+        )}
+
+        {/* Product Enhancements — Long Description (if different from standard) */}
+        {enhancement?.longDescription?.en && enhancement.longDescription.en !== description && (
+          <View className="p-lg bg-bg-elevated border-b border-border">
+            <Text className="text-bodyStrong text-text-primary mb-md">Details</Text>
+            <Text className="text-body text-text-primary leading-relaxed">
+              {enhancement.longDescription.en}
+            </Text>
+          </View>
+        )}
 
         {/* Inventory — Staff Only */}
         {privacyMode === 'staff' && selectedVariant && (

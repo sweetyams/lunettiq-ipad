@@ -4,12 +4,13 @@ import { useRouter } from 'expo-router';
 import { ScanLine } from 'lucide-react-native';
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
+import { useFilters } from '@/src/api/useFilters';
 import { useClient } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { ProductCard, SearchBar, FilterPillRow, LoadingState, ErrorState, EmptyState, Button } from '@/src/ui';
 import type { Product, ProductListParams } from '@/src/api/products.types';
 
-// --- Filter definitions ---
+// --- Static filter definitions ---
 
 const STOCK_FILTERS = [
   { key: 'stock-in', label: 'In stock', value: 'in' },
@@ -37,6 +38,9 @@ export default function ProductsScreen() {
   // Get client name for session header
   const { data: activeClient } = useClient(activeClientId ?? '');
 
+  // Fetch filter taxonomy from API
+  const { data: filterData } = useFilters();
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -44,6 +48,7 @@ export default function ProductsScreen() {
   // Filter state
   const [selectedStock, setSelectedStock] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>('newest');
+  const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
   const [offset, setOffset] = useState(0);
 
   // Debounce search
@@ -100,7 +105,25 @@ export default function ProductsScreen() {
     const raw = productsResponse?.data ?? [];
     if (!raw.length) return [];
 
-    let sorted = [...raw];
+    // Apply faceted filters locally using the product→filter mapping
+    let filtered = raw;
+    const hasActiveFacets = Object.values(selectedFacets).some((v) => v.length > 0);
+
+    if (hasActiveFacets && filterData?.products) {
+      filtered = raw.filter((product) => {
+        const productId = product.shopifyId ?? product.id;
+        const productFilters = filterData.products[productId];
+        if (!productFilters) return false; // Product not in filter map → exclude
+
+        return Object.entries(selectedFacets).every(([groupCode, values]) => {
+          if (values.length === 0) return true; // No selection in this group
+          const productValues = productFilters[groupCode] ?? [];
+          return values.some((v) => productValues.includes(v));
+        });
+      });
+    }
+
+    let sorted = [...filtered];
 
     if (selectedSort === 'best-match' && scoreMap.size > 0) {
       sorted.sort((a, b) => {
@@ -116,7 +139,7 @@ export default function ProductsScreen() {
     // 'newest' is the default server sort
 
     return sorted;
-  }, [productsResponse, selectedSort, scoreMap]);
+  }, [productsResponse, selectedSort, scoreMap, selectedFacets, filterData]);
 
   // Filter pills (combine stock + sort)
   const sortFilters = useMemo(() => {
@@ -146,6 +169,17 @@ export default function ProductsScreen() {
     setSelectedSort(value);
   }, []);
 
+  const handleFacetToggle = useCallback((groupCode: string, value: string) => {
+    setSelectedFacets((prev) => {
+      const current = prev[groupCode] ?? [];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [groupCode]: updated };
+    });
+    setOffset(0);
+  }, []);
+
   const handleProductPress = useCallback((id: string) => {
     router.push(`/products/${id}`);
   }, [router]);
@@ -161,6 +195,7 @@ export default function ProductsScreen() {
     setSearchQuery('');
     setSelectedStock([]);
     setSelectedSort('newest');
+    setSelectedFacets({});
     setOffset(0);
   }, []);
 
@@ -236,18 +271,32 @@ export default function ProductsScreen() {
 
       {/* Filter rows */}
       <View className="border-b border-border">
-        {/* Stock filters */}
-        <FilterPillRow
-          filters={STOCK_FILTERS}
-          selected={selectedStock}
-          onToggle={handleStockToggle}
-        />
         {/* Sort options */}
         <FilterPillRow
           filters={sortFilters}
           selected={[selectedSort]}
           onToggle={handleSortToggle}
         />
+        {/* Stock filters */}
+        <FilterPillRow
+          filters={STOCK_FILTERS}
+          selected={selectedStock}
+          onToggle={handleStockToggle}
+        />
+        {/* Faceted filters from API (colour, material, shape, etc.) */}
+        {filterData?.groups.map((group) => (
+          <FilterPillRow
+            key={group.id}
+            filters={group.values.map((v) => ({
+              key: `${group.code}-${v.value}`,
+              label: v.label?.en ?? v.value,
+              value: v.value,
+              swatchHex: v.swatchHex,
+            }))}
+            selected={selectedFacets[group.code] ?? []}
+            onToggle={(value) => handleFacetToggle(group.code, value)}
+          />
+        ))}
       </View>
 
       {/* Grid */}

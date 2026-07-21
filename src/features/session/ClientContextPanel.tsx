@@ -7,6 +7,7 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from './useSessionStore';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
+import { AiStylistPanel } from '@/src/ui/AiStylistPanel';
 import type { FrameTried } from './useSessionStore';
 
 // --- Constants ---
@@ -128,6 +129,11 @@ export function ClientContextPanel({ clientId }: ClientContextPanelProps) {
           <Text className="text-text-muted text-body italic">No preferences recorded</Text>
         )}
       </SectionCard>
+
+      {/* AI Stylist — staff only */}
+      {mode === 'staff' && (
+        <AiStylistPanel clientId={clientId} />
+      )}
 
       {/* Frames Tried This Session */}
       {framesTried.length > 0 && (
