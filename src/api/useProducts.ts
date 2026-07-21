@@ -1,6 +1,40 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from './client';
-import type { Product, ProductDetail, ProductListParams, ProductListResponse, ProductDetailResponse } from './products.types';
+import type { Product, ProductDetail, ProductListParams, ProductListResponse, ProductDetailResponse, ProductImage } from './products.types';
+
+/**
+ * Normalize image objects that may have `src` (Shopify legacy) instead of `url`.
+ * Also handles cases where images is a flat string array.
+ */
+function normalizeImages(images: unknown): ProductImage[] {
+  if (!images || !Array.isArray(images)) return [];
+  return images
+    .map((img: unknown) => {
+      if (typeof img === 'string') return { url: img };
+      if (typeof img === 'object' && img !== null) {
+        const obj = img as Record<string, unknown>;
+        const url = (obj.url ?? obj.src) as string | undefined;
+        if (!url) return null;
+        return { url, alt: (obj.alt ?? obj.altText) as string | undefined };
+      }
+      return null;
+    })
+    .filter((img): img is ProductImage => img !== null && !!img.url);
+}
+
+/** Normalize a single product's images + variant imageUrls */
+function normalizeProduct<T extends { images?: unknown; variants?: unknown[] }>(p: T): T {
+  const normalized = { ...p };
+  (normalized as any).images = normalizeImages(p.images);
+  if (Array.isArray(p.variants)) {
+    (normalized as any).variants = p.variants.map((v: any) => ({
+      ...v,
+      // Ensure variant imageUrl is a string or null
+      imageUrl: v.imageUrl ?? v.image_url ?? null,
+    }));
+  }
+  return normalized;
+}
 
 export function useProducts(params?: ProductListParams) {
   const searchParams: Record<string, string> = {};
@@ -24,7 +58,7 @@ export function useProducts(params?: ProductListParams) {
       // If the client already unwrapped → result is Product[]
       if (Array.isArray(result)) {
         return {
-          data: result,
+          data: result.map(normalizeProduct),
           meta: {
             total: result.length,
             limit: Number(searchParams.limit) || 50,
@@ -35,7 +69,8 @@ export function useProducts(params?: ProductListParams) {
 
       // If result came through with data+meta intact (shouldn't happen with current client but safe)
       if (result && 'data' in result && Array.isArray((result as ProductListResponse).data)) {
-        return result as ProductListResponse;
+        const r = result as ProductListResponse;
+        return { ...r, data: r.data.map(normalizeProduct) };
       }
 
       // Fallback
@@ -52,7 +87,7 @@ export function useProduct(id: string) {
       // Product detail returns { data: { id, title, variants, ... } }
       // After client unwrap, we get the product object directly (json.data → the object inside)
       const result = await api.get<ProductDetail>(`/api/storefront/products/${id}`);
-      return result;
+      return normalizeProduct(result);
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,

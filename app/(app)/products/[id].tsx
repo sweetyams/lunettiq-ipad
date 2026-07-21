@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ScrollView, View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -131,13 +131,21 @@ export default function ProductDetailScreen() {
     ? suggestions?.find((s) => s.productId === product.id || s.productId === product.shopifyId)
     : null;
 
-  // Color variants for chip selector
-  const colorVariants =
-    product?.variants?.filter((v) =>
-      v.selectedOptions.some(
+  // Color variants for chip selector — deduplicated by colour value
+  const colorVariants = useMemo(() => {
+    if (!product?.variants) return [];
+    const seen = new Set<string>();
+    return product.variants.filter((v) => {
+      const colorOpt = v.selectedOptions.find(
         (opt) => opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour'
-      )
-    ) ?? [];
+      );
+      if (!colorOpt) return false;
+      const colorValue = colorOpt.value.toLowerCase();
+      if (seen.has(colorValue)) return false;
+      seen.add(colorValue);
+      return true;
+    });
+  }, [product?.variants]);
 
   const hasActiveSession = activeClientId && sessionMode !== 'idle';
 
@@ -253,7 +261,7 @@ export default function ProductDetailScreen() {
                 <View key={index} style={{ width }} className="h-full">
                   <Image
                     source={{ uri: image.url }}
-                    className="flex-1"
+                    style={{ width: '100%', height: '100%' }}
                     contentFit="contain"
                     accessibilityLabel={image.alt ?? `${title} image ${index + 1}`}
                   />

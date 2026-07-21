@@ -6,6 +6,8 @@
 export interface ProductImage {
   url: string;
   alt?: string;
+  /** Legacy: Shopify uses `src` in some contexts. Normalized to `url` at the API layer. */
+  src?: string;
 }
 
 export interface ProductViewHints {
@@ -24,6 +26,12 @@ export interface ProductVariant {
   selectedOptions: { name: string; value: string }[];
   imageUrl: string | null;
   inventoryQuantity?: number;
+}
+
+export interface ProductOption {
+  name: string;
+  position: number;
+  values: string[];
 }
 
 export interface Product {
@@ -45,6 +53,7 @@ export interface Product {
   totalStock: number;
   viewHints: ProductViewHints;
   metafields?: Record<string, unknown>;
+  options?: ProductOption[];
 }
 
 export interface ProductDetail extends Product {

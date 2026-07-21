@@ -44,7 +44,7 @@ export function ProductCard({
           <Image
             source={{ uri: image.url }}
             contentFit="cover"
-            className="w-full h-full"
+            style={{ width: '100%', height: '100%' }}
             accessibilityLabel={image.alt ?? title}
           />
         ) : (
@@ -91,12 +91,18 @@ export function ProductCard({
               Tap for price
             </Text>
           )}
-          {/* Variant count */}
-          {product.variantCount > 1 && (
-            <Text className="text-text-muted text-caption">
-              {product.variantCount} colours
-            </Text>
-          )}
+          {/* Colour count — use options if available, fall back to variantCount */}
+          {(() => {
+            const colourOption = product.options?.find(
+              (opt) => opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour'
+            );
+            const colourCount = colourOption?.values?.length ?? (product.variantCount > 1 ? product.variantCount : 0);
+            return colourCount > 1 ? (
+              <Text className="text-text-muted text-caption">
+                {colourCount} colours
+              </Text>
+            ) : null;
+          })()}
         </View>
 
         {/* FitBadge */}
