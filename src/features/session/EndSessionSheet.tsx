@@ -298,13 +298,12 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
         </View>
 
         {/* ─── Step Content ───────────────────────────────────────────── */}
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="p-xl"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {step === 1 && (
+        {step === 1 && (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ padding: 32 }}
+            showsVerticalScrollIndicator={false}
+          >
             <Step1Outcome
               outcome={outcome}
               orderRef={orderRef}
@@ -312,8 +311,15 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
               onOrderRefChange={setOrderRef}
               onQuickEnd={handleQuickEnd}
             />
-          )}
-          {step === 2 && (
+          </ScrollView>
+        )}
+        {step === 2 && (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ padding: 32 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <Step2Summary
               sendSummary={sendSummary}
               language={language}
@@ -324,16 +330,23 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
               onLanguageChange={setLanguage}
               onNext={() => setStep(3)}
             />
-          )}
-          {step === 3 && (
+          </ScrollView>
+        )}
+        {step === 3 && (
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ padding: 32 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
             <Step3Notes
               internalNotes={internalNotes}
               selectedTags={selectedTags}
               onNotesChange={setInternalNotes}
               onTagToggle={handleTagToggle}
             />
-          )}
-        </ScrollView>
+          </ScrollView>
+        )}
 
         {/* ─── Bottom Action Bar ──────────────────────────────────────── */}
         {step === 3 && (
