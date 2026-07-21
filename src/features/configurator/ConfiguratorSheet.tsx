@@ -110,7 +110,7 @@ function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       accessibilityLabel={`${colour.label}${colour.price > 0 ? `, +$${(colour.price / 100).toFixed(2)}` : ''}`}
-      className={`items-center mr-md mb-md`}
+      className={`items-center p-sm rounded-lg ${isSelected ? 'bg-green/10' : ''}`}
     >
       <View
         className={`w-12 h-12 rounded-full border-4 mb-xs ${
@@ -188,7 +188,7 @@ function GroupSection({
                 <View className="ml-xl mb-md">
                   <Text className="text-caption text-text-muted mb-sm">Select colour:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row flex-wrap">
+                    <View className="flex-row flex-wrap" style={{ gap: 0 }}>
                       {colours.map((colour) => (
                         <ColourSwatch
                           key={colour.id}

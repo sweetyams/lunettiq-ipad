@@ -35,39 +35,41 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {family.siblings.map((sibling) => {
-          const isCurrent = sibling.handle === currentHandle || sibling.shopifyId === productId;
-          return (
-            <Pressable
-              key={sibling.shopifyId}
-              onPress={() => handleSiblingPress(sibling)}
-              accessibilityRole="button"
-              accessibilityLabel={`${sibling.colour ?? sibling.title}${isCurrent ? ', current' : ''}`}
-              accessibilityState={{ selected: isCurrent }}
-              className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full flex-row items-center justify-center border mr-sm ${
-                isCurrent
-                  ? 'bg-brand border-brand'
-                  : 'bg-bg-elevated border-border'
-              }`}
-            >
-              {/* Colour swatch */}
-              {sibling.colourHex && (
-                <View
-                  className={`w-5 h-5 rounded-full mr-xs border ${isCurrent ? 'border-white/50' : 'border-border'}`}
-                  style={{ backgroundColor: sibling.colourHex }}
-                />
-              )}
-              <Text
-                className={`text-caption font-medium ${
-                  isCurrent ? 'text-brand-text' : 'text-text-primary'
+        <View className="flex-row" style={{ gap: 0 }}>
+          {family.siblings.map((sibling) => {
+            const isCurrent = sibling.handle === currentHandle || sibling.shopifyId === productId;
+            return (
+              <Pressable
+                key={sibling.shopifyId}
+                onPress={() => handleSiblingPress(sibling)}
+                accessibilityRole="button"
+                accessibilityLabel={`${sibling.colour ?? sibling.title}${isCurrent ? ', current' : ''}`}
+                accessibilityState={{ selected: isCurrent }}
+                className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full flex-row items-center justify-center border ${
+                  isCurrent
+                    ? 'bg-brand border-brand'
+                    : 'bg-bg-elevated border-border'
                 }`}
-                numberOfLines={1}
               >
-                {sibling.colour ?? sibling.title}
-              </Text>
-            </Pressable>
-          );
-        })}
+                {/* Colour swatch */}
+                {sibling.colourHex && (
+                  <View
+                    className={`w-5 h-5 rounded-full mr-xs border ${isCurrent ? 'border-white/50' : 'border-border'}`}
+                    style={{ backgroundColor: sibling.colourHex }}
+                  />
+                )}
+                <Text
+                  className={`text-caption font-medium ${
+                    isCurrent ? 'text-brand-text' : 'text-text-primary'
+                  }`}
+                  numberOfLines={1}
+                >
+                  {sibling.colour ?? sibling.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );

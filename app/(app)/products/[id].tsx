@@ -37,7 +37,7 @@ function VariantChip({ variant, isSelected, onPress }: VariantChipProps) {
       accessibilityRole="button"
       accessibilityLabel={`Select ${label} variant${!variant.availableForSale ? ', out of stock' : ''}`}
       accessibilityState={{ selected: isSelected }}
-      className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full items-center justify-center border mr-sm ${
+      className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full items-center justify-center border ${
         isSelected
           ? 'bg-brand border-brand'
           : variant.availableForSale
@@ -334,17 +334,19 @@ export default function ProductDetailScreen() {
           <View className="p-lg bg-bg-elevated border-b border-border">
             <Text className="text-bodyStrong text-text-primary mb-md">Available colours</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {colorVariants.map((variant) => (
-                <VariantChip
-                  key={variant.shopifyId}
-                  variant={variant}
-                  isSelected={
-                    selectedVariantId === variant.shopifyId ||
-                    (!selectedVariantId && variant === colorVariants[0])
-                  }
-                  onPress={() => setSelectedVariantId(variant.shopifyId)}
-                />
-              ))}
+              <View className="flex-row" style={{ gap: 0 }}>
+                {colorVariants.map((variant) => (
+                  <VariantChip
+                    key={variant.shopifyId}
+                    variant={variant}
+                    isSelected={
+                      selectedVariantId === variant.shopifyId ||
+                      (!selectedVariantId && variant === colorVariants[0])
+                    }
+                    onPress={() => setSelectedVariantId(variant.shopifyId)}
+                  />
+                ))}
+              </View>
             </ScrollView>
           </View>
         )}
