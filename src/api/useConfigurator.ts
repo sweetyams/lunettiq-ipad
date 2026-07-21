@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from './client';
 import type {
   ConfiguratorResolveResult,
+  ResolvedChannel,
   ConfiguratorSnapshot,
   LensColour,
   CartResult,
@@ -18,14 +19,22 @@ import type { SnapshotGroup, SnapshotChoice, SnapshotPriceRule } from './configu
 /**
  * Resolve which configurator flows apply to a product.
  * Returns empty channels if this product has no configurator.
+ *
+ * Note: The Foundry resolve endpoint returns ResolvedChannel[] directly
+ * (wrapped in standard { data, error, meta } envelope which api.get unwraps).
+ * We normalise into { channels: [] } for consistent consumer access.
  */
 export function useConfiguratorResolve(productId: string | null) {
   return useQuery({
     queryKey: ['configurator', 'resolve', productId],
-    queryFn: () =>
-      api.get<ConfiguratorResolveResult>('/api/storefront/configurator/resolve', {
-        params: { productId: productId! },
-      }),
+    queryFn: async (): Promise<ConfiguratorResolveResult> => {
+      const channels = await api.get<ResolvedChannel[]>(
+        '/api/storefront/configurator/resolve',
+        { params: { productId: productId! } },
+      );
+      // API returns raw array; wrap into the shape consumers expect
+      return { channels: Array.isArray(channels) ? channels : [] };
+    },
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 min — flows don't change often
   });

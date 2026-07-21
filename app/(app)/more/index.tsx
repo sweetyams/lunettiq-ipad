@@ -23,17 +23,19 @@ function MenuRow({
   description,
   badge,
   onPress,
+  isLast = false,
 }: {
   icon: React.ReactNode;
   label: string;
   description: string;
   badge?: number;
   onPress: () => void;
+  isLast?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center px-lg py-md border-b border-border min-h-[56px]"
+      className={`flex-row items-center px-lg py-md min-h-[56px] ${isLast ? '' : 'border-b border-border'}`}
       accessibilityRole="button"
       accessibilityLabel={`${label}${badge ? `, ${badge} pending` : ''}`}
     >
@@ -105,6 +107,7 @@ export default function MoreScreen() {
           label="Prescriptions"
           description="View and manage Rx records"
           onPress={() => router.push('/more/rx-pipeline')}
+          isLast
         />
       </View>
 
@@ -128,6 +131,7 @@ export default function MoreScreen() {
           label="Insurance Receipts"
           description="Generate and resend receipts (from client profile)"
           onPress={() => router.push('/clients')}
+          isLast
         />
       </View>
 
@@ -145,6 +149,7 @@ export default function MoreScreen() {
           label="Custom Designs"
           description="Capture custom frame orders"
           onPress={() => router.push('/more/custom-design')}
+          isLast
         />
       </View>
 
@@ -156,6 +161,7 @@ export default function MoreScreen() {
           label="Settings"
           description="Sync, device config, account"
           onPress={() => router.push('/more/settings')}
+          isLast
         />
       </View>
 

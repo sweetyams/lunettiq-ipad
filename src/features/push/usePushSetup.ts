@@ -45,8 +45,17 @@ export function usePushSetup() {
       }
 
       // Get the token
+      // Requires EAS project ID — skip gracefully if not configured
+      const projectId = process.env.EXPO_PUBLIC_PROJECT_ID ?? process.env.EAS_PROJECT_ID;
+      if (!projectId) {
+        if (__DEV__) {
+          console.log('Push setup skipped: no EAS_PROJECT_ID configured');
+        }
+        return;
+      }
+
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+        projectId,
       });
 
       const expoPushToken = tokenData.data;
@@ -66,7 +75,10 @@ export function usePushSetup() {
       console.log('Push token registered successfully');
     } catch (error) {
       console.error('Failed to register push token:', error);
-      toast.error('Push notifications setup failed', 'You may miss important notifications');
+      // Only show user-facing error in production — in dev/simulator this is expected
+      if (!__DEV__) {
+        toast.error('Push notifications setup failed', 'You may miss important notifications');
+      }
     }
   }, [isSignedIn, registerPush]);
 
