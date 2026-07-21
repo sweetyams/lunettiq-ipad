@@ -6,6 +6,15 @@
       "headers": {
         "Authorization": "Bearer ${FOUNDRY_METHOD_TOKEN}"
       }
+    },
+    "foundry-api": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "scripts/mcp/foundry-api-server.ts"],
+      "env": {
+        "FOUNDRY_DEV_TOKEN": "${FOUNDRY_DEV_TOKEN}",
+        "FOUNDRY_BASE_URL": "${FOUNDRY_BASE_URL:-http://lunettiq.localhost:4000}"
+      }
     }
   }
 }
