@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Users, Plus, Package, ArrowUpDown } from 'lucide-react-native';
+import { Users, Plus, Package, ArrowUpDown, ClipboardList, Settings2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 interface QuickAction {
@@ -22,7 +22,7 @@ export function QuickActionsGrid() {
     {
       label: 'New client',
       icon: <Plus color="#1A1A1A" size={20} />,
-      route: '/clients',
+      route: '/clients/new',
       accessibilityLabel: 'Create new client',
     },
     {
@@ -32,10 +32,22 @@ export function QuickActionsGrid() {
       accessibilityLabel: 'Browse product catalogue',
     },
     {
+      label: 'Rx Pipeline',
+      icon: <ClipboardList color="#1A1A1A" size={20} />,
+      route: '/more/rx-pipeline',
+      accessibilityLabel: 'View Rx Pipeline orders',
+    },
+    {
       label: 'Second Sight',
       icon: <ArrowUpDown color="#1A1A1A" size={20} />,
+      route: '/more/second-sight',
+      accessibilityLabel: 'Start Second Sight trade-in',
+    },
+    {
+      label: 'More tools',
+      icon: <Settings2 color="#1A1A1A" size={20} />,
       route: '/more',
-      accessibilityLabel: 'Open Second Sight trade-in',
+      accessibilityLabel: 'View all tools and settings',
     },
   ];
 
@@ -51,9 +63,9 @@ export function QuickActionsGrid() {
             key={action.label}
             onPress={() => router.push(action.route as any)}
             className="bg-bg-page border border-border rounded-md p-md items-center justify-center min-h-[80px] min-w-[44px]"
-            style={{ width: '48%' }}
+            style={{ width: '31%' }}
             accessibilityRole="button"
-            accessibilityLabel={action.label}
+            accessibilityLabel={action.accessibilityLabel}
           >
             {action.icon}
             <Text className="text-caption text-text-primary font-medium mt-sm text-center">

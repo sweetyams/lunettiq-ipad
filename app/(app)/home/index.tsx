@@ -8,6 +8,7 @@ import { AppointmentCard } from '@/src/ui/AppointmentCard';
 import { ActiveHoldsCard } from '@/src/ui/ActiveHoldsCard';
 import { RecentClientsCard } from '@/src/ui/RecentClientsCard';
 import { QuickActionsGrid } from '@/src/ui/QuickActionsGrid';
+import { RxStatusCard } from '@/src/ui/RxStatusCard';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { toast } from '@/src/ui/useToastStore';
@@ -214,6 +215,7 @@ export default function HomeScreen() {
             showsVerticalScrollIndicator={false}
           >
             <ActiveHoldsCard onHoldPress={handleHoldPress} />
+            <RxStatusCard />
             <RecentClientsCard onClientPress={handleClientPress} />
             <QuickActionsGrid />
           </ScrollView>
