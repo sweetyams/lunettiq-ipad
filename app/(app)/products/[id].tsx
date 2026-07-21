@@ -284,8 +284,18 @@ export default function ProductDetailScreen() {
           {product.vendor && (
             <Text className="text-caption text-text-muted mb-sm">{product.vendor}</Text>
           )}
+        </View>
 
-          {/* Price */}
+        {/* Family Switcher: Optical/Sun toggle + Colour chips */}
+        {product.shopifyId && (
+          <ColourSiblings
+            productId={product.shopifyId}
+            currentHandle={product.handle}
+          />
+        )}
+
+        {/* Price */}
+        <View className="px-lg py-md bg-bg-elevated border-b border-border">
           {privacyMode === 'staff' && selectedVariant && (
             <View className="flex-row items-baseline gap-sm">
               <Text className="text-headline font-semibold text-text-primary">
@@ -349,14 +359,6 @@ export default function ProductDetailScreen() {
               </View>
             </ScrollView>
           </View>
-        )}
-
-        {/* Colour Siblings from Product Family */}
-        {product.shopifyId && (
-          <ColourSiblings
-            productId={product.shopifyId}
-            currentHandle={product.handle}
-          />
         )}
 
         {/* Dimensions */}

@@ -39,6 +39,7 @@ import type {
   ConfiguratorPriceSummary,
   LensColour,
 } from '@/src/api/configurator.types';
+import { resolveLensColourLabel } from '@/src/api/configurator.types';
 
 // ─── Choice Card ────────────────────────────────────────────────────────────
 
@@ -103,13 +104,14 @@ interface ColourSwatchProps {
 
 function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
   const priceLabel = colour.price > 0 ? `+$${(colour.price / 100).toFixed(0)}` : 'Included';
+  const displayLabel = resolveLensColourLabel(colour.label);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${colour.label}${colour.price > 0 ? `, +$${(colour.price / 100).toFixed(2)}` : ''}`}
+      accessibilityLabel={`${displayLabel}${colour.price > 0 ? `, +$${(colour.price / 100).toFixed(2)}` : ''}`}
       className={`items-center p-sm rounded-lg ${isSelected ? 'bg-green/10' : ''}`}
     >
       <View
@@ -122,7 +124,7 @@ function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
         }}
       />
       <Text className="text-caption text-text-primary text-center" numberOfLines={2} style={{ maxWidth: 56 }}>
-        {colour.label}
+        {displayLabel}
       </Text>
       <Text className="text-caption text-text-muted text-center">{priceLabel}</Text>
     </Pressable>
@@ -271,7 +273,7 @@ function SummaryStep({
                   return (
                     <Text key={choiceId} className="text-body text-text-primary">
                       {choice.label?.en ?? choice.code}
-                      {colour && ` — ${colour.label}`}
+                      {colour && ` — ${resolveLensColourLabel(colour.label)}`}
                     </Text>
                   );
                 })}

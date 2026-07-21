@@ -12,6 +12,7 @@ import type {
   ConfiguratorSelections,
   ColourSelections,
 } from './configurator.types';
+import { resolveLensColourLabel } from './configurator.types';
 import type { SnapshotGroup, SnapshotChoice, SnapshotPriceRule } from './configurator.types';
 
 // --- Query hooks ---
@@ -135,12 +136,13 @@ export function serializeSelections(
         const colour = colourId ? colourMap.get(colourId) : null;
         attributes.push({ key: `_${group.code}`, value: choice.code });
         if (colour) {
+          const colourLabel = resolveLensColourLabel(colour.label);
           attributes.push({ key: `_${group.code}_colour`, value: colour.code });
-          attributes.push({ key: `_${group.code}_colour_label`, value: colour.label });
+          attributes.push({ key: `_${group.code}_colour_label`, value: colourLabel });
           if (colour.price > 0) {
             pricingLines.push({
               code: colour.code,
-              label: `${choice.label?.en ?? choice.code}: ${colour.label}`,
+              label: `${choice.label?.en ?? choice.code}: ${colourLabel}`,
               amount: colour.price,
             });
           }

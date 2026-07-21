@@ -62,13 +62,20 @@ export interface SnapshotPriceRule {
 export interface LensColour {
   id: string;
   code: string;
-  label: string;
+  /** Foundry returns Bilingual ({en, fr}) — resolve before rendering */
+  label: string | { en: string; fr?: string };
   hexStart: string;
   hexEnd?: string | null; // null = solid, string = gradient
   price: number; // cents
   category: string;
   status: 'active' | 'discontinued';
   setName: string;
+}
+
+/** Resolve a lens colour label to a display string */
+export function resolveLensColourLabel(label: LensColour['label']): string {
+  if (typeof label === 'string') return label;
+  return label.en ?? label.fr ?? '';
 }
 
 export interface LensColourSet {
