@@ -7,6 +7,7 @@ import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { PermissionGate } from '@/src/ui/PermissionGate';
+import { ScreenHeader } from '@/src/ui/ScreenHeader';
 
 const STATE_LABELS: Record<RxOrderState, string> = {
   awaiting_rx: 'Awaiting Rx',
@@ -95,30 +96,29 @@ function RxPipelineContent() {
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="px-xl pt-2xl pb-md border-b border-border">
-        <Text className="text-displayLg text-text-primary">Rx Pipeline</Text>
-        {/* Counts row */}
-        {counts && (
-          <View className="flex-row gap-md mt-md">
-            <View className="items-center">
-              <Text className="text-headline text-text-primary">{counts.awaiting_rx}</Text>
-              <Text className="text-caption text-text-muted">Awaiting</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-headline text-text-primary">{counts.ordered + counts.in_lab}</Text>
-              <Text className="text-caption text-text-muted">In Progress</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-headline text-green">{counts.ready}</Text>
-              <Text className="text-caption text-text-muted">Ready</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-headline text-text-muted">{counts.total}</Text>
-              <Text className="text-caption text-text-muted">Total</Text>
-            </View>
+      <ScreenHeader title="Rx Pipeline" subtitle="Track orders from lab to pickup" />
+      
+      {/* Counts row */}
+      {counts && (
+        <View className="flex-row gap-md px-xl py-sm">
+          <View className="items-center">
+            <Text className="text-headline text-text-primary">{counts.awaiting_rx}</Text>
+            <Text className="text-caption text-text-muted">Awaiting</Text>
           </View>
-        )}
-      </View>
+          <View className="items-center">
+            <Text className="text-headline text-text-primary">{counts.ordered + counts.in_lab}</Text>
+            <Text className="text-caption text-text-muted">In Progress</Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-headline text-green">{counts.ready}</Text>
+            <Text className="text-caption text-text-muted">Ready</Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-headline text-text-muted">{counts.total}</Text>
+            <Text className="text-caption text-text-muted">Total</Text>
+          </View>
+        </View>
+      )}
 
       {/* Filters */}
       <View className="px-xl py-md">

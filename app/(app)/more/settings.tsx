@@ -8,6 +8,7 @@ import { useInitialSync } from '@/src/sync/useInitialSync';
 import { getDatabaseStats, resetDatabase } from '@/src/db';
 import { usePermissions } from '@/src/features/auth/usePermissions';
 import { Button } from '@/src/ui/Button';
+import { ScreenHeader } from '@/src/ui/ScreenHeader';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -74,9 +75,7 @@ export default function SettingsScreen() {
   return (
     <ScrollView className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="px-xl pt-2xl pb-lg border-b border-border">
-        <Text className="text-displayLg text-text-primary">Settings</Text>
-      </View>
+      <ScreenHeader title="Settings" subtitle="Sync, device config, account" />
 
       <View className="p-xl gap-xl">
         {/* Sync Section */}

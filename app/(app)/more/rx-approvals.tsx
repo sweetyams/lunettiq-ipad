@@ -17,6 +17,7 @@ import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Button } from '@/src/ui/Button';
 import { PermissionGate } from '@/src/ui/PermissionGate';
+import { ScreenHeader } from '@/src/ui/ScreenHeader';
 import { toast } from '@/src/ui/useToastStore';
 
 const STATUS_LABELS: Record<ApprovalStatus, string> = {
@@ -160,25 +161,23 @@ function RxApprovalsContent() {
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="px-xl pt-2xl pb-md border-b border-border">
-        <Text className="text-displayLg text-text-primary">Rx Approvals</Text>
-        {summary && (
-          <View className="flex-row gap-md mt-md">
-            <View className="items-center">
-              <Text className="text-headline text-warning">{summary.submitted}</Text>
-              <Text className="text-caption text-text-muted">Pending</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-headline text-blue">{summary.in_review}</Text>
-              <Text className="text-caption text-text-muted">In Review</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-headline text-green">{summary.approved}</Text>
-              <Text className="text-caption text-text-muted">Approved</Text>
-            </View>
+      <ScreenHeader title="Rx Approvals" subtitle="Review and sign off prescriptions" />
+      {summary && (
+        <View className="flex-row gap-md px-xl py-sm">
+          <View className="items-center">
+            <Text className="text-headline text-warning">{summary.submitted}</Text>
+            <Text className="text-caption text-text-muted">Pending</Text>
           </View>
-        )}
-      </View>
+          <View className="items-center">
+            <Text className="text-headline text-text-primary">{summary.in_review}</Text>
+            <Text className="text-caption text-text-muted">In Review</Text>
+          </View>
+          <View className="items-center">
+            <Text className="text-headline text-green">{summary.approved}</Text>
+            <Text className="text-caption text-text-muted">Approved</Text>
+          </View>
+        </View>
+      )}
 
       {/* Tab pills */}
       <View className="flex-row px-xl py-md gap-sm">

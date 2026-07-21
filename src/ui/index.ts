@@ -30,3 +30,5 @@ export { useToastStore, toast } from './useToastStore';
 export type { ToastType, ToastMessage } from './useToastStore';
 export { SessionBar } from './SessionBar';
 export { PermissionGate } from './PermissionGate';
+export { ScreenHeader } from './ScreenHeader';
+export { RxStatusCard } from './RxStatusCard';
