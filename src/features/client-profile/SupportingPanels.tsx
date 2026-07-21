@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
 import { ShoppingBag, Eye, Star, Tag, Glasses as GlassesIcon, Link2, Users, Award, Receipt, ClipboardList } from 'lucide-react-native';
 import {
@@ -60,9 +61,9 @@ export function OrdersPanel({ clientId }: OrdersPanelProps) {
                     Order #{order.orderNumber}
                   </Text>
                   <Text className="text-caption text-text-muted mt-xs">
-                    {new Date(order.createdAt).toLocaleDateString()} · {order.lineItems.length} items
+                    {new Date(order.createdAt).toLocaleDateString()} · {(order.lineItems ?? []).length} items
                   </Text>
-                  {order.lineItems.slice(0, 2).map((item) => (
+                  {(order.lineItems ?? []).slice(0, 2).map((item) => (
                     <Text key={item.id} className="text-caption text-text-muted mt-xs">
                       {item.title}{item.variantTitle ? ` - ${item.variantTitle}` : ''}
                     </Text>
@@ -552,6 +553,22 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
   const { data: loyalty, isLoading } = useLoyaltyBalance(clientId);
   const issueCredit = useIssueCredit(clientId);
   const privacyMode = usePrivacyStore((s) => s.mode);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
+
+  const displayedLedger = showAllTransactions 
+    ? loyalty?.ledger || []
+    : loyalty?.ledger?.slice(0, 5) || [];
+
+  const formatTransactionType = (type: string) => {
+    const typeMap: Record<string, string> = {
+      manual: 'Manual',
+      purchase: 'Purchase',
+      referral: 'Referral',
+      second_sight: 'Second Sight',
+      redemption: 'Redemption',
+    };
+    return typeMap[type] || type;
+  };
 
   return (
     <View>
@@ -566,42 +583,84 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
           ) : loyalty ? (
             <View>
               {/* Balance */}
-              <View className="py-sm border-b border-border">
+              <View className="py-sm border-b border-color-border">
                 {privacyMode === 'staff' ? (
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-body text-text-muted">Current balance</Text>
-                    <Text className="text-headline text-text-primary font-semibold">
+                    <Text className="text-body-md text-color-text-muted">Current balance</Text>
+                    <Text className="text-heading-sm text-color-text-primary font-semibold">
                       {loyalty.balance} credits
                     </Text>
                   </View>
                 ) : (
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-body text-text-muted">Loyalty credits</Text>
-                    <Text className="text-body text-green font-medium">Credits available</Text>
+                    <Text className="text-body-md text-color-text-muted">Loyalty credits</Text>
+                    <Text className="text-body-md text-color-success font-medium">Credits available</Text>
                   </View>
                 )}
               </View>
 
-              {/* Recent ledger — staff only */}
-              {privacyMode === 'staff' && loyalty.ledger?.slice(0, 5).map((entry, i) => (
-                <View key={entry.id} className={`flex-row justify-between py-xs ${i > 0 ? 'border-t border-border' : ''}`}>
-                  <View className="flex-1">
-                    <Text className="text-body text-text-primary">{entry.reason}</Text>
-                    <Text className="text-caption text-text-muted">
-                      {new Date(entry.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </Text>
-                  </View>
-                  <Text className={`text-body font-medium ${entry.amount > 0 ? 'text-green' : 'text-error'}`}>
-                    {entry.amount > 0 ? '+' : ''}{entry.amount}
-                  </Text>
+              {/* Transaction History — staff only */}
+              {privacyMode === 'staff' && loyalty.ledger && loyalty.ledger.length > 0 && (
+                <View className="mt-sm">
+                  <Text className="text-body-sm text-color-text-muted mb-sm">Transaction History</Text>
+                  
+                  {displayedLedger.map((entry, i) => (
+                    <View 
+                      key={entry.id} 
+                      className={`flex-row justify-between items-start py-sm ${
+                        i > 0 ? 'border-t border-color-border/50' : ''
+                      }`}
+                    >
+                      <View className="flex-1 mr-md">
+                        <Text className="text-body-md text-color-text-primary">
+                          {entry.reason}
+                        </Text>
+                        <View className="flex-row items-center mt-xs gap-sm">
+                          <Text className="text-caption-md text-color-text-muted">
+                            {new Date(entry.createdAt).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </Text>
+                          <Text className="text-caption-sm text-color-text-muted uppercase">
+                            {formatTransactionType(entry.type)}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text 
+                        className={`text-body-md font-medium ${
+                          entry.amount > 0 ? 'text-color-success' : 'text-color-error'
+                        }`}
+                      >
+                        {entry.amount > 0 ? '+' : ''}{entry.amount}
+                      </Text>
+                    </View>
+                  ))}
+
+                  {/* Show all/Show less toggle */}
+                  {loyalty.ledger.length > 5 && (
+                    <Pressable
+                      onPress={() => setShowAllTransactions(!showAllTransactions)}
+                      className="mt-sm pt-sm border-t border-color-border/50 min-h-[44px] justify-center"
+                      accessibilityRole="button"
+                      accessibilityLabel={showAllTransactions ? 'Show fewer transactions' : 'Show all transactions'}
+                    >
+                      <Text className="text-body-sm text-color-brand text-center">
+                        {showAllTransactions 
+                          ? 'Show less' 
+                          : `Show all (${loyalty.ledger.length} transactions)`}
+                      </Text>
+                    </Pressable>
+                  )}
                 </View>
-              ))}
+              )}
 
               {/* Issue credit action — staff only */}
               {privacyMode === 'staff' && (
                 <PermissionGate permission="org:loyalty:write">
                   <Pressable
-                    className="mt-sm pt-sm border-t border-border min-h-[44px] justify-center"
+                    className="mt-sm pt-sm border-t border-color-border min-h-[44px] justify-center"
                     onPress={() => {
                       // Courtesy credit — simplified inline action
                       issueCredit.mutate(
@@ -615,13 +674,13 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Issue courtesy credit, 5 dollars"
                   >
-                    <Text className="text-body text-navy text-center">Issue courtesy credit</Text>
+                    <Text className="text-body-md text-color-brand text-center">Issue courtesy credit</Text>
                   </Pressable>
                 </PermissionGate>
               )}
             </View>
           ) : (
-            <Text className="text-body text-text-muted italic text-center py-md">
+            <Text className="text-body-md text-color-text-muted italic text-center py-md">
               No loyalty data
             </Text>
           )}

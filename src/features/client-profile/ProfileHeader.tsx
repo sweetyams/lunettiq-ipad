@@ -17,13 +17,14 @@ export function ProfileHeader({ client, onStartSession }: ProfileHeaderProps) {
     .join('')
     .toUpperCase() || '?';
 
-  const tierTag = client.tags.find((tag) =>
+  const tierTag = (client.tags ?? []).find((tag) =>
     ['CULT', 'VAULT'].includes(tag.toUpperCase())
   );
   const tier = tierTag?.toUpperCase() || 'ESSENTIAL';
 
   const formatCurrency = (amount: number | null): string => {
-    if (!amount) return '$0.00';
+    if (amount == null || isNaN(amount)) return '—';
+    if (amount === 0) return '$0.00';
     return new Intl.NumberFormat('en-CA', {
       style: 'currency',
       currency: 'CAD',

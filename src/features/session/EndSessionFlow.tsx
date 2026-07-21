@@ -99,6 +99,32 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
     setStep(2);
   };
 
+  // Quick end — skip email and notes, just log the outcome
+  const handleQuickEnd = async () => {
+    if (!activeClientId || !sessionId || !outcome) return;
+
+    try {
+      await endSessionMutation.mutateAsync({
+        sessionId,
+        clientId: activeClientId,
+        outcomeTag: outcome,
+        sendSummary: false,
+        summaryLanguage: 'en',
+        internalNotes: '',
+        tags: [],
+        orderRef: undefined,
+      });
+
+      resetSession();
+      resetFitting();
+      router.replace('/(app)/home');
+      onComplete();
+    } catch (error) {
+      console.error('Failed to end session:', error);
+      toast.error('Save failed', 'Failed to save session. Please try again.');
+    }
+  };
+
   const handleTagToggle = (tag: QuickTag) => {
     setSelectedTags(prev => 
       prev.includes(tag) 
@@ -245,6 +271,16 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
           </View>
         </View>
       )}
+
+      {/* Cancel — go back to session */}
+      <Pressable
+        onPress={onCancel}
+        accessibilityRole="button"
+        accessibilityLabel="Cancel and return to session"
+        className="mt-xl py-md items-center min-h-[44px] justify-center"
+      >
+        <Text className="text-body text-text-muted">Cancel — back to session</Text>
+      </Pressable>
     </View>
   );
 
@@ -371,6 +407,17 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         className="bg-brand rounded-md py-md px-lg items-center min-h-[44px] justify-center"
       >
         <Text className="text-body font-medium text-text-inverse">Next</Text>
+      </Pressable>
+
+      {/* Skip — end without notes */}
+      <Pressable
+        onPress={handleQuickEnd}
+        disabled={endSessionMutation.isPending}
+        accessibilityRole="button"
+        accessibilityLabel="End session without notes"
+        className="mt-md py-md items-center min-h-[44px] justify-center"
+      >
+        <Text className="text-body text-text-muted">Done — skip notes</Text>
       </Pressable>
     </ScrollView>
   );

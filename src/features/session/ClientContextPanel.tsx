@@ -97,6 +97,14 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
               </Text>
             )}
           </View>
+          <Pressable
+            onPress={() => router.push(`/clients/${clientId}`)}
+            className="mt-xs min-h-[28px] justify-center"
+            accessibilityRole="link"
+            accessibilityLabel="View full profile"
+          >
+            <Text className="text-caption text-accent">View full profile →</Text>
+          </Pressable>
         </View>
       </View>
 

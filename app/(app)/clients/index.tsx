@@ -180,6 +180,7 @@ function ClientProfile({
   onStartSession: () => void;
   onViewHistory: () => void;
 }) {
+  const router = useRouter();
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
   const initials = [client.firstName?.[0], client.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?';
   const tags = client.tags ?? [];
@@ -249,6 +250,16 @@ function ClientProfile({
         >
           <Text className="text-brand-text text-bodyStrong">Start Session</Text>
         </Pressable>
+        <Pressable 
+          onPress={() => router.push(`/clients/${client.id}`)}
+          className="flex-1 bg-accent rounded-lg py-md items-center min-h-[44px] justify-center"
+        >
+          <Text className="text-accent-text text-bodyStrong">View Profile</Text>
+        </Pressable>
+      </View>
+
+      {/* Secondary actions */}
+      <View className="flex-row gap-md mt-md">
         <Pressable 
           onPress={onViewHistory}
           className="flex-1 bg-bg-surface border border-border rounded-lg py-md items-center min-h-[44px] justify-center"

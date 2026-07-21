@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  User, Eye, Palette, Plus, Lightbulb, ChevronLeft, ClipboardList, Award, Users2,
+  User, Eye, Palette, ChevronLeft,
 } from 'lucide-react-native';
 import { useClient, useUpdateClient } from '@/src/api/useClients';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
@@ -24,6 +24,17 @@ import {
   LinksPanel,
   LoyaltyPanel,
   ReceiptsPanel,
+  QuickStats,
+  ClientPL,
+  TagManagement,
+  RxStatus,
+  NextAppointment,
+  InsuranceSummary,
+  LifestyleSummary,
+  MultiPairCTA,
+  InsuranceFormSheet,
+  LifestyleQuestionnaireSheet,
+  MultiPairResultsSheet,
 } from '@/src/features/client-profile';
 import type { ClientProfile, ClientUpdateParams } from '@/src/api/clients.types';
 
@@ -53,6 +64,11 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
   const startSession = useSessionStore((s) => s.startSession);
   const updateClient = useUpdateClient();
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+
+  // Sheet state
+  const [showInsurance, setShowInsurance] = useState(false);
+  const [showLifestyle, setShowLifestyle] = useState(false);
+  const [showMultiPair, setShowMultiPair] = useState(false);
 
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
 
@@ -120,8 +136,37 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
           </View>
         </ScrollView>
 
-        {/* Right action sidebar */}
-        <View className="w-44 bg-bg-elevated border-l border-border p-lg">
+        {/* Right sidebar — data overview + actions */}
+        <ScrollView className="w-80 bg-bg-elevated border-l border-border p-lg" showsVerticalScrollIndicator={false}>
+          {/* Quick Stats */}
+          <QuickStats client={client} />
+
+          {/* Client P&L — staff only */}
+          <ClientPL client={client} />
+
+          {/* Tags — staff only, add/remove */}
+          <TagManagement client={client} />
+
+          {/* Insurance */}
+          <InsuranceSummary
+            clientId={client.id}
+            onEdit={() => setShowInsurance(true)}
+          />
+
+          {/* Lifestyle */}
+          <LifestyleSummary
+            clientId={client.id}
+            onFill={() => setShowLifestyle(true)}
+          />
+
+          {/* Multi-Pair CTA */}
+          <MultiPairCTA
+            clientId={client.id}
+            onGenerate={() => setShowMultiPair(true)}
+          />
+
+          {/* Actions */}
+          <Text className="text-bodyStrong text-text-primary mb-sm">Actions</Text>
           <ActionButton
             icon={<User color="#FFFFFF" size={20} />}
             label="Start Session"
@@ -140,34 +185,28 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
             variant="secondary"
             onPress={() => router.push(`/more/custom-design?clientId=${client.id}&clientName=${encodeURIComponent(name)}`)}
           />
-          <ActionButton
-            icon={<ClipboardList color="#2B2B2B" size={20} />}
-            label="Rx Pipeline"
-            variant="secondary"
-            onPress={() => router.push('/more/rx-pipeline')}
-          />
-          <ActionButton
-            icon={<Users2 color="#2B2B2B" size={20} />}
-            label="Multi-Pair"
-            variant="secondary"
-            onPress={() => handleStartSession()}
-          />
-          <ActionButton
-            icon={<Lightbulb color="#2B2B2B" size={20} />}
-            label="AI Stylist"
-            variant="secondary"
-            onPress={() => {/* TODO: AI Stylist modal */}}
-          />
-          {privacyMode === 'staff' && (
-            <ActionButton
-              icon={<Plus color="#2B2B2B" size={20} />}
-              label="Add Note"
-              variant="secondary"
-              onPress={() => setActiveTab('history')}
-            />
-          )}
-        </View>
+
+          {/* Bottom spacing */}
+          <View className="h-xl" />
+        </ScrollView>
       </View>
+
+      {/* ─── Modal sheets ───────────────────────────────────────── */}
+      <InsuranceFormSheet
+        clientId={client.id}
+        visible={showInsurance}
+        onClose={() => setShowInsurance(false)}
+      />
+      <LifestyleQuestionnaireSheet
+        clientId={client.id}
+        visible={showLifestyle}
+        onClose={() => setShowLifestyle(false)}
+      />
+      <MultiPairResultsSheet
+        clientId={client.id}
+        visible={showMultiPair}
+        onClose={() => setShowMultiPair(false)}
+      />
     </View>
   );
 }
@@ -212,15 +251,25 @@ function OverviewTab({
         />
         {privacyMode === 'staff' && (
           <View className="mt-sm pt-sm border-t border-border">
+            <View className="flex-row items-center mb-sm">
+              <Text className="text-body text-text-muted w-32">Status</Text>
+              <Text className="text-body text-text-primary font-medium">{capitalize(client.status)}</Text>
+            </View>
+            <RxStatus clientId={client.id} />
+            <NextAppointment clientId={client.id} />
+          </View>
+        )}
+        {privacyMode === 'staff' && (
+          <View className="mt-sm pt-sm border-t border-border">
             <View className="flex-row items-center">
               <Text className="text-body text-text-muted w-32">Tags</Text>
               <View className="flex-1 flex-row flex-wrap gap-xs">
-                {client.tags.map((tag) => (
+                {(client.tags ?? []).map((tag) => (
                   <View key={tag} className="bg-bg-page px-sm py-xs rounded-md">
                     <Text className="text-caption text-text-primary">{tag}</Text>
                   </View>
                 ))}
-                {client.tags.length === 0 && (
+                {(client.tags ?? []).length === 0 && (
                   <Text className="text-body text-text-muted italic">No tags</Text>
                 )}
               </View>
@@ -317,4 +366,10 @@ function ActionButton({
       </Text>
     </Pressable>
   );
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

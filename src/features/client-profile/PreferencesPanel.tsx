@@ -4,6 +4,7 @@ import { Heart, Pencil, Plus, X } from 'lucide-react-native';
 import { useClientPreferences, useUpdatePreferences } from '@/src/api/useClients';
 import { Card, LoadingState } from '@/src/ui';
 import { toast } from '@/src/ui/useToastStore';
+import { DerivedPreferencesCard } from './DerivedPreferencesCard';
 import type { StatedPreferences } from '@/src/api/clients.types';
 
 interface PreferencesPanelProps {
@@ -92,24 +93,7 @@ export function PreferencesPanel({ clientId }: PreferencesPanelProps) {
 
             {/* Derived preferences */}
             {derived && (
-              <View className="mt-lg pt-lg border-t border-border">
-                <Text className="text-bodyStrong text-text-primary mb-sm">Derived (from history)</Text>
-                <DerivedRow label="Shapes" data={derived.derivedShapes} />
-                <DerivedRow label="Materials" data={derived.derivedMaterials} />
-                <DerivedRow label="Colours" data={derived.derivedColours} />
-                {derived.derivedPriceRange && (
-                  <View className="flex-row items-center mt-sm">
-                    <Text className="text-body text-text-muted w-24">Price range</Text>
-                    <Text className="text-body text-text-primary">
-                      ${derived.derivedPriceRange.min} – ${derived.derivedPriceRange.max} (avg ${derived.derivedPriceRange.avg})
-                    </Text>
-                  </View>
-                )}
-                <Text className="text-caption text-text-muted mt-sm">
-                  Based on {derived.sourceOrderCount} orders
-                  {derived.lastComputedAt ? ` · Updated ${new Date(derived.lastComputedAt).toLocaleDateString()}` : ''}
-                </Text>
-              </View>
+              <DerivedPreferencesCard derived={derived} />
             )}
 
             {/* Empty state */}
@@ -137,24 +121,6 @@ function PreferenceRow({ label, items }: { label: string; items: string[] }) {
         {items.map((item) => (
           <View key={item} className="bg-bg-page px-sm py-xs rounded-md">
             <Text className="text-caption text-text-primary">{item}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function DerivedRow({ label, data }: { label: string; data: Record<string, number> }) {
-  const sorted = Object.entries(data).sort(([, a], [, b]) => b - a).slice(0, 5);
-  if (sorted.length === 0) return null;
-  return (
-    <View className="flex-row items-start mt-sm">
-      <Text className="text-body text-text-muted w-24">{label}</Text>
-      <View className="flex-1 flex-row flex-wrap gap-xs">
-        {sorted.map(([name, score]) => (
-          <View key={name} className="bg-bg-page px-sm py-xs rounded-md flex-row items-center">
-            <Text className="text-caption text-text-primary">{name}</Text>
-            <Text className="text-caption text-text-muted ml-xs">({Math.round(score * 100)}%)</Text>
           </View>
         ))}
       </View>

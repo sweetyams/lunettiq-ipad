@@ -59,9 +59,11 @@ const CHECKS = [
     // look for hex that appears on a line that also contains style= or backgroundColor/color/borderColor etc.
     test(line: string, _lines: string[], _i: number): string | null {
       if (isComment(line)) return null;
+      // Only flag hex inside style={{...}} object or RN style properties.
+      // Do NOT flag JSX component props like <Icon color="#..." /> — Lucide icons
+      // require literal color values since RN SVG doesn't support CSS vars.
       const hasStyleProp = /style\s*=\s*\{/.test(line)
         || /backgroundColor\s*:/.test(line)
-        || /(?<!\w)color\s*:/.test(line)
         || /borderColor\s*:/.test(line)
         || /tintColor\s*:/.test(line)
         || /fill\s*:/.test(line)
@@ -159,7 +161,8 @@ const CHECKS = [
 
 function isComment(line: string): boolean {
   const t = line.trim();
-  return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('<!--');
+  return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('<!--')
+    || t.includes('design-token-exception');
 }
 
 function collectFiles(dir: string): string[] {

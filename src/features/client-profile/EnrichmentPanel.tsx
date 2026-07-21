@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
-import { Glasses, Pencil, Check, X } from 'lucide-react-native';
+import { Glasses, Pencil, Check, X, MapPin } from 'lucide-react-native';
 import { useClientEnrichment, useUpdateEnrichment } from '@/src/api/useClients';
+import { useLocations } from '@/src/api/useLocations';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Card, LoadingState } from '@/src/ui';
 import { toast } from '@/src/ui/useToastStore';
+import { LocationPickerSheet } from './LocationPickerSheet';
 import type { EnrichmentUpdateParams } from '@/src/api/clients.types';
 
 interface EnrichmentPanelProps {
@@ -13,15 +15,33 @@ interface EnrichmentPanelProps {
 
 export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
   const { data: enrichment, isLoading } = useClientEnrichment(clientId);
+  const { data: locations } = useLocations();
   const updateEnrichment = useUpdateEnrichment();
   const privacyMode = usePrivacyStore((s) => s.mode);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [draftValue, setDraftValue] = useState('');
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const handleStartEdit = useCallback((field: string, currentValue: string | number | null) => {
     setEditingField(field);
     setDraftValue(currentValue != null ? String(currentValue) : '');
   }, []);
+
+  const handlePickLocation = useCallback((locationId: string) => {
+    const data: EnrichmentUpdateParams = { homeLocationId: locationId };
+    
+    updateEnrichment.mutate(
+      { clientId, data },
+      {
+        onSuccess: () => {
+          toast.success('Home location updated');
+        },
+        onError: () => {
+          toast.error('Failed to update location');
+        },
+      }
+    );
+  }, [clientId, updateEnrichment]);
 
   const handleSave = useCallback(
     (field: string) => {
@@ -49,16 +69,25 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
 
   if (isLoading) return <Card><LoadingState /></Card>;
 
+  const selectedLocation = locations?.find(loc => loc.id === enrichment?.homeLocationId);
+
   const rows: Array<{
     key: string;
     label: string;
     value: string | number | null;
     suffix?: string;
     numeric?: boolean;
+    picker?: boolean;
   }> = [
     { key: 'faceShape', label: 'Face shape', value: enrichment?.faceShape ?? null },
     { key: 'frameWidthMm', label: 'Frame width', value: enrichment?.frameWidthMm ?? null, suffix: 'mm', numeric: true },
     { key: 'bridgeWidthMm', label: 'Bridge width', value: enrichment?.bridgeWidthMm ?? null, suffix: 'mm', numeric: true },
+    { 
+      key: 'homeLocation', 
+      label: 'Home location', 
+      value: selectedLocation?.name ?? null, 
+      picker: true 
+    },
   ];
 
   return (
@@ -107,10 +136,20 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
               </>
             ) : (
               <Pressable
-                onPress={() => handleStartEdit(row.key, row.value)}
+                onPress={() => {
+                  if (row.picker) {
+                    setShowLocationPicker(true);
+                  } else {
+                    handleStartEdit(row.key, row.value);
+                  }
+                }}
                 className="flex-1 flex-row items-center min-h-[44px]"
                 accessibilityRole="button"
-                accessibilityLabel={`${row.label}: ${row.value ? `${row.value}${row.suffix ?? ''}` : 'Not measured'}. Tap to edit`}
+                accessibilityLabel={
+                  row.picker
+                    ? `${row.label}: ${row.value || 'Not set'}. Tap to select location`
+                    : `${row.label}: ${row.value ? `${row.value}${row.suffix ?? ''}` : 'Not measured'}. Tap to edit`
+                }
               >
                 <Text className="text-body text-text-muted w-32">{row.label}</Text>
                 <Text
@@ -118,9 +157,16 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
                     row.value != null ? 'text-text-primary' : 'text-text-muted italic'
                   }`}
                 >
-                  {row.value != null ? `${row.value}${row.suffix ?? ''}` : 'Not measured'}
+                  {row.value != null 
+                    ? `${row.value}${row.suffix ?? ''}` 
+                    : (row.picker ? 'Not set' : 'Not measured')
+                  }
                 </Text>
-                <Pencil color="#6B6B6B" size={16} />
+                {row.picker ? (
+                  <MapPin color="#6B6B6B" size={16} />
+                ) : (
+                  <Pencil color="#6B6B6B" size={16} />
+                )}
               </Pressable>
             )}
           </View>
@@ -185,6 +231,14 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
           </View>
         )}
       </Card>
+
+      {/* Location Picker Sheet */}
+      <LocationPickerSheet
+        isOpen={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={handlePickLocation}
+        selectedLocationId={enrichment?.homeLocationId}
+      />
     </View>
   );
 }

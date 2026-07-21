@@ -12,7 +12,7 @@ export function ClientCard({ client, onPress, isSelected = false }: ClientCardPr
   const initials = [client.firstName?.[0], client.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?';
 
   // Extract tier from tags (e.g. "member-cult" → "CULT")
-  const tierTag = client.tags.find((t) => t.startsWith('member-'));
+  const tierTag = (client.tags ?? []).find((t) => t.startsWith('member-'));
   const tier = tierTag ? tierTag.replace('member-', '').toUpperCase() : null;
 
   return (

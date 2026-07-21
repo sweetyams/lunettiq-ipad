@@ -6,6 +6,7 @@ import type { Interaction } from '../api/interactions.types';
 
 interface TimelineEntryProps {
   interaction: Interaction;
+  isLast?: boolean;
 }
 
 function getInteractionIcon(type: string) {
@@ -37,7 +38,7 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function TimelineEntry({ interaction }: TimelineEntryProps) {
+export function TimelineEntry({ interaction, isLast = false }: TimelineEntryProps) {
   const privacyMode = usePrivacyStore((state) => state.mode);
   
   // Hide internal notes in client mode
@@ -49,7 +50,7 @@ export function TimelineEntry({ interaction }: TimelineEntryProps) {
   const IconComponent = getInteractionIcon(interaction.type);
 
   return (
-    <View className="flex-row items-start p-md border-b border-border bg-bg-elevated">
+    <View className={`flex-row items-start p-md bg-bg-elevated ${isLast ? '' : 'border-b border-border'}`}>
       {/* Icon */}
       <View className="mr-sm mt-xs">
         <IconComponent size={20} color="#6B6B6B" />

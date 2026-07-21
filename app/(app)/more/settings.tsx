@@ -139,7 +139,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* WiFi-only uploads toggle */}
-            <View className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]">
+            <View className="flex-row items-center px-lg py-md min-h-[44px]">
               <Wifi size={16} color="#6B6B6B" />
               <Text className="text-body text-text-primary ml-sm flex-1">Upload photos on WiFi only</Text>
               <Switch
@@ -150,7 +150,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Force sync button */}
-            <View className="px-lg py-md">
+            <View className="px-lg py-md border-t border-border">
               <Button
                 variant="secondary"
                 onPress={handleForceSync}
@@ -171,8 +171,8 @@ export default function SettingsScreen() {
         <View>
           <Text className="text-displayMd text-text-primary mb-md">Cache</Text>
           <View className="bg-bg-surface rounded-lg border border-border">
-            {Object.entries(dbStats).map(([key, value]) => (
-              <View key={key} className="flex-row items-center px-lg py-sm border-b border-border">
+            {Object.entries(dbStats).map(([key, value], index, arr) => (
+              <View key={key} className={`flex-row items-center px-lg py-sm ${index < arr.length - 1 ? 'border-b border-border' : ''}`}>
                 <Text className="text-body text-text-primary flex-1 capitalize">
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </Text>
@@ -213,7 +213,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Permissions */}
-            <View className="px-lg py-md border-b border-border">
+            <View className="px-lg py-md">
               <Text className="text-bodyStrong text-text-primary mb-xs">Permissions</Text>
               <View className="flex-row flex-wrap gap-xs">
                 {permissions.length > 0 ? (
@@ -231,7 +231,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Sign out */}
-            <View className="px-lg py-md">
+            <View className="px-lg py-md border-t border-border">
               <Pressable
                 onPress={() => signOut()}
                 className="flex-row items-center justify-center py-sm min-h-[44px]"
