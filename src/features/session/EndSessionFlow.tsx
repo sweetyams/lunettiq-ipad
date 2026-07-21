@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, Pressable, TextInput, Switch, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, TextInput, Switch, ScrollView } from 'react-native';
 import { ShoppingBag, Calendar, Star, DoorOpen, ChevronLeft, ScanLine } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useCreateInteraction } from '@/src/api/useInteractions';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
+import { toast } from '@/src/ui/useToastStore';
 import type { QuickTag } from '@/src/api/sessions.types';
 
 type Step = 1 | 2 | 3;
@@ -106,13 +107,12 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
   };
 
   const handleBarcodeScan = () => {
-    // TODO: Implement barcode scanning for order linking
-    Alert.alert('Barcode Scan', 'Barcode scanning not yet implemented');
+    toast.info('Barcode Scan', 'Barcode scanning for order linking coming soon.');
   };
 
   const handleComplete = async () => {
     if (!activeClientId || !sessionId || !outcome) {
-      Alert.alert('Error', 'Missing required session data');
+      toast.error('Missing data', 'Required session data is incomplete. Please try again.');
       return;
     }
 
@@ -172,7 +172,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       
     } catch (error) {
       console.error('Failed to end session:', error);
-      Alert.alert('Error', 'Failed to save session. Please try again.');
+      toast.error('Save failed', 'Failed to save session. Please try again.');
     }
   };
 

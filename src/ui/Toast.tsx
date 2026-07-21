@@ -130,7 +130,7 @@ export function ToastContainer() {
 
   return (
     <View
-      className="absolute top-0 left-0 right-0 z-50 px-xl pt-md"
+      className="absolute top-[26px] left-0 right-0 z-50 px-xl pt-md"
       pointerEvents="box-none"
     >
       {toasts.map((t) => (

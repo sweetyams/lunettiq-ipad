@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, Hand } from 'lucide-react-native';
+import { CameraCapturedPicture } from 'expo-camera';
 import { useFittingStore } from '@/src/features/fitting/useFittingStore';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
@@ -10,6 +11,7 @@ import { ShelfThumbnail } from '@/src/features/fitting/ShelfThumbnail';
 import { CompareView } from '@/src/features/fitting/CompareView';
 import { FrameDetailPopover } from '@/src/features/fitting/FrameDetailPopover';
 import { HandedToClientView } from '@/src/features/fitting/HandedToClientView';
+import { CaptureView } from '@/src/camera/CaptureView';
 import { Button } from '@/src/ui/Button';
 import { TopBar } from '@/src/ui/TopBar';
 import { toast } from '@/src/ui/useToastStore';
@@ -60,7 +62,7 @@ export default function FittingScreen() {
     };
   }, [activeClientId, id, startFittingStore, startSessionFitting, endFittingStore, endSessionFitting, router]);
 
-  const handleCapture = () => {
+  const handleCapture = (photo: CameraCapturedPicture) => {
     // Check consent on first capture
     if (photos.length === 0 && consentStatus === 'pending') {
       return; // ConsentModal will handle this
@@ -78,11 +80,11 @@ export default function FittingScreen() {
       return;
     }
 
-    // Create mock photo for now (real camera integration later)
-    const mockPhoto: SessionPhoto = {
+    // Create photo record from captured image
+    const sessionPhoto: SessionPhoto = {
       id: `photo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      localUri: `mock://photo_${photos.length + 1}`,
-      thumbnailUri: `mock://thumb_${photos.length + 1}`,
+      localUri: photo.uri,
+      thumbnailUri: photo.uri, // TODO: Generate proper thumbnail
       r2Key: null,
       productId: null,
       productName: null,
@@ -93,14 +95,14 @@ export default function FittingScreen() {
       uploadStatus: 'pending',
     };
 
-    addPhoto(mockPhoto);
+    addPhoto(sessionPhoto);
   };
 
   const handleConsentResponse = (granted: boolean) => {
     setConsent(granted);
-    if (granted) {
-      // Proceed with first capture
-      handleCapture();
+    // Camera is now live, user can capture when ready
+    if (!granted) {
+      toast.info('No Photo Mode', 'You can still log frames tried using the barcode scanner.');
     }
   };
 
@@ -151,7 +153,6 @@ export default function FittingScreen() {
 
   const selectedPhotos = photos.filter(p => selectedPhotoIds.includes(p.id));
   const showConsentModal = photos.length === 0 && consentStatus === 'pending';
-  const isCapturing = false; // Will be true during actual camera capture
 
   // Show HANDED mode when device is handed to client
   if (handedToClient) {
@@ -181,39 +182,29 @@ export default function FittingScreen() {
       />
 
       {/* Camera Feed Area */}
-      <View className="flex-1 items-center justify-center relative">
-        {/* Placeholder for camera feed */}
-        <View className="flex-1 w-full bg-black items-center justify-center">
-          <Camera size={48} color="#6B6B6B" />
-          <Text className="text-text-inverse text-body mt-md opacity-70">
-            Camera feed placeholder
-          </Text>
-          
-          {/* Face guide overlay */}
-          <View className="absolute inset-0 items-center justify-center">
-            <View className="w-64 h-80 border-2 border-dashed border-white/30 rounded-full" />
+      <View className="flex-1">
+        {consentStatus === 'declined' ? (
+          // No-photo mode - show frame logging interface
+          <View className="flex-1 items-center justify-center bg-black">
+            <Camera size={48} color="#6B6B6B" />
+            <Text className="text-text-inverse text-headline mt-lg mb-md">
+              No Photo Mode
+            </Text>
+            <Text className="text-text-inverse text-body opacity-70 text-center px-xl">
+              Use the barcode scanner or product search to log frames tried
+            </Text>
           </View>
-        </View>
-
-        {/* Capture Button */}
-        <Pressable
-          onPress={handleCapture}
-          disabled={isCapturing || (consentStatus === 'declined' ? false : photos.length >= maxPhotos)}
-          className={`
-            absolute right-8 w-18 h-18 rounded-full bg-bg-elevated border-4 border-white/30 items-center justify-center
-            ${isCapturing || photos.length >= maxPhotos ? 'opacity-50' : ''}
-          `}
-          style={{ 
-            top: '50%', 
-            marginTop: -36, // Half of height (72px / 2)
-            minWidth: 72,
-            minHeight: 72,
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Capture photo"
-        >
-          <View className="w-16 h-16 rounded-full bg-bg-elevated border-2 border-gray-300" />
-        </Pressable>
+        ) : (
+          // Camera mode - show live camera feed
+          <CaptureView
+            onCapture={handleCapture}
+            maxPhotos={maxPhotos}
+            currentCount={photos.length}
+            disabled={photos.length >= maxPhotos}
+            showMirrorToggle={true}
+            onClose={handleExit}
+          />
+        )}
       </View>
 
       {/* Photo Shelf */}

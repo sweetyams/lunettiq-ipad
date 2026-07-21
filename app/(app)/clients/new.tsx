@@ -105,7 +105,7 @@ export default function NewClientScreen() {
 
       router.replace(`/clients/${newClient.id}`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create client. Please try again.');
+      toast.error('Error', 'Failed to create client. Please try again.');
     }
   };
 
@@ -114,7 +114,7 @@ export default function NewClientScreen() {
   };
 
   const handleSaveReminder = () => {
-    Alert.alert('Reminder saved', 'We\'ll remind you to create this client when you\'re back online.');
+    toast.success('Reminder saved', 'We\'ll remind you to create this client when you\'re back online.');
     router.back();
   };
 

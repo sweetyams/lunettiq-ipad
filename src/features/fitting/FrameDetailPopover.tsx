@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { X, Link, Star, Trash2, BarChart3 } from 'lucide-react-native';
 import { VerdictControl } from './VerdictControl';
 import { Button } from '@/src/ui/Button';
+import { toast } from '@/src/ui/useToastStore';
 import type { SessionPhoto, Verdict } from './fitting.types';
 
 interface FrameDetailPopoverProps {
@@ -78,13 +79,8 @@ export function FrameDetailPopover({
     onShortlist(photo.id);
     setIsShortlisted(true);
     
-    // Show confirmation toast (simplified as alert for now)
-    Alert.alert(
-      'Added to Shortlist', 
-      `Held until ${formattedDate}`,
-      [{ text: 'OK' }],
-      { cancelable: true }
-    );
+    // Show confirmation toast
+    toast.success('Added to Shortlist', `Held until ${formattedDate}`);
   };
 
   const handleDelete = () => {

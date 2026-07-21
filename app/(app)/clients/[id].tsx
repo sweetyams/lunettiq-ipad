@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { 
   Mail, Phone, MapPin, CreditCard, User, Eye, Glasses, 
   Heart, ShoppingBag, Star, Calendar, MessageCircle, 
-  FileText, Plus, Palette, Lightbulb 
+  FileText, Plus, Palette, Lightbulb, Play, ArrowRight
 } from 'lucide-react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useClient } from '@/src/api/useClients';
@@ -57,6 +57,8 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
   const router = useRouter();
   const privacyMode = usePrivacyStore((s) => s.mode);
   const startSession = useSessionStore((s) => s.startSession);
+  const activeClientId = useSessionStore((s) => s.activeClientId);
+  const sessionMode = useSessionStore((s) => s.mode);
   
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
   const initials = [client.firstName?.[0], client.lastName?.[0]]
@@ -82,6 +84,15 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
     startSession(client.id, name);
     router.push(`/clients/${client.id}/session`);
   };
+
+  const handleGoToSession = () => {
+    router.push(`/clients/${client.id}/session`);
+  };
+
+  // Is there already an active session for THIS client?
+  const hasActiveSessionForClient = activeClientId === client.id && sessionMode !== 'idle';
+  // Is there a session active for a DIFFERENT client?
+  const hasSessionForOtherClient = activeClientId !== null && activeClientId !== client.id && sessionMode !== 'idle';
 
   return (
     <View className="flex-1 bg-bg-page">
@@ -190,12 +201,37 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
 
         {/* Right action bar */}
         <View className="w-48 bg-bg-elevated border-l border-border p-lg">
-          <ActionButton
-            icon={<User color="#FFFFFF" size={20} />}
-            label="Start Session"
-            variant="primary"
-            onPress={handleStartSession}
-          />
+          {/* Session actions — context-aware */}
+          {hasActiveSessionForClient ? (
+            <>
+              <ActionButton
+                icon={<ArrowRight color="#FFFFFF" size={20} />}
+                label="Go to Session"
+                variant="primary"
+                onPress={handleGoToSession}
+              />
+              <ActionButton
+                icon={<Play color="#FFFFFF" size={20} />}
+                label="Start Fitting"
+                variant="primary"
+                onPress={() => router.push(`/clients/${client.id}/fitting`)}
+              />
+            </>
+          ) : hasSessionForOtherClient ? (
+            <View className="bg-warning/10 rounded-md p-md mb-md">
+              <Text className="text-caption text-warning text-center">
+                Session active with another client
+              </Text>
+            </View>
+          ) : (
+            <ActionButton
+              icon={<User color="#FFFFFF" size={20} />}
+              label="Start Session"
+              variant="primary"
+              onPress={handleStartSession}
+            />
+          )}
+          
           <ActionButton
             icon={<Eye color="#2B2B2B" size={20} />}
             label="Second Sight"
