@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { usePrivacyStore, completeReclaimFromClient } from '@/src/features/privacy/PrivacyModeProvider';
 import { useFittingStore } from './useFittingStore';
 
 const HANDED_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
@@ -11,7 +11,7 @@ interface HandedModeState {
 }
 
 export function useHandedMode() {
-  const { handedToClient, handToClient, reclaimFromClient } = usePrivacyStore();
+  const { handedToClient, handToClient } = usePrivacyStore();
   const { setVerdict } = useFittingStore();
   const [state, setState] = useState<HandedModeState>({
     isHanded: handedToClient,
@@ -58,9 +58,11 @@ export function useHandedMode() {
   const handleTopEdgePress = () => {
     const now = Date.now();
     const timeSinceLastTap = now - lastTapTimeRef.current;
+    console.log(`[Handed] tap — count=${tapCountRef.current} timeSince=${timeSinceLastTap}ms`);
 
     if (tapCountRef.current === 1 && timeSinceLastTap < DOUBLE_TAP_TIMEOUT) {
       // Second tap within window — trigger exit
+      console.log('[Handed] double-tap detected — exiting');
       tapCountRef.current = 0;
       lastTapTimeRef.current = 0;
       if (tapTimeoutRef.current) {
@@ -86,24 +88,11 @@ export function useHandedMode() {
   };
 
   const handleExitGesture = async () => {
-    // This would trigger biometric authentication in real implementation
-    // For now, we'll simulate it
-    try {
-      // TODO: Integrate with expo-local-authentication
-      // const { success } = await LocalAuthentication.authenticateAsync({
-      //   promptMessage: 'Staff authentication required',
-      //   fallbackLabel: 'Use passcode',
-      // });
-      
-      // Simulate successful biometric auth for now
-      const success = true;
-      
-      if (success) {
-        reclaimFromClient();
-      }
-    } catch (error) {
-      console.error('Biometric authentication failed:', error);
-    }
+    console.log('[Handed] handleExitGesture called — reclaiming');
+    // TODO: Integrate expo-local-authentication biometric prompt before reclaiming
+    // const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Staff auth' });
+    // if (!result.success) return;
+    completeReclaimFromClient();
   };
 
   const handleHandToClient = () => {
@@ -111,7 +100,7 @@ export function useHandedMode() {
   };
 
   const handleReclaim = () => {
-    reclaimFromClient();
+    completeReclaimFromClient();
   };
 
   // Client verdict handler - marks verdicts as client-set
