@@ -12,6 +12,8 @@ dist/
 web-build/
 .env.local
 .env
+.env.prod
+.env.dev
 *.tsbuildinfo
 
 # @generated expo-cli sync-2b81b286409207a5da26e14c78851eb30d8ccbdb
@@ -20,3 +22,6 @@ web-build/
 expo-env.d.ts
 # @end expo-cli.DS_Store
 **/.DS_Store
+
+# Foundry Method sync cache
+.foundry-method/
