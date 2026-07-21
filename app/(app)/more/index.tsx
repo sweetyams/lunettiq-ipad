@@ -14,7 +14,6 @@ import {
   FileText,
   ChevronRight,
 } from 'lucide-react-native';
-import { PermissionGate } from '@/src/ui/PermissionGate';
 import { useRxPipelineCounts } from '@/src/api/useRxPipeline';
 import { useRxApprovalSummary } from '@/src/api/useRxApprovals';
 
@@ -67,7 +66,7 @@ export default function MoreScreen() {
   const { signOut } = useAuth();
   const router = useRouter();
 
-  // Live badge counts
+  // Live badge counts — these queries fail gracefully if no permission
   const { data: rxCounts } = useRxPipelineCounts();
   const { data: approvalSummary } = useRxApprovalSummary();
 
@@ -87,61 +86,49 @@ export default function MoreScreen() {
       {/* Optical & Rx Section */}
       <SectionHeader title="Optical Workflows" />
       <View className="mx-xl bg-bg-surface rounded-lg border border-border overflow-hidden">
-        <PermissionGate permission="org:rx-pipeline:read">
-          <MenuRow
-            icon={<ClipboardList color="#1A1A1A" size={18} />}
-            label="Rx Pipeline"
-            description="Track orders from lab to pickup"
-            badge={readyForPickup}
-            onPress={() => router.push('/more/rx-pipeline')}
-          />
-        </PermissionGate>
-        <PermissionGate permission="org:rx:verify">
-          <MenuRow
-            icon={<FileCheck color="#1A1A1A" size={18} />}
-            label="Rx Approvals"
-            description="Review and sign off prescriptions"
-            badge={pendingApprovals}
-            onPress={() => router.push('/more/rx-approvals')}
-          />
-        </PermissionGate>
-        <PermissionGate permission="org:prescriptions:read">
-          <MenuRow
-            icon={<FileText color="#1A1A1A" size={18} />}
-            label="Prescriptions"
-            description="View and manage Rx records"
-            onPress={() => router.push('/more/rx-pipeline')}
-          />
-        </PermissionGate>
+        <MenuRow
+          icon={<ClipboardList color="#1A1A1A" size={18} />}
+          label="Rx Pipeline"
+          description="Track orders from lab to pickup"
+          badge={readyForPickup}
+          onPress={() => router.push('/more/rx-pipeline')}
+        />
+        <MenuRow
+          icon={<FileCheck color="#1A1A1A" size={18} />}
+          label="Rx Approvals"
+          description="Review and sign off prescriptions"
+          badge={pendingApprovals}
+          onPress={() => router.push('/more/rx-approvals')}
+        />
+        <MenuRow
+          icon={<FileText color="#1A1A1A" size={18} />}
+          label="Prescriptions"
+          description="View and manage Rx records"
+          onPress={() => router.push('/more/rx-pipeline')}
+        />
       </View>
 
       {/* Sales & Client Tools */}
       <SectionHeader title="Sales Tools" />
       <View className="mx-xl bg-bg-surface rounded-lg border border-border overflow-hidden">
-        <PermissionGate permission="org:multi_pair:recommend">
-          <MenuRow
-            icon={<Users2 color="#1A1A1A" size={18} />}
-            label="Multi-Pair"
-            description="Recommend multiple frames per lifestyle"
-            onPress={() => router.push('/clients')}
-          />
-        </PermissionGate>
-        <PermissionGate permission="org:loyalty:read">
-          <MenuRow
-            icon={<Award color="#1A1A1A" size={18} />}
-            label="Loyalty & Credits"
-            description="View balances and issue credits"
-            onPress={() => router.push('/clients')}
-          />
-        </PermissionGate>
-        <PermissionGate permission="org:receipts:read">
-          <MenuRow
-            icon={<Receipt color="#1A1A1A" size={18} />}
-            label="Insurance Receipts"
-            description="Generate and resend receipts"
-            onPress={() => router.push('/clients')}
-          />
-        </PermissionGate>
+        <MenuRow
+          icon={<Users2 color="#1A1A1A" size={18} />}
+          label="Multi-Pair"
+          description="Recommend multiple frames per lifestyle"
+          onPress={() => router.push('/clients')}
+        />
+        <MenuRow
+          icon={<Award color="#1A1A1A" size={18} />}
+          label="Loyalty & Credits"
+          description="View balances and issue credits (from client profile)"
+          onPress={() => router.push('/clients')}
+        />
+        <MenuRow
+          icon={<Receipt color="#1A1A1A" size={18} />}
+          label="Insurance Receipts"
+          description="Generate and resend receipts (from client profile)"
+          onPress={() => router.push('/clients')}
+        />
       </View>
 
       {/* Intake & Custom */}
