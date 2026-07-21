@@ -142,6 +142,35 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     onDismiss();
   }, [onDismiss]);
 
+  /** Quick end — skips email and notes steps, ends session immediately */
+  const handleQuickEnd = useCallback(async () => {
+    if (!activeClientId || !sessionId) {
+      toast.error('Missing data', 'No active session found.');
+      return;
+    }
+
+    try {
+      await endSessionMutation.mutateAsync({
+        sessionId,
+        clientId: activeClientId,
+        outcomeTag: 'left_empty_handed',
+        sendSummary: false,
+        summaryLanguage: 'en',
+        internalNotes: '',
+        tags: [],
+        orderRef: undefined,
+      });
+
+      resetSession();
+      resetFitting();
+      router.replace('/(app)/home');
+      onComplete();
+    } catch (error) {
+      console.error('Failed to quick-end session:', error);
+      toast.error('Failed', 'Could not end session. Try again.');
+    }
+  }, [activeClientId, sessionId, endSessionMutation, resetSession, resetFitting, router, onComplete]);
+
   const handleOutcomeSelect = useCallback((selected: OutcomeTag) => {
     setOutcome(selected);
     setStep(2);
@@ -281,6 +310,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
               orderRef={orderRef}
               onOutcomeSelect={handleOutcomeSelect}
               onOrderRefChange={setOrderRef}
+              onQuickEnd={handleQuickEnd}
             />
           )}
           {step === 2 && (
@@ -339,9 +369,10 @@ interface Step1Props {
   orderRef: string;
   onOutcomeSelect: (outcome: OutcomeTag) => void;
   onOrderRefChange: (ref: string) => void;
+  onQuickEnd: () => void;
 }
 
-function Step1Outcome({ outcome, orderRef, onOutcomeSelect, onOrderRefChange }: Step1Props) {
+function Step1Outcome({ outcome, orderRef, onOutcomeSelect, onOrderRefChange, onQuickEnd }: Step1Props) {
   return (
     <View>
       <Text className="text-display-sm text-color-text-primary text-center mb-sm">
@@ -414,6 +445,20 @@ function Step1Outcome({ outcome, orderRef, onOutcomeSelect, onOrderRefChange }: 
           </View>
         </View>
       )}
+
+      {/* Quick end — skip steps, end immediately */}
+      <View className="mt-xl pt-xl border-t border-color-border">
+        <Pressable
+          onPress={onQuickEnd}
+          accessibilityRole="button"
+          accessibilityLabel="End session without notes or email"
+          className="min-h-[48px] rounded-lg border border-color-border items-center justify-center"
+        >
+          <Text className="text-body-lg text-color-text-muted">
+            Just end the session (no email, no notes)
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
