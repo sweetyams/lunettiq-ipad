@@ -1,6 +1,6 @@
 {
   "name": "ios-dev",
-  "description": "Lunettiq iPad app — Expo + React Native + WatermelonDB. Consumes Foundry API.",
+  "description": "Lunettiq iPad app — Expo + React Native + WatermelonDB. Consumes Foundry API. Scoped to app/feature code only.",
   "tools": ["*"],
   "resources": [
     "file://.kiro/steering/**/*.md",
@@ -9,5 +9,20 @@
   "hooks": {},
   "includeMcpJson": true,
   "model": "claude-sonnet-4",
-  "welcomeMessage": "Lunettiq iPad agent ready. Expo Router + TanStack Query + WatermelonDB. Say 'create feature X' to start a buildflow, or 'use #10-foundry-api' for the API contract."
+  "blockedPaths": [
+    ".kiro/steering/**",
+    ".kiro/working-method/**",
+    ".kiro/hooks/**",
+    ".kiro/prompts/**",
+    ".kiro/agents/**",
+    "scripts/**",
+    ".github/**",
+    ".githooks/**",
+    "*.config.*",
+    "package.json",
+    "eas.json",
+    "tsconfig.json",
+    ".editorconfig"
+  ],
+  "welcomeMessage": "Lunettiq iPad agent ready. Expo Router + TanStack Query + WatermelonDB. Say 'create feature X' to start a buildflow, or 'use #10-foundry-api' for the API contract.\n\nNote: This agent is scoped to app/ and src/ code. Infrastructure changes require the primary agent."
 }

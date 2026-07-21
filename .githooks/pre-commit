@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Git pre-commit hook — runs verification pipeline before allowing a commit.
+# Ensures no developer can commit without passing TypeScript, accessibility,
+# performance, and design-drift audits.
+#
+# To bypass in emergency: git commit --no-verify
+#
+
+echo "🔍 Running pre-commit verification..."
+echo ""
+
+# Run the full verify pipeline
+npm run verify
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit verification failed. Fix the issues above or use --no-verify to skip."
+  exit 1
+fi
+
+echo ""
+echo "✅ Pre-commit verification passed."
+exit 0
