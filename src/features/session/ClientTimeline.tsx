@@ -10,10 +10,10 @@ import { EmptyState } from '../../ui/EmptyState';
 import type { Interaction } from '../../api/interactions.types';
 
 interface ClientTimelineProps {
-  shopifyCustomerId: string;
+  clientId: string;
 }
 
-export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
+export function ClientTimeline({ clientId }: ClientTimelineProps) {
   const [noteText, setNoteText] = useState('');
   const [showAddNote, setShowAddNote] = useState(false);
 
@@ -22,7 +22,7 @@ export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
     isLoading,
     error,
     refetch,
-  } = useInteractions(shopifyCustomerId);
+  } = useInteractions(clientId);
 
   const createInteraction = useCreateInteraction();
 
@@ -31,11 +31,9 @@ export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
 
     try {
       await createInteraction.mutateAsync({
-        shopifyCustomerId,
+        clientId,
         type: 'note',
-        direction: 'internal',
-        body: noteText.trim(),
-        metadata: {},
+        notes: noteText.trim(),
       });
       
       setNoteText('');
@@ -69,14 +67,14 @@ export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
     return (
       <View className="flex-1">
         {/* Add Note Section */}
-        <View className="p-lg bg-offWhite border-b border-warmGrey">
+        <View className="p-lg bg-bg-page border-b border-border">
           <Button
             variant="primary"
             onPress={() => setShowAddNote(true)}
           >
             <View className="flex-row items-center">
               <Plus size={20} color="white" />
-              <Text className="text-white font-medium ml-sm">Add Note</Text>
+              <Text className="text-text-inverse font-medium ml-sm">Add Note</Text>
             </View>
           </Button>
         </View>
@@ -93,13 +91,13 @@ export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
   );
 
   return (
-    <View className="flex-1 bg-offWhite">
+    <View className="flex-1 bg-bg-page">
       {/* Add Note Section */}
-      <View className="bg-offWhite border-b border-warmGrey">
+      <View className="bg-bg-page border-b border-border">
         {showAddNote ? (
           <View className="p-lg">
             <TextInput
-              className="border border-warmGrey rounded-md p-md text-[17px] bg-white mb-md"
+              className="border border-border rounded-md p-md text-[17px] bg-bg-elevated mb-md"
               placeholder="Add a note about this client..."
               value={noteText}
               onChangeText={setNoteText}
@@ -135,7 +133,7 @@ export function ClientTimeline({ shopifyCustomerId }: ClientTimelineProps) {
             >
               <View className="flex-row items-center">
                 <Plus size={20} color="white" />
-                <Text className="text-white font-medium ml-sm">Add Note</Text>
+                <Text className="text-text-inverse font-medium ml-sm">Add Note</Text>
               </View>
             </Button>
           </View>

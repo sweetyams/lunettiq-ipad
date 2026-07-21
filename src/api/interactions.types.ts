@@ -14,8 +14,9 @@ export interface Interaction {
 }
 
 export interface CreateInteractionParams {
-  shopifyCustomerId: string;
+  clientId: string;
   type: string;
+  notes?: string;
   direction?: string;
   subject?: string;
   body?: string;
