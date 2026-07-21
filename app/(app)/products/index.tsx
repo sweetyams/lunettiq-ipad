@@ -1,22 +1,17 @@
-import { View, Text, FlatList, useWindowDimensions, RefreshControl } from 'react-native';
+import { View, Text, FlatList, Pressable, useWindowDimensions, RefreshControl } from 'react-native';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ScanLine } from 'lucide-react-native';
+import { ScanLine, SlidersHorizontal } from 'lucide-react-native';
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useFilters } from '@/src/api/useFilters';
 import { useClient } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { ProductCard, SearchBar, FilterPillRow, LoadingState, ErrorState, EmptyState, Button } from '@/src/ui';
+import { FilterSheet } from '@/src/ui/FilterSheet';
 import type { Product, ProductListParams } from '@/src/api/products.types';
 
-// --- Static filter definitions ---
-
-const STOCK_FILTERS = [
-  { key: 'stock-in', label: 'In stock', value: 'in' },
-  { key: 'stock-low', label: 'Low stock', value: 'low' },
-  { key: 'stock-out', label: 'Out of stock', value: 'out' },
-];
+// --- Sort options ---
 
 const SORT_OPTIONS = [
   { key: 'sort-newest', label: 'Newest', value: 'newest' },
@@ -49,6 +44,7 @@ export default function ProductsScreen() {
   const [selectedStock, setSelectedStock] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>('newest');
   const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [offset, setOffset] = useState(0);
 
   // Debounce search
@@ -225,6 +221,12 @@ export default function ProductsScreen() {
     ? `As of ${new Date(dataUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : null;
 
+  // Active filter count for badge
+  const activeFilterCount = useMemo(() => {
+    const facetCount = Object.values(selectedFacets).reduce((sum, v) => sum + v.length, 0);
+    return selectedStock.length + facetCount;
+  }, [selectedStock, selectedFacets]);
+
   // --- Render ---
 
   if (isLoading && !productsResponse) return <LoadingState />;
@@ -249,55 +251,64 @@ export default function ProductsScreen() {
         )}
       </View>
 
-      {/* Search */}
-      <View className="px-xl py-sm">
-        <View className="flex-row items-center space-x-sm">
-          <View className="flex-1">
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search products..."
-            />
-          </View>
-          <Button
-            variant="ghost"
-            onPress={() => router.push('/products/scanner')}
-            className="w-[44px] px-0"
-          >
-            <ScanLine size={20} color="#2B2B2B" />
-          </Button>
+      {/* Search + Filter bar — single row */}
+      <View className="px-xl py-sm border-b border-border flex-row items-center gap-sm">
+        <View className="flex-1">
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search products..."
+          />
         </View>
+        {/* Scan button */}
+        <Pressable
+          onPress={() => router.push('/products/scanner')}
+          className="w-[44px] h-[44px] items-center justify-center border border-border rounded-md bg-bg-elevated"
+          accessibilityRole="button"
+          accessibilityLabel="Scan barcode"
+        >
+          <ScanLine size={20} color="#2B2B2B" />
+        </Pressable>
+        {/* Filter button with active count badge */}
+        <Pressable
+          onPress={() => setShowFilterSheet(true)}
+          className={`min-h-[44px] px-md rounded-md flex-row items-center gap-xs border ${
+            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-elevated'
+          }`}
+          accessibilityRole="button"
+          accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+        >
+          <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#FFFFFF' : '#2B2B2B'} />
+          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-white' : 'text-text-primary'}`}>
+            {activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filter'}
+          </Text>
+        </Pressable>
       </View>
 
-      {/* Filter rows */}
+      {/* Sort pills — single row, always visible */}
       <View className="border-b border-border">
-        {/* Sort options */}
         <FilterPillRow
           filters={sortFilters}
           selected={[selectedSort]}
           onToggle={handleSortToggle}
         />
-        {/* Stock filters */}
-        <FilterPillRow
-          filters={STOCK_FILTERS}
-          selected={selectedStock}
-          onToggle={handleStockToggle}
-        />
-        {/* Faceted filters from API (colour, material, shape, etc.) */}
-        {filterData?.groups.map((group) => (
-          <FilterPillRow
-            key={group.id}
-            filters={group.values.map((v) => ({
-              key: `${group.code}-${v.value}`,
-              label: v.label?.en ?? v.value,
-              value: v.value,
-              swatchHex: v.swatchHex,
-            }))}
-            selected={selectedFacets[group.code] ?? []}
-            onToggle={(value) => handleFacetToggle(group.code, value)}
-          />
-        ))}
       </View>
+
+      {/* Filter sheet */}
+      <FilterSheet
+        visible={showFilterSheet}
+        onClose={() => setShowFilterSheet(false)}
+        filterData={filterData}
+        selectedFacets={selectedFacets}
+        selectedStock={selectedStock}
+        onFacetToggle={handleFacetToggle}
+        onStockToggle={handleStockToggle}
+        onClear={() => {
+          setSelectedFacets({});
+          setSelectedStock([]);
+        }}
+        activeCount={activeFilterCount}
+      />
 
       {/* Grid */}
       {products.length === 0 && !isLoading ? (

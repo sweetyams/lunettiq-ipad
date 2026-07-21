@@ -2,12 +2,12 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  User, Eye, Palette, Plus, Lightbulb, ChevronLeft,
+  User, Eye, Palette, Plus, Lightbulb, ChevronLeft, ClipboardList, Award, Users2,
 } from 'lucide-react-native';
 import { useClient, useUpdateClient } from '@/src/api/useClients';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
-import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
+import { LoadingState, ErrorState, EmptyState, PermissionGate } from '@/src/ui';
 import { toast } from '@/src/ui/useToastStore';
 import {
   ProfileHeader,
@@ -22,6 +22,8 @@ import {
   ProductInteractionsPanel,
   TryonSessionsPanel,
   LinksPanel,
+  LoyaltyPanel,
+  ReceiptsPanel,
 } from '@/src/features/client-profile';
 import type { ClientProfile, ClientUpdateParams } from '@/src/api/clients.types';
 
@@ -138,6 +140,22 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
             variant="secondary"
             onPress={() => router.push(`/more/custom-design?clientId=${client.id}`)}
           />
+          <PermissionGate permission="org:rx-pipeline:read">
+            <ActionButton
+              icon={<ClipboardList color="#2B2B2B" size={20} />}
+              label="Rx Pipeline"
+              variant="secondary"
+              onPress={() => router.push(`/more/rx-pipeline?clientId=${client.id}`)}
+            />
+          </PermissionGate>
+          <PermissionGate permission="org:multi_pair:recommend">
+            <ActionButton
+              icon={<Users2 color="#2B2B2B" size={20} />}
+              label="Multi-Pair"
+              variant="secondary"
+              onPress={() => router.push(`/clients/${client.id}/session`)}
+            />
+          </PermissionGate>
           <ActionButton
             icon={<Lightbulb color="#2B2B2B" size={20} />}
             label="AI Stylist"
@@ -221,6 +239,12 @@ function OverviewTab({
       {/* Preferences */}
       <PreferencesPanel clientId={client.id} />
 
+      {/* Loyalty credits — staff only */}
+      <LoyaltyPanel clientId={client.id} />
+
+      {/* Insurance receipts */}
+      <ReceiptsPanel clientId={client.id} />
+
       {/* Wishlist */}
       <WishlistPanel clientId={client.id} />
     </View>
@@ -228,10 +252,19 @@ function OverviewTab({
 }
 
 function HistoryTab({ clientId }: { clientId: string }) {
+  const router = useRouter();
   return (
     <View className="gap-lg">
       <InteractionsTimeline clientId={clientId} />
       <OrdersPanel clientId={clientId} />
+      <PermissionGate permission="org:rx-pipeline:read">
+        <Pressable
+          onPress={() => router.push(`/more/rx-pipeline?clientId=${clientId}`)}
+          className="flex-row items-center justify-between bg-bg-surface border border-border rounded-lg px-lg py-md min-h-[44px]"
+        >
+          <Text className="text-body text-navy">View Rx Pipeline orders →</Text>
+        </Pressable>
+      </PermissionGate>
       <TryonSessionsPanel clientId={clientId} />
       <ProductInteractionsPanel clientId={clientId} />
     </View>

@@ -7,6 +7,7 @@ interface ButtonProps {
   children: React.ReactNode;
   loading?: boolean;
   className?: string;
+  accessibilityLabel?: string;
 }
 
 export function Button({ 
@@ -15,7 +16,8 @@ export function Button({
   disabled = false, 
   children, 
   loading = false, 
-  className = '' 
+  className = '',
+  accessibilityLabel,
 }: ButtonProps) {
   const baseClasses = 'p-md rounded-md min-h-[44px] min-w-[44px] flex-row items-center justify-center';
   
@@ -40,6 +42,7 @@ export function Button({
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`}
     >
       {loading ? (

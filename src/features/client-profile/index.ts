@@ -11,4 +11,6 @@ export {
   ProductInteractionsPanel,
   TryonSessionsPanel,
   LinksPanel,
+  LoyaltyPanel,
+  ReceiptsPanel,
 } from './SupportingPanels';

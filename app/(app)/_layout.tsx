@@ -38,7 +38,7 @@ export default function AppLayout() {
             height: 60,
           },
           tabBarLabelStyle: {
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: '500',
           },
         }}

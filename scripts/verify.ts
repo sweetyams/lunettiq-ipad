@@ -20,8 +20,8 @@ const checks: Check[] = [
   // Core — must pass
   { name: 'TypeScript', cmd: 'npx tsc --noEmit' },
 
-  // Design system enforcement
-  { name: 'Design Drift', cmd: 'npx tsx scripts/audit-design-drift.ts', optional: true },
+  // Design system enforcement — hardcoded colors are a hard failure
+  { name: 'Design Drift', cmd: 'npx tsx scripts/audit-design-drift.ts' },
 
   // Accessibility (steering: 44pt targets, 17pt min, VoiceOver labels)
   { name: 'Accessibility', cmd: 'npx tsx scripts/audit-accessibility.ts', optional: true },

@@ -20,6 +20,7 @@ export { VerdictControl } from './VerdictControl';
 export { ShelfThumbnail } from './ShelfThumbnail';
 export { ConsentModal } from './ConsentModal';
 export { FilterPillRow } from './FilterPillRow';
+export { FilterSheet } from './FilterSheet';
 export { FitBadge } from './FitBadge';
 export { StockDot } from './StockDot';
 export { DevErrorBoundary } from './DevErrorBoundary';

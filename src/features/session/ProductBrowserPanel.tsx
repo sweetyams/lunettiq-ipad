@@ -1,19 +1,15 @@
-import { View, Text, FlatList, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, Pressable, useWindowDimensions } from 'react-native';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { SlidersHorizontal } from 'lucide-react-native';
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useFilters } from '@/src/api/useFilters';
-import { ProductCard, SearchBar, FilterPillRow, LoadingState, EmptyState } from '@/src/ui';
+import { ProductCard, SearchBar, FilterPillRow, LoadingState, EmptyState, Button } from '@/src/ui';
+import { FilterSheet } from '@/src/ui/FilterSheet';
 import type { Product, ProductListParams } from '@/src/api/products.types';
 
-// --- Filter definitions ---
-
-const STOCK_FILTERS = [
-  { key: 'stock-in', label: 'In stock', value: 'in' },
-  { key: 'stock-low', label: 'Low stock', value: 'low' },
-  { key: 'stock-out', label: 'Out of stock', value: 'out' },
-];
+// --- Sort options ---
 
 const SORT_OPTIONS = [
   { key: 'sort-best', label: 'Best match', value: 'best-match' },
@@ -55,6 +51,7 @@ export function ProductBrowserPanel({
   const [selectedStock, setSelectedStock] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState<string>('best-match');
   const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [offset, setOffset] = useState(0);
 
   // Debounce search
@@ -205,6 +202,12 @@ export function ProductBrowserPanel({
 
   const keyExtractor = useCallback((item: Product) => item.id ?? item.shopifyId, []);
 
+  // Active filter count for badge
+  const activeFilterCount = useMemo(() => {
+    const facetCount = Object.values(selectedFacets).reduce((sum, v) => sum + v.length, 0);
+    return selectedStock.length + facetCount;
+  }, [selectedStock, selectedFacets]);
+
   // Stale indicator
   const isStale = dataUpdatedAt > 0 && Date.now() - dataUpdatedAt > 10 * 60 * 1000;
   const staleLabel = isStale && dataUpdatedAt > 0
@@ -226,42 +229,54 @@ export function ProductBrowserPanel({
         )}
       </View>
 
-      {/* Search */}
-      <View className="px-lg py-xs">
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search frames..."
-        />
+      {/* Search + Filter bar */}
+      <View className="px-lg py-xs flex-row items-center gap-sm">
+        <View className="flex-1">
+          <SearchBar
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search frames..."
+          />
+        </View>
+        <Pressable
+          onPress={() => setShowFilterSheet(true)}
+          className={`min-h-[44px] px-md rounded-md flex-row items-center gap-xs border ${
+            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-elevated'
+          }`}
+          accessibilityRole="button"
+          accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
+        >
+          <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#FFFFFF' : '#2B2B2B'} />
+          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-white' : 'text-text-primary'}`}>
+            {activeFilterCount > 0 ? `${activeFilterCount}` : 'Filter'}
+          </Text>
+        </Pressable>
       </View>
 
-      {/* Filters */}
+      {/* Sort pills — single row */}
       <View className="border-b border-border">
         <FilterPillRow
           filters={SORT_OPTIONS}
           selected={[selectedSort]}
           onToggle={handleSortToggle}
         />
-        <FilterPillRow
-          filters={STOCK_FILTERS}
-          selected={selectedStock}
-          onToggle={handleStockToggle}
-        />
-        {/* Faceted filters from API */}
-        {filterData?.groups.map((group) => (
-          <FilterPillRow
-            key={group.id}
-            filters={group.values.map((v) => ({
-              key: `${group.code}-${v.value}`,
-              label: v.label?.en ?? v.value,
-              value: v.value,
-              swatchHex: v.swatchHex,
-            }))}
-            selected={selectedFacets[group.code] ?? []}
-            onToggle={(value) => handleFacetToggle(group.code, value)}
-          />
-        ))}
       </View>
+
+      {/* Filter sheet */}
+      <FilterSheet
+        visible={showFilterSheet}
+        onClose={() => setShowFilterSheet(false)}
+        filterData={filterData}
+        selectedFacets={selectedFacets}
+        selectedStock={selectedStock}
+        onFacetToggle={handleFacetToggle}
+        onStockToggle={handleStockToggle}
+        onClear={() => {
+          setSelectedFacets({});
+          setSelectedStock([]);
+        }}
+        activeCount={activeFilterCount}
+      />
 
       {/* Grid */}
       {isLoading && !productsResponse ? (

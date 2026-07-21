@@ -1,12 +1,14 @@
 import { View, Text, ScrollView, TextInput, Pressable } from 'react-native';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, ThumbsUp, HelpCircle, XCircle, FileText } from 'lucide-react-native';
+import { Heart, ThumbsUp, HelpCircle, XCircle, FileText, Users2 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useClient } from '@/src/api/useClients';
 import { useInteractions } from '@/src/api/useInteractions';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from './useSessionStore';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
+import { PermissionGate } from '@/src/ui/PermissionGate';
 import { AiStylistPanel } from '@/src/ui/AiStylistPanel';
 import type { FrameTried } from './useSessionStore';
 
@@ -34,6 +36,7 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
   const { data: client, isLoading, error, refetch } = useClient(clientId);
   const { data: interactionsData } = useInteractions(clientId);
   const mode = usePrivacyStore((s) => s.mode);
+  const router = useRouter();
   const {
     sessionNotes,
     setSessionNotes,
@@ -145,6 +148,25 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
             ))}
           </View>
         </SectionCard>
+      )}
+
+      {/* Multi-Pair — permission gated entry point from session */}
+      {mode === 'staff' && (
+        <PermissionGate permission="org:multi_pair:recommend">
+          <Pressable
+            onPress={() => router.push(`/clients/${clientId}/session`)}
+            className="mb-lg bg-bg-page border border-border rounded-lg px-md py-md flex-row items-center min-h-[44px]"
+            accessibilityRole="button"
+            accessibilityLabel="Open Multi-Pair recommendations"
+          >
+            <Users2 size={18} color="#0A153D" />
+            <View className="flex-1 ml-sm">
+              <Text className="text-bodyStrong text-navy">Multi-Pair</Text>
+              <Text className="text-caption text-text-muted">Recommend multiple frames</Text>
+            </View>
+            <Text className="text-body text-text-muted">→</Text>
+          </Pressable>
+        </PermissionGate>
       )}
 
       {/* Session Notes (always editable, autosave) */}

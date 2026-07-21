@@ -1,13 +1,28 @@
 #!/usr/bin/env tsx
 /**
- * audit-design-drift.ts — Detect violations of the design system contract.
+ * audit-design-drift.ts — Enforce the Lunettiq iPad design system contract.
  *
- * Scans for:
- * - Hardcoded hex colors (should use brand tokens via NativeWind)
- * - Custom shadows (forbidden — use border-based depth only)
- * - Wrong font sizes (below 17pt body minimum)
- * - System blue or non-brand colors
- * - Direct style prop usage (should use className)
+ * THE RULE: No hardcoded color values anywhere in component code.
+ * All colors must be referenced as NativeWind token classNames or as
+ * tokens from useDesignTokens(). Never bare hex, rgba, hsl, or color keywords
+ * inside style={} props.
+ *
+ * This mirrors the constraint in .kiro/steering/02-design-system.md Rule 1.
+ *
+ * Allowed token class prefixes (from tailwind.config.js):
+ *   bg-color-*, text-color-*, border-color-*, ring-color-*
+ *   bg-verdict-*, text-verdict-*
+ *   bg-mode-*, bg-chrome-*, text-chrome-*, border-chrome-*
+ *
+ * Scans: src/**\/*.{ts,tsx}  app/**\/*.{ts,tsx}
+ *
+ * Checks:
+ *   1. Hardcoded hex in style={} props          → ERROR
+ *   2. Hardcoded rgba/hsl in style={} props     → ERROR
+ *   3. Tailwind arbitrary color class bg-[#...] → ERROR
+ *   4. Custom shadows (use border-based depth)  → ERROR
+ *   5. Font size below 14px in style props      → ERROR
+ *   6. Any hex/rgba in string literals in code  → WARNING (may be in comments)
  */
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
@@ -15,165 +30,227 @@ import { join, relative } from 'path';
 const SRC_DIRS = ['src', 'app'];
 const EXTENSIONS = ['.tsx', '.ts'];
 
-// Brand palette — these are the ONLY allowed color references
-const BRAND_COLORS = [
-  '#0A153D', // navy
-  '#005D23', // green
-  '#F5F2EC', // offWhite
-  '#E8E4DE', // warmGrey
-  '#2B2B2B', // charcoal
-  '#6B6B6B', // midGrey
-  '#FFFFFF', // white
-  '#C53030', // error
-  '#D4A017', // warning
-  '#2D4A8A', // blue
+// Files where raw color values are legitimately defined — never flagged
+const ALWAYS_EXCLUDE = [
+  'tailwind.config',
+  'audit-design-drift',
+  '.kiro',
+  'node_modules',
+  '.d.ts',
 ];
 
-// Patterns that indicate design drift
-const VIOLATIONS = [
-  {
-    name: 'Hardcoded hex color (not in brand palette)',
-    pattern: /#[0-9A-Fa-f]{6}\b/g,
-    filter: (match: string, line: string) => {
-      // Allow brand colors and comments
-      if (BRAND_COLORS.includes(match.toUpperCase())) return false;
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) return false;
-      // Allow in tailwind config and design system definition files
-      return true;
-    },
-    excludeFiles: ['tailwind.config', 'design-system', 'tokens', 'theme'],
-  },
-  {
-    name: 'Custom shadow (use border-based depth)',
-    pattern: /shadow[-_]|boxShadow|elevation:\s*\d/g,
-    filter: (_match: string, line: string) => {
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) return false;
-      return true;
-    },
-    excludeFiles: ['tailwind.config'],
-  },
-  {
-    name: 'Inline style prop (use className)',
-    pattern: /style=\{\{[^}]*\}\}/g,
-    filter: (_match: string, line: string) => {
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) return false;
-      return true;
-    },
-    excludeFiles: [],
-  },
-  {
-    name: 'System blue color (banned — use brand tokens)',
-    pattern: /systemBlue|#007AFF|tintColor|color:\s*['"]blue['"]/gi,
-    filter: (_match: string, line: string) => {
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) return false;
-      return true;
-    },
-    excludeFiles: [],
-  },
-  {
-    name: 'Font size below 17pt minimum (accessibility)',
-    pattern: /fontSize:\s*(\d+)/g,
-    filter: (match: string, line: string) => {
-      if (line.trim().startsWith('//') || line.trim().startsWith('*')) return false;
-      const sizeMatch = match.match(/\d+/);
-      if (!sizeMatch) return false;
-      const size = parseInt(sizeMatch[0], 10);
-      // Allow sizes 14pt for captions (documented exception)
-      return size < 14 && size > 0;
-    },
-    excludeFiles: ['theme', 'tokens', 'tailwind'],
-  },
-];
-
-interface Issue {
+interface Violation {
   file: string;
   line: number;
+  severity: 'error' | 'warn';
   rule: string;
   match: string;
   context: string;
 }
 
+// ─── Check definitions ───────────────────────────────────────────────────────
+
+const CHECKS = [
+  {
+    id: 'no-hex-in-style',
+    severity: 'error' as const,
+    description: 'Hardcoded hex color in style prop (use token className)',
+    // Matches hex inside style={{...}} — single or multi-line heuristic:
+    // look for hex that appears on a line that also contains style= or backgroundColor/color/borderColor etc.
+    test(line: string, _lines: string[], _i: number): string | null {
+      if (isComment(line)) return null;
+      const hasStyleProp = /style\s*=\s*\{/.test(line)
+        || /backgroundColor\s*:/.test(line)
+        || /(?<!\w)color\s*:/.test(line)
+        || /borderColor\s*:/.test(line)
+        || /tintColor\s*:/.test(line)
+        || /fill\s*:/.test(line)
+        || /stroke\s*:/.test(line);
+      if (!hasStyleProp) return null;
+      const hexMatch = line.match(/#[0-9A-Fa-f]{3,8}\b/);
+      if (hexMatch) return hexMatch[0];
+      return null;
+    },
+  },
+  {
+    id: 'no-rgba-in-style',
+    severity: 'error' as const,
+    description: 'Hardcoded rgba/hsl/hsla in style prop (use token className)',
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const hasStyleProp = /style\s*=\s*\{/.test(line)
+        || /backgroundColor\s*:/.test(line)
+        || /(?<!\w)color\s*:/.test(line)
+        || /borderColor\s*:/.test(line)
+        || /tintColor\s*:/.test(line);
+      if (!hasStyleProp) return null;
+      const rgbaMatch = line.match(/rgba?\s*\(|hsla?\s*\(/i);
+      if (rgbaMatch) return rgbaMatch[0];
+      return null;
+    },
+  },
+  {
+    id: 'no-arbitrary-tailwind-color',
+    severity: 'error' as const,
+    description: 'Tailwind arbitrary color value bg-[#...] / text-[#...] (use token class)',
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const match = line.match(/(?:bg|text|border|ring)-\[#[0-9A-Fa-f]{3,8}\]/);
+      if (match) return match[0];
+      return null;
+    },
+  },
+  {
+    id: 'no-custom-shadow',
+    severity: 'error' as const,
+    description: 'Custom shadow (use border-based depth — see 02-design-system.md)',
+    excludeFiles: ['tailwind.config'],
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const match = line.match(/shadow-(?!none|inner|outline|sm|md|lg|xl|2xl)[a-z]|\bboxShadow\b|\belevation\s*:\s*[1-9]/i);
+      if (match) return match[0];
+      return null;
+    },
+  },
+  {
+    id: 'no-small-font',
+    severity: 'error' as const,
+    description: 'Font size below 14px in style prop (accessibility minimum)',
+    excludeFiles: ['tailwind.config', 'audit-'],
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const match = line.match(/fontSize\s*:\s*(\d+)/);
+      if (!match) return null;
+      const size = parseInt(match[1]!, 10);
+      if (size > 0 && size < 14) return match[0];
+      return null;
+    },
+  },
+  {
+    id: 'no-system-blue',
+    severity: 'error' as const,
+    description: 'System blue detected — use color-brand token instead',
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const match = line.match(/#007AFF|systemBlue/i);
+      if (match) return match[0];
+      return null;
+    },
+  },
+  {
+    id: 'warn-hex-in-code',
+    severity: 'warn' as const,
+    description: 'Hex color literal in code (verify it\'s not a hardcoded color)',
+    excludeFiles: ['tailwind.config', 'audit-'],
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      // Hex that isn't inside a token definition file
+      const match = line.match(/#[0-9A-Fa-f]{6}\b/);
+      // Only warn if it's on a JSX/return line, not in a config object
+      if (match && (line.includes('className=') || line.includes('style='))) {
+        return match[0];
+      }
+      return null;
+    },
+  },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isComment(line: string): boolean {
+  const t = line.trim();
+  return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('<!--');
+}
+
 function collectFiles(dir: string): string[] {
   const results: string[] = [];
   try {
-    const entries = readdirSync(dir);
-    for (const entry of entries) {
+    for (const entry of readdirSync(dir)) {
       const fullPath = join(dir, entry);
       if (entry.startsWith('.') || entry === 'node_modules') continue;
       const stat = statSync(fullPath);
-      if (stat.isDirectory()) {
-        results.push(...collectFiles(fullPath));
-      } else if (EXTENSIONS.some((ext) => entry.endsWith(ext))) {
-        results.push(fullPath);
-      }
+      if (stat.isDirectory()) results.push(...collectFiles(fullPath));
+      else if (EXTENSIONS.some(ext => entry.endsWith(ext))) results.push(fullPath);
     }
-  } catch {
-    // Directory doesn't exist yet
-  }
+  } catch { /* directory may not exist yet */ }
   return results;
 }
 
-function audit(): void {
-  const issues: Issue[] = [];
-  const root = process.cwd();
+// ─── Runner ──────────────────────────────────────────────────────────────────
 
-  const files = SRC_DIRS.flatMap((dir) => collectFiles(join(root, dir)));
+function audit(): void {
+  const violations: Violation[] = [];
+  const root = process.cwd();
+  const files = SRC_DIRS.flatMap(dir => collectFiles(join(root, dir)));
 
   for (const file of files) {
     const relPath = relative(root, file);
-    const content = readFileSync(file, 'utf8');
-    const lines = content.split('\n');
 
-    for (const violation of VIOLATIONS) {
-      // Skip excluded files
-      if (violation.excludeFiles.some((exc) => relPath.includes(exc))) continue;
+    // Skip always-excluded paths
+    if (ALWAYS_EXCLUDE.some(ex => relPath.includes(ex))) continue;
+
+    const lines = readFileSync(file, 'utf8').split('\n');
+
+    for (const check of CHECKS) {
+      // Skip per-check excludes
+      if ('excludeFiles' in check && check.excludeFiles?.some(ex => relPath.includes(ex))) continue;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]!;
-        const matches = line.matchAll(violation.pattern);
-        for (const match of matches) {
-          if (violation.filter(match[0], line)) {
-            issues.push({
-              file: relPath,
-              line: i + 1,
-              rule: violation.name,
-              match: match[0],
-              context: line.trim().slice(0, 80),
-            });
-          }
+        const match = check.test(line, lines, i);
+        if (match) {
+          violations.push({
+            file: relPath,
+            line: i + 1,
+            severity: check.severity,
+            rule: check.description,
+            match,
+            context: line.trim().slice(0, 100),
+          });
         }
       }
     }
   }
 
-  console.log(`\n🎨 Design Drift Audit\n`);
+  // ─── Report ─────────────────────────────────────────────────────────────
 
-  if (issues.length === 0) {
+  console.log('\n🎨 Design Drift Audit — Lunettiq iPad\n');
+
+  const errors = violations.filter(v => v.severity === 'error');
+  const warnings = violations.filter(v => v.severity === 'warn');
+
+  if (violations.length === 0) {
     console.log('  ✓ No design drift detected\n');
     process.exit(0);
   }
 
   // Group by rule
-  const grouped = new Map<string, Issue[]>();
-  for (const issue of issues) {
-    const existing = grouped.get(issue.rule) ?? [];
-    existing.push(issue);
-    grouped.set(issue.rule, existing);
+  const grouped = new Map<string, Violation[]>();
+  for (const v of violations) {
+    const key = `${v.severity.toUpperCase()}: ${v.rule}`;
+    grouped.set(key, [...(grouped.get(key) ?? []), v]);
   }
 
-  for (const [rule, ruleIssues] of grouped) {
-    console.log(`  ✗ ${rule} (${ruleIssues.length} occurrences)`);
-    for (const issue of ruleIssues.slice(0, 5)) {
-      console.log(`    ${issue.file}:${issue.line} → ${issue.context}`);
+  for (const [rule, issues] of grouped) {
+    const icon = issues[0]!.severity === 'error' ? '✗' : '⚠';
+    console.log(`  ${icon} ${rule} (${issues.length})`);
+    for (const issue of issues.slice(0, 5)) {
+      console.log(`    ${issue.file}:${issue.line}`);
+      console.log(`      → ${issue.context}`);
     }
-    if (ruleIssues.length > 5) {
-      console.log(`    ... and ${ruleIssues.length - 5} more`);
-    }
+    if (issues.length > 5) console.log(`    ... and ${issues.length - 5} more`);
     console.log('');
   }
 
-  console.log(`  Total: ${issues.length} design drift violations\n`);
-  process.exit(1);
+  const summary = [
+    errors.length > 0 ? `${errors.length} error${errors.length > 1 ? 's' : ''}` : '',
+    warnings.length > 0 ? `${warnings.length} warning${warnings.length > 1 ? 's' : ''}` : '',
+  ].filter(Boolean).join(', ');
+
+  console.log(`  Total: ${summary}`);
+  console.log(`  Fix: replace hardcoded values with token classNames (see 02-design-system.md)\n`);
+
+  process.exit(errors.length > 0 ? 1 : 0);
 }
 
 audit();

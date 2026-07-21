@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollView, View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { ChevronLeft, Heart, Star } from 'lucide-react-native';
+import { ChevronLeft, Heart, Star, Settings2 } from 'lucide-react-native';
 import { useProduct } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useCreateProductInteraction } from '@/src/api/useProductInteractions';
@@ -11,6 +11,9 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { LoadingState, ErrorState, EmptyState, Button, FitBadge, StockDot } from '@/src/ui';
 import { ColourSiblings } from '@/src/ui/ColourSiblings';
+import { ConfiguratorSheet } from '@/src/features/configurator/ConfiguratorSheet';
+import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet';
+import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import type { ProductVariant } from '@/src/api/products.types';
 
 // --- Variant Chip ---
@@ -97,6 +100,10 @@ export default function ProductDetailScreen() {
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [showPrice, setShowPrice] = useState(false);
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [showOrderSummary, setShowOrderSummary] = useState(false);
+  const [configuredCart, setConfiguredCart] = useState<CartResult | null>(null);
+  const [configuredPrice, setConfiguredPrice] = useState<ConfiguratorPriceSummary | null>(null);
 
   // Log 'viewed' interaction once per session visit
   useEffect(() => {
@@ -145,6 +152,27 @@ export default function ProductDetailScreen() {
       : (product.description as Record<string, string>)?.en ??
         (product.description as Record<string, string>)?.fr ?? ''
     : '';
+
+  const handleConfiguratorComplete = useCallback(
+    (cartResult: CartResult, priceSummary: ConfiguratorPriceSummary) => {
+      setConfiguredCart(cartResult);
+      setConfiguredPrice(priceSummary);
+      setShowConfigurator(false);
+      setShowOrderSummary(true);
+    },
+    []
+  );
+
+  const handleOrderCreated = useCallback(
+    (orderId: string) => {
+      setShowOrderSummary(false);
+      setConfiguredCart(null);
+      setConfiguredPrice(null);
+      // Navigate to Rx Pipeline to see the new order
+      router.push('/more/rx-pipeline');
+    },
+    [router]
+  );
 
   // Actions
   const handleTryInFitting = useCallback(() => {
@@ -375,10 +403,21 @@ export default function ProductDetailScreen() {
         {hasActiveSession ? (
           <View className="flex-row gap-md">
             <View className="flex-1">
-              <Button variant="primary" onPress={handleTryInFitting}>
-                Try in fitting
+              <Button variant="primary" onPress={() => setShowConfigurator(true)}>
+                <View className="flex-row items-center gap-xs justify-center">
+                  <Settings2 size={18} color="white" />
+                  <Text className="text-text-inverse text-bodyStrong">Configure lenses</Text>
+                </View>
               </Button>
             </View>
+            <Pressable
+              onPress={handleTryInFitting}
+              className="min-h-[44px] px-md items-center justify-center border border-border rounded-md"
+              accessibilityRole="button"
+              accessibilityLabel="Try in fitting"
+            >
+              <Text className="text-bodyStrong text-text-primary">Try</Text>
+            </Pressable>
             <Pressable
               onPress={handleWishlist}
               className="min-h-[44px] min-w-[44px] items-center justify-center border border-border rounded-md px-md"
@@ -398,10 +437,39 @@ export default function ProductDetailScreen() {
           </View>
         ) : (
           <View className="items-center py-sm">
-            <Text className="text-body text-text-muted">Start a session to recommend</Text>
+            <Text className="text-body text-text-muted">Start a session to configure lenses</Text>
           </View>
         )}
       </View>
+
+      {/* Configurator Sheet */}
+      {product && (
+        <ConfiguratorSheet
+          visible={showConfigurator}
+          productId={product.id ?? product.shopifyId}
+          productName={title}
+          variantId={selectedVariant?.shopifyId}
+          basePrice={selectedVariant ? Math.round(Number(selectedVariant.price) * 100) : 0}
+          onClose={() => setShowConfigurator(false)}
+          onComplete={handleConfiguratorComplete}
+        />
+      )}
+
+      {/* Order Summary Sheet */}
+      {product && configuredCart && configuredPrice && (
+        <OrderSummarySheet
+          visible={showOrderSummary}
+          productId={product.id ?? product.shopifyId}
+          productName={title}
+          variantId={selectedVariant?.shopifyId}
+          cartResult={configuredCart}
+          priceSummary={configuredPrice}
+          clientId={activeClientId ?? undefined}
+          sessionId={sessionId ?? undefined}
+          onClose={() => setShowOrderSummary(false)}
+          onOrderCreated={handleOrderCreated}
+        />
+      )}
     </View>
   );
 }

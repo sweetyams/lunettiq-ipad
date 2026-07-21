@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable } from 'react-native';
-import { ShoppingBag, Eye, Star, Tag, Glasses as GlassesIcon, Link2, Users } from 'lucide-react-native';
+import { ShoppingBag, Eye, Star, Tag, Glasses as GlassesIcon, Link2, Users, Award, Receipt, ClipboardList } from 'lucide-react-native';
 import {
   useClientOrders,
   useClientPrescriptions,
@@ -9,8 +9,12 @@ import {
   useClientTryonSessions,
   useClientLinks,
 } from '@/src/api/useClients';
+import { useLoyaltyBalance, useIssueCredit } from '@/src/api/useLoyalty';
+import { useReceipts, useSendReceipt } from '@/src/api/useReceipts';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { PermissionGate } from '@/src/ui/PermissionGate';
 import { Card, LoadingState } from '@/src/ui';
+import { toast } from '@/src/ui/useToastStore';
 import type {
   ClientOrder,
   Prescription,
@@ -535,5 +539,159 @@ export function LinksPanel({ clientId }: LinksPanelProps) {
         )}
       </Card>
     </View>
+  );
+}
+
+// ─── Loyalty Panel ───────────────────────────────────────────
+
+interface LoyaltyPanelProps {
+  clientId: string;
+}
+
+export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
+  const { data: loyalty, isLoading } = useLoyaltyBalance(clientId);
+  const issueCredit = useIssueCredit(clientId);
+  const privacyMode = usePrivacyStore((s) => s.mode);
+
+  return (
+    <PermissionGate permission="org:loyalty:read">
+      <View>
+        <View className="flex-row items-center mb-md">
+          <Award color="#6B6B6B" size={20} />
+          <Text className="text-headline text-text-primary font-semibold ml-sm">Loyalty Credits</Text>
+        </View>
+
+        <Card>
+          {isLoading ? (
+            <LoadingState />
+          ) : loyalty ? (
+            <View>
+              {/* Balance */}
+              <View className="py-sm border-b border-border">
+                {privacyMode === 'staff' ? (
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-body text-text-muted">Current balance</Text>
+                    <Text className="text-headline text-text-primary font-semibold">
+                      {loyalty.balance} credits
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-body text-text-muted">Loyalty credits</Text>
+                    <Text className="text-body text-green font-medium">Credits available</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Recent ledger — staff only */}
+              {privacyMode === 'staff' && loyalty.ledger?.slice(0, 5).map((entry, i) => (
+                <View key={entry.id} className={`flex-row justify-between py-xs ${i > 0 ? 'border-t border-border' : ''}`}>
+                  <View className="flex-1">
+                    <Text className="text-body text-text-primary">{entry.reason}</Text>
+                    <Text className="text-caption text-text-muted">
+                      {new Date(entry.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                  <Text className={`text-body font-medium ${entry.amount > 0 ? 'text-green' : 'text-error'}`}>
+                    {entry.amount > 0 ? '+' : ''}{entry.amount}
+                  </Text>
+                </View>
+              ))}
+
+              {/* Issue credit action — staff only */}
+              {privacyMode === 'staff' && (
+                <PermissionGate permission="org:loyalty:write">
+                  <Pressable
+                    className="mt-sm pt-sm border-t border-border min-h-[44px] justify-center"
+                    onPress={() => {
+                      // Courtesy credit — simplified inline action
+                      issueCredit.mutate(
+                        { amount: 500, reason: 'Courtesy credit', type: 'manual' },
+                        {
+                          onSuccess: () => toast.success('Credit issued', '+500 credits added'),
+                          onError: () => toast.error('Failed to issue credit'),
+                        }
+                      );
+                    }}
+                  >
+                    <Text className="text-body text-navy text-center">Issue courtesy credit</Text>
+                  </Pressable>
+                </PermissionGate>
+              )}
+            </View>
+          ) : (
+            <Text className="text-body text-text-muted italic text-center py-md">
+              No loyalty data
+            </Text>
+          )}
+        </Card>
+      </View>
+    </PermissionGate>
+  );
+}
+
+// ─── Receipts Panel ──────────────────────────────────────────
+
+interface ReceiptsPanelProps {
+  clientId: string;
+}
+
+export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
+  const { data: receipts, isLoading } = useReceipts(clientId);
+  const sendReceipt = useSendReceipt();
+
+  return (
+    <PermissionGate permission="org:receipts:read">
+      <View>
+        <View className="flex-row items-center mb-md">
+          <Receipt color="#6B6B6B" size={20} />
+          <Text className="text-headline text-text-primary font-semibold ml-sm">Insurance Receipts</Text>
+        </View>
+
+        <Card>
+          {isLoading ? (
+            <LoadingState />
+          ) : receipts && receipts.length > 0 ? (
+            receipts.slice(0, 5).map((receipt, i) => (
+              <View
+                key={receipt.id}
+                className={`flex-row items-center py-md ${i < receipts.length - 1 ? 'border-b border-border' : ''}`}
+              >
+                <View className="flex-1">
+                  <Text className="text-body text-text-primary">{receipt.insurerName}</Text>
+                  <Text className="text-caption text-text-muted">
+                    {new Date(receipt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {receipt.sentAt && ` · Sent ${new Date(receipt.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                  </Text>
+                </View>
+                <Text className="text-body text-text-primary mr-md">
+                  ${(receipt.amount / 100).toFixed(2)}
+                </Text>
+                <PermissionGate permission="org:receipts:write">
+                  <Pressable
+                    onPress={() =>
+                      sendReceipt.mutate(
+                        { id: receipt.id },
+                        {
+                          onSuccess: () => toast.success('Receipt sent', `Emailed to client`),
+                          onError: () => toast.error('Failed to send receipt'),
+                        }
+                      )
+                    }
+                    className="min-h-[44px] px-md items-center justify-center border border-border rounded-md"
+                  >
+                    <Text className="text-caption text-navy">Resend</Text>
+                  </Pressable>
+                </PermissionGate>
+              </View>
+            ))
+          ) : (
+            <Text className="text-body text-text-muted italic text-center py-md">
+              No receipts
+            </Text>
+          )}
+        </Card>
+      </View>
+    </PermissionGate>
   );
 }
