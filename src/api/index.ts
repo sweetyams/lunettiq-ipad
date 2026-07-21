@@ -83,8 +83,40 @@ export { useInteractions, useCreateInteraction as useCreateInteractionLegacy } f
 export type { InteractionListResponse } from './interactions.types';
 
 // ─── Appointments ────────────────────────────────────────────
-export { useAppointments, useUpdateAppointment } from './useAppointments';
-export type { Appointment, AppointmentListParams } from './appointments.types';
+export {
+  useAppointments,
+  useTodayAppointments,
+  useWeekAppointments,
+  useStaffSchedules,
+  useAppointmentHolds,
+  useActiveHolds,
+  useUpdateAppointment,
+  useCheckIn,
+  useMarkNoShow,
+  useAppointmentServices,
+  useSchedulingStaff,
+  useAvailableSlots,
+  useCreateAppointment,
+  useUpdateAppointmentDetails,
+  useCancelAppointment,
+  useCompleteAppointment,
+  useConfirmAppointment,
+} from './useAppointments';
+export type {
+  Appointment,
+  AppointmentStatus,
+  AppointmentType,
+  AppointmentListParams,
+  AppointmentStatusUpdate,
+  AppointmentService,
+  StaffMember,
+  StaffSchedule,
+  TimeSlot,
+  InventoryHold,
+  IntakeFormType,
+  CreateAppointmentPayload,
+  UpdateAppointmentPayload,
+} from './appointments.types';
 
 // ─── Rx Pipeline ─────────────────────────────────────────────
 export {
@@ -139,3 +171,7 @@ export type {
   SaveInsurancePayload,
   UpdateInsurancePayload,
 } from './multi-pair.types';
+
+// ─── Locations ──────────────────────────────────────────────
+export { useLocations } from './useLocations';
+export type { Location } from './useLocations';

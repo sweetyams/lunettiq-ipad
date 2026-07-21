@@ -1,10 +1,11 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useWeekAppointments, useStaffSchedules } from '@/src/api/useAppointments';
 import { Appointment } from '@/src/api/appointments.types';
 import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
+import { CreateAppointmentSheet } from '@/src/features/appointments';
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -39,6 +40,7 @@ export default function WeekViewScreen() {
     const day = today.getDay();
     return day === 0 ? 6 : day - 1; // Monday = 0
   });
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
 
   const selectedDate = useMemo(() => addDays(weekStart, selectedDayIndex), [weekStart, selectedDayIndex]);
   const selectedDateStr = formatDate(selectedDate);
@@ -78,6 +80,15 @@ export default function WeekViewScreen() {
     router.back();
   }, [router]);
 
+  const handleAppointmentTap = useCallback((appointment: Appointment) => {
+    // Navigate back to day view with this appointment's date and select it
+    const appointmentDate = appointment.startsAt.substring(0, 10); // YYYY-MM-DD
+    router.push({
+      pathname: '/appointments',
+      params: { selectedDate: appointmentDate, selectedAppointmentId: appointment.id }
+    });
+  }, [router]);
+
   const isToday = (dayIndex: number) => {
     const date = addDays(weekStart, dayIndex);
     return formatDate(date) === formatDate(new Date());
@@ -109,9 +120,11 @@ export default function WeekViewScreen() {
       case 'confirmed':
         return 'bg-info';
       case 'completed':
-        return 'bg-muted';
+        return 'bg-bg-muted';
       case 'no_show':
         return 'bg-error';
+      case 'cancelled':
+        return 'bg-bg-muted';
       default:
         return 'bg-border';
     }
@@ -144,10 +157,21 @@ export default function WeekViewScreen() {
             >
               <ChevronLeft color="#1A1A1A" size={24} />
             </Pressable>
-            <Text className="text-displayLg text-text-primary">Week View</Text>
+            <Text className="text-display-lg text-text-primary">Week View</Text>
           </View>
 
           <View className="flex-row items-center gap-md">
+            {/* New appointment button */}
+            <Pressable 
+              onPress={() => setShowCreateSheet(true)}
+              className="bg-brand rounded-md px-lg py-sm min-h-[44px] flex-row items-center gap-sm"
+              accessibilityRole="button"
+              accessibilityLabel="New appointment"
+            >
+              <Plus color="#FFFFFF" size={20} />
+              <Text className="text-brand-text text-body-md font-medium">New</Text>
+            </Pressable>
+
             <Pressable
               onPress={handlePreviousWeek}
               className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-border"
@@ -156,7 +180,7 @@ export default function WeekViewScreen() {
             >
               <ChevronLeft color="#1A1A1A" size={20} />
             </Pressable>
-            <Text className="text-bodyStrong text-text-primary min-w-[120px] text-center">
+            <Text className="text-body-lg font-medium text-text-primary min-w-[120px] text-center">
               {weekLabel}
             </Text>
             <Pressable
@@ -252,24 +276,29 @@ export default function WeekViewScreen() {
                 >
                   {/* Time column */}
                   <View className="w-[80px] pt-md">
-                    <Text className="text-caption text-text-muted font-mono">
+                    <Text className="text-caption-md text-text-muted font-mono">
                       {formatTime(appointment.startsAt)}
                     </Text>
                   </View>
 
                   {/* Appointment card */}
-                  <View className="flex-1 bg-bg-elevated border border-border rounded-lg p-md">
+                  <Pressable 
+                    onPress={() => handleAppointmentTap(appointment)}
+                    className="flex-1 bg-bg-surface border border-border rounded-lg p-md min-h-[44px] justify-center"
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${appointment.clientName ?? 'Walk-in'} appointment`}
+                  >
                     <View className="flex-row items-center gap-sm mb-xs">
                       <View className={`w-2 h-2 rounded-full ${getStatusColor(appointment.status)}`} />
-                      <Text className="text-bodyStrong text-text-primary">
+                      <Text className="text-body-md font-medium text-text-primary">
                         {appointment.clientName ?? 'Walk-in'}
                       </Text>
                     </View>
-                    <Text className="text-caption text-text-muted">
+                    <Text className="text-caption-md text-text-muted">
                       {appointment.type} • {appointment.duration} min
                       {appointment.staffName ? ` • ${appointment.staffName}` : ''}
                     </Text>
-                  </View>
+                  </Pressable>
                 </View>
               ))}
             </ScrollView>
@@ -278,21 +307,70 @@ export default function WeekViewScreen() {
 
         {/* Staff sidebar */}
         {staffSchedules && staffSchedules.length > 0 && (
-          <View className="w-[200px] border-l border-border p-md">
-            <Text className="text-captionStrong text-text-muted uppercase tracking-wide mb-md">
+          <View className="w-[240px] border-l border-border p-md">
+            <Text className="text-caption-lg font-medium text-text-muted uppercase tracking-wide mb-md">
               Staff on Duty
             </Text>
-            {staffSchedules.map((schedule) => (
-              <View key={schedule.id} className="mb-md">
-                <Text className="text-bodyStrong text-text-primary">{schedule.staffName}</Text>
-                <Text className="text-caption text-text-muted">
-                  {schedule.startTime} – {schedule.endTime}
-                </Text>
-              </View>
-            ))}
+            {staffSchedules.map((schedule) => {
+              const staffAppointments = selectedDayAppointments.filter(
+                appt => appt.staffId === schedule.id
+              );
+              
+              return (
+                <View key={schedule.id} className="mb-lg">
+                  <View className="flex-row items-center justify-between mb-xs">
+                    <Text className="text-body-md font-medium text-text-primary">
+                      {schedule.staffName}
+                    </Text>
+                    <View className="w-5 h-5 rounded-full bg-bg-muted items-center justify-center">
+                      <Text className="text-caption-xs text-text-muted font-mono">
+                        {staffAppointments.length}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text className="text-caption-md text-text-muted mb-sm">
+                    {schedule.startTime} – {schedule.endTime}
+                  </Text>
+                  
+                  {/* Staff's appointments for selected day */}
+                  {staffAppointments.length > 0 && (
+                    <View className="gap-xs">
+                      {staffAppointments.slice(0, 3).map((appt) => (
+                        <Pressable
+                          key={appt.id}
+                          onPress={() => handleAppointmentTap(appt)}
+                          className="bg-bg-surface-hover rounded-sm px-xs py-xs border-l-2 border-brand"
+                          accessibilityRole="button"
+                          accessibilityLabel={`View ${appt.clientName} appointment`}
+                        >
+                          <Text className="text-caption-md text-text-primary font-medium">
+                            {formatTime(appt.startsAt)}
+                          </Text>
+                          <Text className="text-caption-xs text-text-muted">
+                            {appt.clientName ?? 'Walk-in'}
+                          </Text>
+                        </Pressable>
+                      ))}
+                      {staffAppointments.length > 3 && (
+                        <Text className="text-caption-xs text-text-muted">
+                          +{staffAppointments.length - 3} more
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
       </View>
+
+      {/* Create appointment sheet */}
+      <CreateAppointmentSheet 
+        visible={showCreateSheet} 
+        onClose={() => setShowCreateSheet(false)} 
+        preselectedDate={selectedDateStr}
+      />
     </View>
   );
 }

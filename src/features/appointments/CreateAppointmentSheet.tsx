@@ -31,6 +31,13 @@ type Step = 'service' | 'client' | 'staff' | 'datetime' | 'review';
 
 const STEPS: Step[] = ['service', 'client', 'staff', 'datetime', 'review'];
 
+/** Safely extract name from AppointmentService (jsonb can be string or {en, fr}) */
+function serviceName(name: { en: string; fr: string } | string | unknown): string {
+  if (typeof name === 'string') return name;
+  if (name && typeof name === 'object' && 'en' in name) return (name as { en: string }).en;
+  return 'Appointment';
+}
+
 function formatDateStr(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -121,9 +128,11 @@ export function CreateAppointmentSheet({
       return;
     }
 
+    const title = serviceName(selectedService.name);
+
     const payload: CreateAppointmentPayload = {
-      title: selectedService.name.en,
-      clientId: selectedClient?.id ?? null,
+      title,
+      shopifyCustomerId: selectedClient?.id ?? null,
       staffId: selectedStaff?.id ?? selectedSlot.staffId ?? null,
       typeId: selectedService.id,
       startsAt: selectedSlot.startsAt,
@@ -247,6 +256,7 @@ export function CreateAppointmentSheet({
               onSelectSlot={setSelectedSlot}
               serviceDuration={selectedService?.durationMinutes ?? 30}
               hasService={!!selectedService}
+              staffList={staffList ?? []}
             />
           )}
           {step === 'review' && (
@@ -346,7 +356,7 @@ function ServiceStep({ services, isLoading, selected, onSelect }: {
                   isSelected ? 'border-brand bg-bg-elevated' : 'border-border bg-bg-page'
                 }`}
                 accessibilityRole="button"
-                accessibilityLabel={`${service.name.en}, ${service.durationMinutes} minutes`}
+                accessibilityLabel={`${serviceName(service.name)}, ${service.durationMinutes} minutes`}
               >
                 {isSelected && (
                   <View className="w-6 h-6 rounded-full bg-brand items-center justify-center">
@@ -354,7 +364,7 @@ function ServiceStep({ services, isLoading, selected, onSelect }: {
                   </View>
                 )}
                 <View className="flex-1">
-                  <Text className="text-body-lg text-text-primary">{service.name.en}</Text>
+                  <Text className="text-body-lg text-text-primary">{serviceName(service.name)}</Text>
                   <Text className="text-body-sm text-text-muted">
                     {service.durationMinutes} min
                     {service.price ? ` · $${(service.price / 100).toFixed(0)}` : ' · Free'}
@@ -513,7 +523,7 @@ function StaffStep({ staff, selected, onSelect, onClear }: {
   );
 }
 
-function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismissDatePicker, slots, slotsLoading, selectedSlot, onSelectSlot, serviceDuration, hasService }: {
+function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismissDatePicker, slots, slotsLoading, selectedSlot, onSelectSlot, serviceDuration, hasService, staffList }: {
   date: Date;
   onDatePress: () => void;
   showDatePicker: boolean;
@@ -525,10 +535,36 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
   onSelectSlot: (s: TimeSlot) => void;
   serviceDuration: number;
   hasService: boolean;
+  staffList: StaffMember[];
 }) {
   const dateDisplay = date.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
   });
+
+  // Deduplicate slots by time — show unique times, pick first available staff for each
+  const uniqueSlots = useMemo(() => {
+    const seen = new Map<string, TimeSlot>();
+    for (const slot of slots) {
+      const timeKey = slot.startsAt;
+      if (!seen.has(timeKey)) {
+        seen.set(timeKey, slot);
+      }
+    }
+    return Array.from(seen.values()).sort(
+      (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+    );
+  }, [slots]);
+
+  // Check if multiple staff serve the same times (show staff picker per slot)
+  const hasMultipleStaff = useMemo(() => {
+    const staffIds = new Set(slots.map((s) => s.staffId));
+    return staffIds.size > 1;
+  }, [slots]);
+
+  const getStaffName = (staffId: string) => {
+    const member = staffList.find((s) => s.id === staffId);
+    return member?.name ?? '';
+  };
 
   return (
     <View className="gap-lg">
@@ -549,15 +585,16 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
         </Pressable>
       </View>
 
-      {/* Inline date picker */}
+      {/* Inline date picker — give it proper height for iPad */}
       {showDatePicker && (
-        <View className="border border-border rounded-lg overflow-hidden bg-bg-elevated">
+        <View className="border border-border rounded-lg overflow-hidden bg-bg-elevated" style={{ minHeight: 420 }}>
           <DateTimePicker
             value={date}
             mode="date"
             display="inline"
             minimumDate={new Date()}
             onChange={onDateChange}
+            style={{ height: 380 }}
           />
           {Platform.OS === 'ios' && (
             <Pressable onPress={onDismissDatePicker} className="p-md items-center border-t border-border">
@@ -579,7 +616,7 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
           <View className="p-lg items-center">
             <Text className="text-body-md text-text-muted">Loading available times...</Text>
           </View>
-        ) : slots.length === 0 ? (
+        ) : uniqueSlots.length === 0 ? (
           <View className="p-lg items-center rounded-lg bg-bg-muted">
             <Clock color="#737373" size={24} />
             <Text className="text-body-md text-text-muted mt-sm">No available slots</Text>
@@ -587,7 +624,7 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
           </View>
         ) : (
           <View className="flex-row flex-wrap gap-sm">
-            {slots.map((slot, idx) => {
+            {uniqueSlots.map((slot, idx) => {
               const isSelected = selectedSlot?.startsAt === slot.startsAt && selectedSlot?.staffId === slot.staffId;
               return (
                 <Pressable
@@ -597,11 +634,16 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
                     isSelected ? 'border-brand bg-brand' : 'border-border bg-bg-page'
                   }`}
                   accessibilityRole="button"
-                  accessibilityLabel={`${formatTimeDisplay(slot.startsAt)} to ${formatTimeDisplay(slot.endsAt)}`}
+                  accessibilityLabel={`${formatTimeDisplay(slot.startsAt)} to ${formatTimeDisplay(slot.endsAt)}${hasMultipleStaff ? ` with ${getStaffName(slot.staffId)}` : ''}`}
                 >
                   <Text className={`text-body-md font-medium ${isSelected ? 'text-brand-text' : 'text-text-primary'}`}>
                     {formatTimeDisplay(slot.startsAt)}
                   </Text>
+                  {hasMultipleStaff && (
+                    <Text className={`text-body-xs ${isSelected ? 'text-brand-text' : 'text-text-muted'}`}>
+                      {getStaffName(slot.staffId)}
+                    </Text>
+                  )}
                 </Pressable>
               );
             })}
@@ -629,7 +671,7 @@ function ReviewStep({ service, client, staff, slot, notes, onNotesChange }: {
       <Text className="text-heading-lg text-text-primary">Review</Text>
 
       <View className="rounded-lg border border-border overflow-hidden">
-        <SummaryRow label="Service" value={service?.name.en ?? '—'} />
+        <SummaryRow label="Service" value={service ? serviceName(service.name) : '—'} />
         <SummaryRow label="Client" value={clientName} />
         <SummaryRow label="Staff" value={staff?.name ?? 'Any available'} />
         <SummaryRow label="Date" value={slot ? new Date(slot.startsAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '—'} />

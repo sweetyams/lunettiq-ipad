@@ -5,6 +5,7 @@ export default function AppointmentsLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="week" />
+      <Stack.Screen name="staff-schedule" />
     </Stack>
   );
 }

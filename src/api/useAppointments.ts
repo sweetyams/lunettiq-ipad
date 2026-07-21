@@ -4,8 +4,13 @@ import {
   Appointment,
   AppointmentListParams,
   AppointmentStatusUpdate,
+  AppointmentService,
+  StaffMember,
   StaffSchedule,
+  TimeSlot,
   InventoryHold,
+  CreateAppointmentPayload,
+  UpdateAppointmentPayload,
 } from './appointments.types';
 
 // --- Query helpers ---
@@ -137,7 +142,7 @@ export function useUpdateAppointment() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AppointmentStatusUpdate }) =>
-      api.patch<Appointment>(`/api/scheduling/${id}/transition`, data),
+      api.post<Appointment>(`/api/scheduling/${id}/transition`, data),
     onSuccess: () => {
       // Invalidate all appointment queries to refetch fresh state
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
@@ -181,4 +186,103 @@ export function useMarkNoShow() {
         data: { status: 'no_show' },
       }),
   };
+}
+
+/** Available appointment services/types — from GET /api/scheduling/types */
+export function useAppointmentServices() {
+  return useQuery({
+    queryKey: ['appointment-services'],
+    queryFn: () => api.get<AppointmentService[]>('/api/scheduling/types'),
+    staleTime: 30 * 60 * 1000, // 30 min — rarely changes
+  });
+}
+
+/** Staff available for scheduling — from GET /api/staff */
+export function useSchedulingStaff() {
+  return useQuery({
+    queryKey: ['scheduling-staff'],
+    queryFn: () => api.get<StaffMember[]>('/api/staff'),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/** Available time slots for a date/type/staff combination */
+export function useAvailableSlots(params: { date: string; typeId?: string; staffId?: string; locationId?: string }) {
+  // Only fetch when we have a valid date (YYYY-MM-DD format)
+  const hasValidDate = /^\d{4}-\d{2}-\d{2}$/.test(params.date);
+
+  return useQuery({
+    queryKey: ['available-slots', params],
+    queryFn: () => {
+      const queryParams: Record<string, string> = { date: params.date };
+      if (params.typeId) queryParams.typeId = params.typeId;
+      if (params.staffId) queryParams.staffId = params.staffId;
+      if (params.locationId) queryParams.locationId = params.locationId;
+      return api.get<TimeSlot[]>('/api/scheduling/slots', { params: queryParams });
+    },
+    enabled: hasValidDate,
+    staleTime: 2 * 60 * 1000, // 2 min
+  });
+}
+
+/** Create a new appointment */
+export function useCreateAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateAppointmentPayload) =>
+      api.post<Appointment>('/api/scheduling', payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+    },
+  });
+}
+
+/** Update appointment details (time, staff, notes) */
+export function useUpdateAppointmentDetails() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateAppointmentPayload }) =>
+      api.patch<Appointment>(`/api/scheduling/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['available-slots'] });
+    },
+  });
+}
+
+/** Cancel an appointment (transitions to cancelled) */
+export function useCancelAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<Appointment>(`/api/scheduling/${id}/transition`, { status: 'cancelled' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+}
+
+/** Complete an appointment */
+export function useCompleteAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<Appointment>(`/api/scheduling/${id}/transition`, { status: 'completed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+}
+
+/** Confirm a scheduled appointment */
+export function useConfirmAppointment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<Appointment>(`/api/scheduling/${id}/transition`, { status: 'confirmed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
 }

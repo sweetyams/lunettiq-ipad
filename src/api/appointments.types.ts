@@ -82,3 +82,55 @@ export interface AppointmentListParams {
 export interface AppointmentStatusUpdate {
   status: AppointmentStatus;
 }
+
+export interface AppointmentService {
+  id: string;
+  name: { en: string; fr: string };
+  durationMinutes: number;
+  bufferMinutes: number;
+  locationId: string | null;
+  active: boolean;
+  sortOrder: number | null;
+  createdAt: string;
+  // Optional fields that may or may not be present depending on Foundry version
+  color?: string;
+  onlineBookable?: boolean;
+  intakeFormType?: IntakeFormType;
+  price?: number | null;
+}
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: string;
+  locationId: string | null;
+  avatarUrl: string | null;
+}
+
+export interface TimeSlot {
+  startsAt: string;
+  endsAt: string;
+  staffId: string;
+  locationId: string;
+  available: boolean;
+}
+
+export interface CreateAppointmentPayload {
+  title: string;
+  shopifyCustomerId: string | null; // Foundry uses shopifyCustomerId, not clientId
+  staffId: string | null;
+  typeId: string | null;
+  startsAt: string; // ISO 8601
+  endsAt: string; // ISO 8601
+  notes: string | null;
+  locationId: string | null;
+  source: 'tablet';
+}
+
+export interface UpdateAppointmentPayload {
+  title?: string;
+  staffId?: string | null;
+  startsAt?: string;
+  endsAt?: string;
+  notes?: string | null;
+}
