@@ -32,6 +32,7 @@ export interface SessionState {
 interface SessionActions {
   // Lifecycle
   startSession: (clientId: string, clientName: string) => void;
+  setSessionId: (id: string) => void;
   endSession: () => void;
   startFitting: () => void;
   endFitting: () => void;
@@ -101,12 +102,16 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           activeClientId: clientId,
           activeClientName: clientName,
           mode: 'session',
-          sessionId: generateSessionId(),
+          sessionId: generateSessionId(), // local placeholder — replaced by server ID
           sessionStartedAt: Date.now(),
           framesTried: [],
           sessionNotes: '',
           notesLastSavedAt: null,
         });
+      },
+
+      setSessionId: (id: string) => {
+        set({ sessionId: id });
       },
 
       endSession: () => {

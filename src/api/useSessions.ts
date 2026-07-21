@@ -37,30 +37,52 @@ export function useCreateSession() {
 }
 
 /**
- * End a try-on session with outcome and notes
+ * End a try-on session with outcome and notes.
  * POST /api/clients/{clientId}/tryon-sessions/{sessionId}/end
+ *
+ * The handler sets status='completed', records the outcome, and fires
+ * a Klaviyo event for the summary email asynchronously.
  */
 export function useEndSession() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (params: EndSessionParams): Promise<SessionResponse> => {
-      const { sessionId, clientId, ...endData } = params;
-      return api.post(`/api/clients/${clientId}/tryon-sessions/${sessionId}/end`, endData);
-    },
-    onSuccess: (session, params) => {
-      // Update session cache
-      queryClient.setQueryData(['sessions', params.sessionId], session);
+      const { sessionId, clientId, outcomeTag, sendSummary, summaryLanguage, internalNotes, tags, orderRef } = params;
       
-      // Invalidate client sessions and interactions
-      queryClient.invalidateQueries({ 
-        queryKey: ['clients', params.clientId, 'sessions'] 
+      // Map iPad outcome tags to Foundry's outcome enum
+      const outcomeMap: Record<string, string> = {
+        purchased: 'purchased',
+        booked_next_visit: 'needs_followup',
+        shortlist_emailed: 'saved_for_later',
+        left_empty_handed: 'no_match',
+      };
+
+      return api.post(`/api/clients/${clientId}/tryon-sessions/${sessionId}/end`, {
+        outcome: outcomeMap[outcomeTag] ?? 'no_match',
+        notes: internalNotes || undefined,
+        // Extra metadata for iPad-specific fields (server ignores unknown keys gracefully)
+        sendSummary,
+        summaryLanguage,
+        tags,
+        orderRef: orderRef ?? undefined,
       });
+    },
+    onSuccess: (_, params) => {
+      // Invalidate client interactions timeline
       queryClient.invalidateQueries({ 
         queryKey: ['clients', params.clientId, 'interactions'] 
       });
       
-      // Invalidate today's appointments if session was from appointment
+      // Invalidate client sessions list
+      queryClient.invalidateQueries({ 
+        queryKey: ['clients', params.clientId, 'sessions'] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['clients', params.clientId, 'tryon-sessions'] 
+      });
+      
+      // Invalidate today's appointments
       queryClient.invalidateQueries({ 
         queryKey: ['appointments', 'today'] 
       });
@@ -113,36 +135,5 @@ export function useCreateProductInteraction() {
   });
 }
 
-/**
- * Batch create multiple product interactions (for session end)
- */
-export function useCreateBatchProductInteractions() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (interactions: CreateProductInteractionParams[]): Promise<ProductInteractionResponse[]> => {
-      // Create all interactions in parallel
-      const promises = interactions.map(params => {
-        const { clientId, ...interactionData } = params;
-        return api.post<ProductInteractionResponse>(`/api/clients/${clientId}/product-interactions`, interactionData);
-      });
-      
-      return Promise.all(promises);
-    },
-    onSuccess: (interactions, params) => {
-      if (params.length > 0) {
-        const clientId = params[0]?.clientId;
-        
-        if (clientId) {
-          // Invalidate client caches
-          queryClient.invalidateQueries({ 
-            queryKey: ['clients', clientId, 'product-interactions'] 
-          });
-          queryClient.invalidateQueries({ 
-            queryKey: ['clients', clientId, 'suggestions'] 
-          });
-        }
-      }
-    },
-  });
-}
+// NOTE: useCreateBatchProductInteractions lives in ./useProductInteractions.ts
+// It is the canonical batch hook with `surface: 'tablet'` and metadata support.

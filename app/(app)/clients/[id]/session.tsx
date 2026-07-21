@@ -1,42 +1,51 @@
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { SessionTopBar } from '@/src/features/session/SessionTopBar';
 import { ProductBrowserPanel } from '@/src/features/session/ProductBrowserPanel';
 import { ClientContextPanel } from '@/src/features/session/ClientContextPanel';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { useClient } from '@/src/api/useClients';
+import { useCreateSession } from '@/src/api/useSessions';
 import { LoadingState, ErrorState } from '@/src/ui';
 
 export default function SessionWorkspaceScreen() {
   const { id: clientId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { activeClientId, activeClientName, mode, startSession, endSession } = useSessionStore();
+  const { activeClientId, activeClientName, mode, startSession, setSessionId } = useSessionStore();
   const [showEndSession, setShowEndSession] = useState(false);
   const [aiSearchTerm, setAiSearchTerm] = useState<string | undefined>(undefined);
+  const sessionCreatedRef = useRef(false);
 
   // Fetch client profile (for name fallback + data)
   const { data: client, isLoading, error } = useClient(clientId);
+  const createSession = useCreateSession();
 
   // Start session on mount if not already active for this client
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || !client) return;
     if (activeClientId === clientId && (mode === 'session' || mode === 'fitting')) return;
+    if (sessionCreatedRef.current) return;
 
-    // Derive client name for the chip
-    if (client) {
-      const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Client';
-      startSession(clientId, name);
-    }
-  }, [clientId, client, activeClientId, mode, startSession]);
+    const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Client';
+    startSession(clientId, name);
+    sessionCreatedRef.current = true;
+
+    // Create session on server and store the real ID
+    createSession.mutate(
+      { clientId },
+      { onSuccess: (session) => setSessionId(session.id) }
+    );
+  }, [clientId, client, activeClientId, mode, startSession, createSession, setSessionId]);
 
   // Redirect if session ended externally or wrong client
+  // Guard: don't fire when we're in the process of ending the session (sheet is open)
   useEffect(() => {
-    if (mode === 'idle' && !isLoading) {
+    if (mode === 'idle' && !isLoading && !showEndSession) {
       router.replace(`/clients/${clientId}`);
     }
-  }, [mode, clientId, isLoading, router]);
+  }, [mode, clientId, isLoading, router, showEndSession]);
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -58,11 +67,11 @@ export default function SessionWorkspaceScreen() {
   }, []);
 
   const handleEndSessionComplete = useCallback(() => {
-    // Flow completed successfully - end session and navigate
+    // Flow completed successfully — EndSessionSheet already reset the stores.
+    // Just hide the sheet and navigate to home.
     setShowEndSession(false);
-    endSession();
-    router.replace(`/clients/${clientId}`);
-  }, [endSession, router, clientId]);
+    router.replace('/(app)/home');
+  }, [router]);
 
   const handleProductPress = useCallback((productId: string) => {
     router.push(`/products/${productId}`);

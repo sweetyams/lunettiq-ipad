@@ -161,7 +161,7 @@ export interface ClientOrder {
   fulfillmentStatus: string | null;
   totalPrice: number;
   currency: string;
-  lineItems: OrderLineItem[];
+  lineItems: OrderLineItem[] | undefined;
   createdAt: string;
 }
 

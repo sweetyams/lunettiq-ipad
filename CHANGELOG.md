@@ -1,5 +1,58 @@
 # Changelog
 
+## [2026-07-21] — End Session & Client Profile Fixes
+
+### Fixed
+- End session navigation race: three competing `router.replace()` calls caused errors
+- End session API: was calling non-existent `/tryon-sessions/{id}/end` route (got HTML back)
+- `order.lineItems.length` crash in client profile History tab (API returns undefined)
+- Removed duplicate `useCreateBatchProductInteractions` hook from useSessions.ts
+
+### Changed
+- `EndSessionSheet` no longer navigates internally — callers handle navigation via `onComplete`
+- `useEndSession` now calls `POST /api/clients/{id}/tryon-sessions/{sessionId}/end`
+- Session start creates session on Foundry server, stores server-returned ID
+- `useSessionStore` gains `setSessionId()` action for server ID replacement
+- `session.tsx` guards idle-redirect useEffect against firing during end-session modal
+- `ClientOrder.lineItems` type updated to `OrderLineItem[] | undefined` (matches API reality)
+
+## [2026-07-21] — Appointment Screen Integration & Staff Schedule
+
+### Added
+- New appointment button (+ icon) in day view and week view headers with primary brand styling
+- Staff filter pill row in appointment day view to filter appointments by staff member
+- Enhanced staff schedule sidebar in week view showing appointments per staff member
+- New StaffScheduleScreen with time grid layout showing all staff schedules
+- Appointment cards now tappable in week view to navigate back to day view with selection
+- Staff schedule screen with hourly grid (9 AM - 6 PM) and color-coded appointment types
+- Current time indicator in staff schedule view
+- Enhanced staff sidebar showing appointment counts and quick preview
+
+### Changed
+- Updated AppointmentDetailPanel integration to support onEdit and onCancelled props
+- Appointment filtering by selected staff member in day view
+- Week view navigation now passes appointment selection back to day view
+- Design tokens applied throughout (bg-color-*, text-color-*, border-color-*)
+- Staff schedule navigation added to view toggle in day view header
+- Enhanced appointment cards with better touch targets and accessibility labels
+
+### Fixed
+- Added missing onSaved prop to EditAppointmentSheet component
+- TypeScript compilation errors resolved
+
+## [2026-07-21] — Create Appointment Sheet
+
+### Added
+- New component: CreateAppointmentSheet modal/bottom sheet for creating appointments
+- Form sections for service selection, client search, staff assignment, date/time slots, and notes
+- Integration with useAppointmentServices, useSchedulingStaff, useAvailableSlots, and useClients APIs
+- Support for preselected client and date via props interface
+- Proper TypeScript typing with FormState interface and CreateAppointmentPayload
+- Toast notifications for success/error feedback using useToastStore
+- Loading and error states for API calls
+- Responsive form validation requiring service, date, and time slot
+- Export from src/features/appointments/index.ts for easy importing
+
 ## [2026-07-21] — Design Drift Fixes
 
 ### Fixed

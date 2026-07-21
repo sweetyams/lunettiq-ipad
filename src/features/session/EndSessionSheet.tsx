@@ -29,7 +29,6 @@ import {
   ChevronLeft,
   ScanLine,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useEndSession } from '@/src/api/useSessions';
@@ -95,8 +94,6 @@ const QUICK_TAGS: { key: QuickTag; label: string }[] = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSheetProps) {
-  const router = useRouter();
-
   // ─── State ────────────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>(1);
   const [outcome, setOutcome] = useState<OutcomeTag | null>(null);
@@ -163,13 +160,12 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
 
       resetSession();
       resetFitting();
-      router.replace('/(app)/home');
       onComplete();
     } catch (error) {
       console.error('Failed to quick-end session:', error);
       toast.error('Failed', 'Could not end session. Try again.');
     }
-  }, [activeClientId, sessionId, endSessionMutation, resetSession, resetFitting, router, onComplete]);
+  }, [activeClientId, sessionId, endSessionMutation, resetSession, resetFitting, onComplete]);
 
   const handleOutcomeSelect = useCallback((selected: OutcomeTag) => {
     setOutcome(selected);
@@ -228,8 +224,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       resetSession();
       resetFitting();
 
-      // 4. Navigate home
-      router.replace('/(app)/home');
+      // 4. Signal completion — caller handles navigation
       onComplete();
     } catch (error) {
       console.error('Failed to end session:', error);
@@ -239,7 +234,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     activeClientId, sessionId, outcome, framesTried, sendSummary,
     consentCaptured, language, internalNotes, selectedTags, orderRef,
     batchInteractionsMutation, endSessionMutation, resetSession,
-    resetFitting, router, onComplete,
+    resetFitting, onComplete,
   ]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
