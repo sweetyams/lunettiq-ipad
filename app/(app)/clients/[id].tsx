@@ -1,46 +1,38 @@
-import { View, Text, ScrollView, Pressable, TextInput, Image } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { 
-  Mail, Phone, MapPin, CreditCard, User, Eye, Glasses, 
-  Heart, ShoppingBag, Star, Calendar, MessageCircle, 
-  FileText, Plus, Palette, Lightbulb, Play, ArrowRight
+import {
+  User, Eye, Palette, Plus, Lightbulb, ChevronLeft,
 } from 'lucide-react-native';
-import { useQuery } from '@tanstack/react-query';
-import { useClient } from '@/src/api/useClients';
-import { useInteractions } from '@/src/api/useInteractions';
+import { useClient, useUpdateClient } from '@/src/api/useClients';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
-import { api } from '@/src/api/client';
-import { LoadingState, ErrorState, EmptyState, Button, Card, TimelineEntry } from '@/src/ui';
-import type { ClientProfile } from '@/src/api/clients.types';
+import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
+import { toast } from '@/src/ui/useToastStore';
+import {
+  ProfileHeader,
+  EnrichmentPanel,
+  PreferencesPanel,
+  InteractionsTimeline,
+  InlineEditField,
+  OrdersPanel,
+  PrescriptionsPanel,
+  WishlistPanel,
+  SegmentsPanel,
+  ProductInteractionsPanel,
+  TryonSessionsPanel,
+  LinksPanel,
+} from '@/src/features/client-profile';
+import type { ClientProfile, ClientUpdateParams } from '@/src/api/clients.types';
 
-// Additional API hooks for client profile sections
-function useClientOrders(clientId: string) {
-  return useQuery({
-    queryKey: ['client-orders', clientId],
-    queryFn: () => api.get<{ data: any[] }>(`/api/clients/${clientId}/orders`),
-    enabled: !!clientId,
-    staleTime: 5 * 60 * 1000,
-  });
-}
+type ProfileTab = 'overview' | 'history' | 'clinical' | 'relationships';
 
-function useClientWishlist(clientId: string) {
-  return useQuery({
-    queryKey: ['client-wishlist', clientId],
-    queryFn: () => api.get<{ data: any[] }>(`/api/clients/${clientId}/wishlist`),
-    enabled: !!clientId,
-    staleTime: 60 * 1000,
-  });
-}
-
-function useClientPrescriptions(clientId: string) {
-  return useQuery({
-    queryKey: ['client-prescriptions', clientId],
-    queryFn: () => api.get<{ data: any[] }>(`/api/clients/${clientId}/prescriptions`),
-    enabled: !!clientId,
-    staleTime: 5 * 60 * 1000,
-  });
-}
+const TABS: Array<{ key: ProfileTab; label: string }> = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'history', label: 'History' },
+  { key: 'clinical', label: 'Clinical' },
+  { key: 'relationships', label: 'Relationships' },
+];
 
 export default function ClientProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -57,255 +49,225 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
   const router = useRouter();
   const privacyMode = usePrivacyStore((s) => s.mode);
   const startSession = useSessionStore((s) => s.startSession);
-  const activeClientId = useSessionStore((s) => s.activeClientId);
-  const sessionMode = useSessionStore((s) => s.mode);
-  
+  const updateClient = useUpdateClient();
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
+
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
-  const initials = [client.firstName?.[0], client.lastName?.[0]]
-    .filter(Boolean)
-    .join('')
-    .toUpperCase() || '?';
 
-  // Get tier from tags (CULT, VAULT, or default to Essential)
-  const tierTag = client.tags.find(tag => 
-    ['CULT', 'VAULT'].includes(tag.toUpperCase())
-  );
-  const tier = tierTag?.toUpperCase() || 'ESSENTIAL';
-
-  const formatCurrency = (amount: number | null) => {
-    if (!amount) return '$0.00';
-    return new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount);
-  };
-
-  const handleStartSession = () => {
+  const handleStartSession = useCallback(() => {
     startSession(client.id, name);
     router.push(`/clients/${client.id}/session`);
-  };
+  }, [client.id, name, router, startSession]);
 
-  const handleGoToSession = () => {
-    router.push(`/clients/${client.id}/session`);
-  };
-
-  // Is there already an active session for THIS client?
-  const hasActiveSessionForClient = activeClientId === client.id && sessionMode !== 'idle';
-  // Is there a session active for a DIFFERENT client?
-  const hasSessionForOtherClient = activeClientId !== null && activeClientId !== client.id && sessionMode !== 'idle';
+  const handleUpdateField = useCallback(
+    (field: keyof ClientUpdateParams, value: string) => {
+      const data: ClientUpdateParams = { [field]: value || null };
+      updateClient.mutate(
+        { id: client.id, data },
+        {
+          onSuccess: () => toast.success('Updated'),
+          onError: () => toast.error('Failed to update'),
+        }
+      );
+    },
+    [client.id, updateClient]
+  );
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Top sticky band */}
-      <View className="bg-bg-elevated border-b border-border px-2xl py-lg">
-        <View className="flex-row items-center">
-          {/* Avatar */}
-          <View className="w-16 h-16 rounded-full bg-brand items-center justify-center mr-lg">
-            <Text className="text-text-inverse text-headline font-bold">{initials}</Text>
-          </View>
-          
-          {/* Name and tier */}
-          <View className="flex-1">
-            <Text className="text-displayMd text-text-primary font-bold">{name}</Text>
-            <View className="flex-row items-center mt-sm gap-md">
-              <TierBadge tier={tier} />
-              {privacyMode === 'staff' && client.enrichment?.internalNotes && (
-                <View className="bg-warning/20 px-md py-xs rounded-md">
-                  <Text className="text-captionStrong text-warning">Has internal notes</Text>
-                </View>
-              )}
-            </View>
-          </View>
+      {/* Header with client info */}
+      <ProfileHeader client={client} onStartSession={handleStartSession} />
 
-          {/* Contact info */}
-          <View className="items-end">
-            {client.email && (
-              <View className="flex-row items-center mb-xs">
-                <Mail color="#6B6B6B" size={16} />
-                <Text className="text-body text-text-muted ml-sm">{client.email}</Text>
-              </View>
-            )}
-            {client.phone && (
-              <View className="flex-row items-center mb-xs">
-                <Phone color="#6B6B6B" size={16} />
-                <Text className="text-body text-text-muted ml-sm">{client.phone}</Text>
-              </View>
-            )}
-            {client.enrichment?.homeLocationId && (
-              <View className="flex-row items-center">
-                <MapPin color="#6B6B6B" size={16} />
-                <Text className="text-body text-text-muted ml-sm">Montreal West</Text>
-              </View>
-            )}
-          </View>
-
-          {/* Credits (staff-only or simplified for client) */}
-          {privacyMode === 'staff' ? (
-            client.totalSpent && (
-              <View className="items-center ml-lg">
-                <Text className="text-captionStrong text-text-muted">LTV</Text>
-                <Text className="text-headline text-text-primary">{formatCurrency(client.totalSpent)}</Text>
-              </View>
-            )
-          ) : (
-            <View className="items-center ml-lg">
-              <CreditCard color="#005D23" size={24} />
-              <Text className="text-bodyStrong text-accent">Credits available</Text>
-            </View>
-          )}
+      {/* Tab bar */}
+      <View className="bg-bg-elevated border-b border-border px-2xl">
+        <View className="flex-row">
+          {TABS.map((tab) => (
+            <Pressable
+              key={tab.key}
+              onPress={() => setActiveTab(tab.key)}
+              className={`min-h-[44px] px-lg items-center justify-center border-b-2 ${
+                activeTab === tab.key ? 'border-brand' : 'border-transparent'
+              }`}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === tab.key }}
+              accessibilityLabel={tab.label}
+            >
+              <Text
+                className={`text-bodyStrong ${
+                  activeTab === tab.key ? 'text-brand' : 'text-text-muted'
+                }`}
+              >
+                {tab.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       </View>
 
+      {/* Main content area: scrollable left + action sidebar right */}
       <View className="flex-1 flex-row">
-        {/* Main scrollable content */}
-        <ScrollView className="flex-1 p-xl">
+        {/* Scrollable content */}
+        <ScrollView className="flex-1 p-xl" showsVerticalScrollIndicator={false}>
           <View className="max-w-4xl">
-            {/* Fit Profile */}
-            <ProfileSection title="Fit Profile" icon={<Glasses color="#6B6B6B" size={20} />}>
-              <FitProfileCard client={client} />
-            </ProfileSection>
-
-            {/* Preferences */}
-            <ProfileSection title="Preferences" icon={<Heart color="#6B6B6B" size={20} />}>
-              <PreferencesCard client={client} />
-            </ProfileSection>
-
-            {/* Recent Orders */}
-            <ProfileSection title="Recent Orders" icon={<ShoppingBag color="#6B6B6B" size={20} />}>
-              <RecentOrdersCard clientId={client.id} />
-            </ProfileSection>
-
-            {/* Wishlist */}
-            <ProfileSection title="Wishlist" icon={<Star color="#6B6B6B" size={20} />}>
-              <WishlistCard clientId={client.id} />
-            </ProfileSection>
-
-            {/* Prescription Status */}
-            <ProfileSection title="Prescription Status" icon={<Eye color="#6B6B6B" size={20} />}>
-              <PrescriptionCard clientId={client.id} />
-            </ProfileSection>
-
-            {/* Interaction Timeline */}
-            <ProfileSection title="Timeline" icon={<MessageCircle color="#6B6B6B" size={20} />}>
-              <TimelineCard clientId={client.id} />
-            </ProfileSection>
-
-            {/* Internal Notes (staff-only) */}
-            {privacyMode === 'staff' && (
-              <ProfileSection title="Internal Notes" icon={<FileText color="#6B6B6B" size={20} />}>
-                <InternalNotesCard client={client} />
-              </ProfileSection>
+            {activeTab === 'overview' && (
+              <OverviewTab client={client} onUpdateField={handleUpdateField} />
             )}
+            {activeTab === 'history' && <HistoryTab clientId={client.id} />}
+            {activeTab === 'clinical' && <ClinicalTab clientId={client.id} />}
+            {activeTab === 'relationships' && <RelationshipsTab clientId={client.id} />}
           </View>
         </ScrollView>
 
-        {/* Right action bar */}
-        <View className="w-48 bg-bg-elevated border-l border-border p-lg">
-          {/* Session actions — context-aware */}
-          {hasActiveSessionForClient ? (
-            <>
-              <ActionButton
-                icon={<ArrowRight color="#FFFFFF" size={20} />}
-                label="Go to Session"
-                variant="primary"
-                onPress={handleGoToSession}
-              />
-              <ActionButton
-                icon={<Play color="#FFFFFF" size={20} />}
-                label="Start Fitting"
-                variant="primary"
-                onPress={() => router.push(`/clients/${client.id}/fitting`)}
-              />
-            </>
-          ) : hasSessionForOtherClient ? (
-            <View className="bg-warning/10 rounded-md p-md mb-md">
-              <Text className="text-caption text-warning text-center">
-                Session active with another client
-              </Text>
-            </View>
-          ) : (
-            <ActionButton
-              icon={<User color="#FFFFFF" size={20} />}
-              label="Start Session"
-              variant="primary"
-              onPress={handleStartSession}
-            />
-          )}
-          
+        {/* Right action sidebar */}
+        <View className="w-44 bg-bg-elevated border-l border-border p-lg">
+          <ActionButton
+            icon={<User color="#FFFFFF" size={20} />}
+            label="Start Session"
+            variant="primary"
+            onPress={handleStartSession}
+          />
           <ActionButton
             icon={<Eye color="#2B2B2B" size={20} />}
             label="Second Sight"
             variant="secondary"
-            onPress={() => {/* TODO: Navigate to Second Sight */}}
+            onPress={() => router.push(`/more/second-sight?clientId=${client.id}`)}
           />
           <ActionButton
             icon={<Palette color="#2B2B2B" size={20} />}
             label="Custom Design"
             variant="secondary"
-            onPress={() => {/* TODO: Navigate to Custom Design */}}
-          />
-          <ActionButton
-            icon={<Plus color="#2B2B2B" size={20} />}
-            label="Add Note"
-            variant="secondary"
-            onPress={() => {/* Show add note modal */}}
+            onPress={() => router.push(`/more/custom-design?clientId=${client.id}`)}
           />
           <ActionButton
             icon={<Lightbulb color="#2B2B2B" size={20} />}
-            label="Recommend"
+            label="AI Stylist"
             variant="secondary"
-            onPress={() => {/* Show recommend modal */}}
+            onPress={() => {/* TODO: AI Stylist modal */}}
           />
+          {privacyMode === 'staff' && (
+            <ActionButton
+              icon={<Plus color="#2B2B2B" size={20} />}
+              label="Add Note"
+              variant="secondary"
+              onPress={() => setActiveTab('history')}
+            />
+          )}
         </View>
       </View>
     </View>
   );
 }
 
-function TierBadge({ tier }: { tier: string }) {
-  const colors = {
-    CULT: 'bg-brand text-text-inverse',
-    VAULT: 'bg-accent text-text-inverse', 
-    ESSENTIAL: 'bg-border text-text-primary'
-  } as const;
+// ─── Tab Content ─────────────────────────────────────────────
 
-  return (
-    <View className={`px-md py-xs rounded-full ${colors[tier as keyof typeof colors] || colors.ESSENTIAL}`}>
-      <Text className="text-captionStrong font-bold">{tier}</Text>
-    </View>
-  );
-}
-
-function ProfileSection({ 
-  title, 
-  icon, 
-  children 
-}: { 
-  title: string; 
-  icon: React.ReactNode; 
-  children: React.ReactNode; 
+function OverviewTab({
+  client,
+  onUpdateField,
+}: {
+  client: ClientProfile;
+  onUpdateField: (field: keyof ClientUpdateParams, value: string) => void;
 }) {
+  const privacyMode = usePrivacyStore((s) => s.mode);
+
   return (
-    <View className="mb-lg">
-      <View className="flex-row items-center mb-md">
-        {icon}
-        <Text className="text-headline text-text-primary font-semibold ml-sm">{title}</Text>
+    <View className="gap-lg">
+      {/* Contact Details — editable */}
+      <View className="bg-bg-elevated rounded-lg border border-border p-md">
+        <Text className="text-bodyStrong text-text-primary mb-md">Contact Details</Text>
+        <InlineEditField
+          label="First name"
+          value={client.firstName}
+          onSave={(v) => onUpdateField('firstName', v)}
+        />
+        <InlineEditField
+          label="Last name"
+          value={client.lastName}
+          onSave={(v) => onUpdateField('lastName', v)}
+        />
+        <InlineEditField
+          label="Email"
+          value={client.email}
+          onSave={(v) => onUpdateField('email', v)}
+          keyboardType="email-address"
+        />
+        <InlineEditField
+          label="Phone"
+          value={client.phone}
+          onSave={(v) => onUpdateField('phone', v)}
+          keyboardType="phone-pad"
+        />
+        {privacyMode === 'staff' && (
+          <View className="mt-sm pt-sm border-t border-border">
+            <View className="flex-row items-center">
+              <Text className="text-body text-text-muted w-32">Tags</Text>
+              <View className="flex-1 flex-row flex-wrap gap-xs">
+                {client.tags.map((tag) => (
+                  <View key={tag} className="bg-bg-page px-sm py-xs rounded-md">
+                    <Text className="text-caption text-text-primary">{tag}</Text>
+                  </View>
+                ))}
+                {client.tags.length === 0 && (
+                  <Text className="text-body text-text-muted italic">No tags</Text>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
       </View>
-      {children}
+
+      {/* Fit Profile / Enrichment */}
+      <EnrichmentPanel clientId={client.id} />
+
+      {/* Preferences */}
+      <PreferencesPanel clientId={client.id} />
+
+      {/* Wishlist */}
+      <WishlistPanel clientId={client.id} />
     </View>
   );
 }
 
-function ActionButton({ 
-  icon, 
-  label, 
-  variant, 
-  onPress 
-}: { 
-  icon: React.ReactNode; 
-  label: string; 
-  variant: 'primary' | 'secondary'; 
-  onPress: () => void; 
+function HistoryTab({ clientId }: { clientId: string }) {
+  return (
+    <View className="gap-lg">
+      <InteractionsTimeline clientId={clientId} />
+      <OrdersPanel clientId={clientId} />
+      <TryonSessionsPanel clientId={clientId} />
+      <ProductInteractionsPanel clientId={clientId} />
+    </View>
+  );
+}
+
+function ClinicalTab({ clientId }: { clientId: string }) {
+  return (
+    <View className="gap-lg">
+      <PrescriptionsPanel clientId={clientId} />
+      <EnrichmentPanel clientId={clientId} />
+    </View>
+  );
+}
+
+function RelationshipsTab({ clientId }: { clientId: string }) {
+  return (
+    <View className="gap-lg">
+      <LinksPanel clientId={clientId} />
+      <SegmentsPanel clientId={clientId} />
+    </View>
+  );
+}
+
+// ─── Action Button ───────────────────────────────────────────
+
+function ActionButton({
+  icon,
+  label,
+  variant,
+  onPress,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  variant: 'primary' | 'secondary';
+  onPress: () => void;
 }) {
   return (
     <Pressable
@@ -317,254 +279,13 @@ function ActionButton({
       accessibilityLabel={label}
     >
       {icon}
-      <Text className={`text-captionStrong mt-xs text-center ${
-        variant === 'primary' ? 'text-text-inverse' : 'text-text-primary'
-      }`}>
+      <Text
+        className={`text-captionStrong mt-xs text-center ${
+          variant === 'primary' ? 'text-text-inverse' : 'text-text-primary'
+        }`}
+      >
         {label}
       </Text>
     </Pressable>
-  );
-}
-
-function FitProfileCard({ client }: { client: ClientProfile }) {
-  const enrichment = client.enrichment;
-  
-  return (
-    <Card>
-      <View className="grid-cols-3 gap-md">
-        <View className="flex-row justify-between py-sm border-b border-border">
-          <Text className="text-body text-text-muted">Face shape</Text>
-          <Text className="text-bodyStrong text-text-primary">
-            {enrichment?.faceShape || 'Not measured'}
-          </Text>
-        </View>
-        <View className="flex-row justify-between py-sm border-b border-border">
-          <Text className="text-body text-text-muted">Frame width</Text>
-          <Text className="text-bodyStrong text-text-primary">
-            {enrichment?.frameWidthMm ? `${enrichment.frameWidthMm}mm` : 'Not measured'}
-          </Text>
-        </View>
-        <View className="flex-row justify-between py-sm">
-          <Text className="text-body text-text-muted">Bridge width</Text>
-          <Text className="text-bodyStrong text-text-primary">
-            {enrichment?.bridgeWidthMm ? `${enrichment.bridgeWidthMm}mm` : 'Not measured'}
-          </Text>
-        </View>
-      </View>
-      
-      {!enrichment?.faceShape && (
-        <View className="mt-md p-md bg-bg-page rounded-md">
-          <Text className="text-body text-text-muted text-center">
-            Start a fitting session to capture measurements
-          </Text>
-        </View>
-      )}
-    </Card>
-  );
-}
-
-function PreferencesCard({ client }: { client: ClientProfile }) {
-  const preferences = client.enrichment?.customFields?.preferences_json as any;
-  
-  return (
-    <Card>
-      <View className="flex-row">
-        <View className="flex-1 mr-md">
-          <Text className="text-bodyStrong text-text-primary mb-sm">Stated</Text>
-          {preferences?.stated?.length > 0 ? (
-            preferences.stated.map((pref: string, index: number) => (
-              <Text key={index} className="text-body text-text-muted mb-xs">• {pref}</Text>
-            ))
-          ) : (
-            <Text className="text-body text-text-muted italic">No stated preferences</Text>
-          )}
-        </View>
-        
-        <View className="flex-1">
-          <Text className="text-bodyStrong text-text-primary mb-sm">Derived</Text>
-          <View className="flex-row flex-wrap gap-xs">
-            {['Acetate', 'Bold', 'Vintage', '$200-400'].map((tag) => (
-              <View key={tag} className="bg-bg-page px-sm py-xs rounded-md">
-                <Text className="text-caption text-text-primary">{tag}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-    </Card>
-  );
-}
-
-function RecentOrdersCard({ clientId }: { clientId: string }) {
-  const { data: orders, isLoading, error } = useClientOrders(clientId);
-  
-  if (isLoading) return <Card><LoadingState /></Card>;
-  if (error) return <Card><Text className="text-error">Failed to load orders</Text></Card>;
-  
-  return (
-    <Card>
-      {orders?.data && orders.data.length > 0 ? (
-        orders.data.slice(0, 3).map((order: any, index: number) => (
-          <View key={order.id} className={`py-md ${index < 2 ? 'border-b border-border' : ''}`}>
-            <View className="flex-row justify-between items-start">
-              <View className="flex-1">
-                <Text className="text-bodyStrong text-text-primary">{order.productName}</Text>
-                <Text className="text-caption text-text-muted">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </Text>
-              </View>
-              <Text className="text-bodyStrong text-text-primary">
-                ${order.total?.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        ))
-      ) : (
-        <Text className="text-body text-text-muted italic text-center py-md">
-          No orders yet
-        </Text>
-      )}
-    </Card>
-  );
-}
-
-function WishlistCard({ clientId }: { clientId: string }) {
-  const { data: wishlist, isLoading, error } = useClientWishlist(clientId);
-  
-  if (isLoading) return <Card><LoadingState /></Card>;
-  if (error) return <Card><Text className="text-error">Failed to load wishlist</Text></Card>;
-  
-  return (
-    <Card>
-      {wishlist?.data && wishlist.data.length > 0 ? (
-        <View className="flex-row flex-wrap gap-md">
-          {wishlist.data.map((item: any) => (
-            <View key={item.id} className="w-20 items-center">
-              <Image 
-                source={{ uri: item.product?.image?.url }}
-                className="w-16 h-16 rounded-md bg-bg-page"
-                resizeMode="cover"
-              />
-              <Text className="text-caption text-text-primary text-center mt-xs" numberOfLines={2}>
-                {item.product?.title}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text className="text-body text-text-muted italic text-center py-md">
-          No wishlist items yet
-        </Text>
-      )}
-    </Card>
-  );
-}
-
-function PrescriptionCard({ clientId }: { clientId: string }) {
-  const { data: prescriptions, isLoading, error } = useClientPrescriptions(clientId);
-  
-  if (isLoading) return <Card><LoadingState /></Card>;
-  if (error) return <Card><Text className="text-error">Failed to load prescription</Text></Card>;
-  
-  const currentRx = prescriptions?.data?.[0];
-  
-  return (
-    <Card>
-      {currentRx ? (
-        <View>
-          <View className="flex-row justify-between items-center mb-md">
-            <Text className="text-bodyStrong text-text-primary">Current Rx</Text>
-            <View className={`px-md py-xs rounded-full ${
-              currentRx.isValid ? 'bg-accent/20' : 'bg-warning/20'
-            }`}>
-              <Text className={`text-captionStrong ${
-                currentRx.isValid ? 'text-accent' : 'text-warning'
-              }`}>
-                {currentRx.isValid ? 'Valid' : 'Expired'}
-              </Text>
-            </View>
-          </View>
-          
-          <View className="flex-row justify-between py-sm border-b border-border">
-            <Text className="text-body text-text-muted">Issue date</Text>
-            <Text className="text-bodyStrong text-text-primary">
-              {new Date(currentRx.issuedAt).toLocaleDateString()}
-            </Text>
-          </View>
-          <View className="flex-row justify-between py-sm">
-            <Text className="text-body text-text-muted">Expires</Text>
-            <Text className="text-bodyStrong text-text-primary">
-              {new Date(currentRx.expiresAt).toLocaleDateString()}
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <Text className="text-body text-text-muted italic text-center py-md">
-          No prescription on file
-        </Text>
-      )}
-    </Card>
-  );
-}
-
-function TimelineCard({ clientId }: { clientId: string }) {
-  const { data: interactions, isLoading, error } = useInteractions(clientId);
-  
-  if (isLoading) return <Card><LoadingState /></Card>;
-  if (error) return <Card><Text className="text-error">Failed to load timeline</Text></Card>;
-  
-  return (
-    <Card>
-      {interactions && interactions.interactions.length > 0 ? (
-        <View>
-          {interactions.interactions.slice(0, 5).map((interaction: any, index: number) => (
-            <View key={interaction.id} className={index < 4 ? 'mb-md pb-md border-b border-border' : ''}>
-              <TimelineEntry interaction={interaction} />
-            </View>
-          ))}
-          {interactions.interactions.length > 5 && (
-            <Pressable className="mt-md">
-              <Text className="text-bodyStrong text-accent text-center">
-                View all {interactions.interactions.length} entries
-              </Text>
-            </Pressable>
-          )}
-        </View>
-      ) : (
-        <Text className="text-body text-text-muted italic text-center py-md">
-          No interactions yet
-        </Text>
-      )}
-    </Card>
-  );
-}
-
-function InternalNotesCard({ client }: { client: ClientProfile }) {
-  const notes = client.enrichment?.internalNotes || '';
-  
-  return (
-    <Card>
-      <TextInput
-        value={notes}
-        onChangeText={(text) => {
-          // TODO: Implement debounced save
-          console.log('Update notes:', text);
-        }}
-        placeholder="Add internal notes about this client..."
-        multiline
-        numberOfLines={4}
-        className="text-body text-text-primary min-h-[88px] p-0"
-        textAlignVertical="top"
-      />
-      
-      <View className="flex-row mt-md">
-        <Text className="text-caption text-text-muted flex-1">
-          Staff-only notes • Auto-saved
-        </Text>
-        <Text className="text-caption text-text-muted">
-          Last updated: {new Date().toLocaleDateString()}
-        </Text>
-      </View>
-    </Card>
   );
 }
