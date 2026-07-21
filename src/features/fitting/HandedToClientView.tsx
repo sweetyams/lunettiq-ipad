@@ -46,12 +46,12 @@ export function HandedToClientView() {
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Mode Strip - GREEN for HANDED mode — EXIT GESTURE AREA */}
+      {/* Mode Strip - HANDED mode — EXIT GESTURE AREA */}
       <Pressable
         onPress={exitGesture}
         onPressIn={() => console.log('[Handed] bar pressed')}
         className="min-h-[44px] items-center justify-center"
-        style={{ backgroundColor: '#005D23' }}
+        style={{ backgroundColor: '#023891' }}
         accessibilityRole="button"
         accessibilityLabel="Double tap to return to staff mode"
         accessibilityHint="Quickly tap twice to authenticate and exit client view"
