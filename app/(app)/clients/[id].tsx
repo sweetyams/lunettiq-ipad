@@ -132,30 +132,26 @@ function ClientProfileLayout({ client }: { client: ClientProfile }) {
             icon={<Eye color="#2B2B2B" size={20} />}
             label="Second Sight"
             variant="secondary"
-            onPress={() => router.push(`/more/second-sight?clientId=${client.id}`)}
+            onPress={() => router.push(`/more/second-sight?clientId=${client.id}&clientName=${encodeURIComponent(name)}`)}
           />
           <ActionButton
             icon={<Palette color="#2B2B2B" size={20} />}
             label="Custom Design"
             variant="secondary"
-            onPress={() => router.push(`/more/custom-design?clientId=${client.id}`)}
+            onPress={() => router.push(`/more/custom-design?clientId=${client.id}&clientName=${encodeURIComponent(name)}`)}
           />
-          <PermissionGate permission="org:rx-pipeline:read">
-            <ActionButton
-              icon={<ClipboardList color="#2B2B2B" size={20} />}
-              label="Rx Pipeline"
-              variant="secondary"
-              onPress={() => router.push(`/more/rx-pipeline?clientId=${client.id}`)}
-            />
-          </PermissionGate>
-          <PermissionGate permission="org:multi_pair:recommend">
-            <ActionButton
-              icon={<Users2 color="#2B2B2B" size={20} />}
-              label="Multi-Pair"
-              variant="secondary"
-              onPress={() => router.push(`/clients/${client.id}/session`)}
-            />
-          </PermissionGate>
+          <ActionButton
+            icon={<ClipboardList color="#2B2B2B" size={20} />}
+            label="Rx Pipeline"
+            variant="secondary"
+            onPress={() => router.push('/more/rx-pipeline')}
+          />
+          <ActionButton
+            icon={<Users2 color="#2B2B2B" size={20} />}
+            label="Multi-Pair"
+            variant="secondary"
+            onPress={() => handleStartSession()}
+          />
           <ActionButton
             icon={<Lightbulb color="#2B2B2B" size={20} />}
             label="AI Stylist"

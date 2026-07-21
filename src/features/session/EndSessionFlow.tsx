@@ -4,7 +4,7 @@ import { ShoppingBag, Calendar, Star, DoorOpen, ChevronLeft, ScanLine } from 'lu
 import { useRouter } from 'expo-router';
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
-import { useCreateInteraction } from '@/src/api/useInteractions';
+import { useEndSession } from '@/src/api/useSessions';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
 import { toast } from '@/src/ui/useToastStore';
 import { useDesignTokens } from '@/src/features/design';
@@ -72,8 +72,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
     reset: resetFitting 
   } = useFittingStore();
 
-  const endSessionMutation = useCreateInteraction(); // Use existing interaction API
-  const createInteractionMutation = useCreateInteraction();
+  const endSessionMutation = useEndSession();
   const createProductInteractionsMutation = useCreateBatchProductInteractions();
 
   // Quick tag options with proper typing
@@ -119,24 +118,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
     }
 
     try {
-      // 1. Create main session completion interaction
-      await createInteractionMutation.mutateAsync({
-        clientId: activeClientId,
-        type: 'session_completed',
-        notes: internalNotes.trim() || undefined,
-        metadata: {
-          sessionId,
-          outcome,
-          framesTried: framesTried.length,
-          photosTaken: photos.length,
-          sendSummary: sendSummary && consentCaptured,
-          summaryLanguage: language,
-          tags: selectedTags,
-          orderRef: orderRef.trim() || undefined,
-        },
-      });
-
-      // 2. Create product interactions for each frame with verdict
+      // 1. Create product interactions for each frame with verdict first
       const productInteractions = framesTried
         .filter(frame => frame.verdict)
         .map(frame => ({
@@ -161,6 +143,18 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       if (productInteractions.length > 0) {
         await createProductInteractionsMutation.mutateAsync(productInteractions);
       }
+
+      // 2. End session with outcome and metadata using proper API
+      await endSessionMutation.mutateAsync({
+        sessionId,
+        clientId: activeClientId,
+        outcomeTag: outcome,
+        sendSummary: sendSummary && consentCaptured,
+        summaryLanguage: language,
+        internalNotes: internalNotes.trim() || '',
+        tags: selectedTags,
+        orderRef: orderRef.trim() || undefined,
+      });
 
       // 3. Reset session and fitting state
       resetSession();
@@ -444,7 +438,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       <Pressable
         onPress={handleComplete}
         disabled={
-          createInteractionMutation.isPending ||
+          endSessionMutation.isPending ||
           createProductInteractionsMutation.isPending
         }
         accessibilityRole="button"
@@ -452,14 +446,14 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         className="bg-accent rounded-md py-md px-lg items-center min-h-[44px] justify-center opacity-100"
         style={{ 
           opacity: (
-            createInteractionMutation.isPending ||
+            endSessionMutation.isPending ||
             createProductInteractionsMutation.isPending
           ) ? 0.6 : 1
         }}
       >
         <Text className="text-body font-medium text-text-inverse">
           {(
-            createInteractionMutation.isPending ||
+            endSessionMutation.isPending ||
             createProductInteractionsMutation.isPending
           ) ? 'Saving...' : 'Save & end session'}
         </Text>

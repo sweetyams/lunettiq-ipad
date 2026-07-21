@@ -554,12 +554,11 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
   const privacyMode = usePrivacyStore((s) => s.mode);
 
   return (
-    <PermissionGate permission="org:loyalty:read">
-      <View>
-        <View className="flex-row items-center mb-md">
-          <Award color="#6B6B6B" size={20} />
-          <Text className="text-headline text-text-primary font-semibold ml-sm">Loyalty Credits</Text>
-        </View>
+    <View>
+      <View className="flex-row items-center mb-md">
+        <Award color="#6B6B6B" size={20} />
+        <Text className="text-headline text-text-primary font-semibold ml-sm">Loyalty Credits</Text>
+      </View>
 
         <Card>
           {isLoading ? (
@@ -628,7 +627,6 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
           )}
         </Card>
       </View>
-    </PermissionGate>
   );
 }
 
@@ -643,12 +641,11 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
   const sendReceipt = useSendReceipt();
 
   return (
-    <PermissionGate permission="org:receipts:read">
-      <View>
-        <View className="flex-row items-center mb-md">
-          <Receipt color="#6B6B6B" size={20} />
-          <Text className="text-headline text-text-primary font-semibold ml-sm">Insurance Receipts</Text>
-        </View>
+    <View>
+      <View className="flex-row items-center mb-md">
+        <Receipt color="#6B6B6B" size={20} />
+        <Text className="text-headline text-text-primary font-semibold ml-sm">Insurance Receipts</Text>
+      </View>
 
         <Card>
           {isLoading ? (
@@ -696,6 +693,5 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
           )}
         </Card>
       </View>
-    </PermissionGate>
   );
 }

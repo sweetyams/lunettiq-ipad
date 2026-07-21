@@ -52,7 +52,13 @@ export default function SessionWorkspaceScreen() {
     setShowEndSession(true);
   }, []);
 
-  const handleEndSessionConfirm = useCallback(() => {
+  const handleEndSessionDismiss = useCallback(() => {
+    // Just hide the sheet, keep session active
+    setShowEndSession(false);
+  }, []);
+
+  const handleEndSessionComplete = useCallback(() => {
+    // Flow completed successfully - end session and navigate
     setShowEndSession(false);
     endSession();
     router.replace(`/clients/${clientId}`);
@@ -100,7 +106,8 @@ export default function SessionWorkspaceScreen() {
       {/* End Session Sheet */}
       <EndSessionSheet
         visible={showEndSession}
-        onClose={handleEndSessionConfirm}
+        onDismiss={handleEndSessionDismiss}
+        onComplete={handleEndSessionComplete}
       />
     </View>
   );

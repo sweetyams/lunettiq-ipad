@@ -4,21 +4,29 @@ import { EndSessionFlow } from './EndSessionFlow';
 
 interface EndSessionSheetProps {
   visible: boolean;
-  onClose: () => void;
+  onDismiss: () => void;
+  onComplete: () => void;
 }
 
-export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
+export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSheetProps) {
   const handleBackdropPress = () => {
-    // Allow dismissing by tapping backdrop (with confirmation in future)
-    onClose();
+    // Backdrop press dismisses (cancels) without ending session
+    onDismiss();
   };
 
-  const handleComplete = () => {
-    onClose();
+  const handleXButtonPress = () => {
+    // X button dismisses (cancels) without ending session
+    onDismiss();
   };
 
-  const handleCancel = () => {
-    onClose();
+  const handleFlowComplete = () => {
+    // EndSessionFlow completed successfully - end session and navigate
+    onComplete();
+  };
+
+  const handleFlowCancel = () => {
+    // EndSessionFlow was cancelled - dismiss without ending session
+    onDismiss();
   };
 
   return (
@@ -26,7 +34,7 @@ export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={onDismiss}
       presentationStyle="overFullScreen"
     >
       {/* Backdrop */}
@@ -36,11 +44,9 @@ export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
         accessibilityRole="button"
         accessibilityLabel="Close end session dialog"
       >
-        {/* Modal content */}
-        <Pressable 
-          className="bg-bg-page rounded-lg w-full max-w-[600px] max-h-[85%] shadow-lg"
-          onPress={(e) => e.stopPropagation()} // Prevent backdrop dismiss when tapping content
-          accessibilityRole="none"
+        {/* Modal content - fix layout to be flex container with proper scrolling */}
+        <View 
+          className="bg-bg-page rounded-lg w-full max-w-[600px] max-h-[85%] shadow-lg flex overflow-hidden"
         >
           {/* Header with close button */}
           <View className="flex-row items-center justify-between p-lg border-b border-border">
@@ -48,7 +54,7 @@ export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
               End Session
             </Text>
             <Pressable
-              onPress={onClose}
+              onPress={handleXButtonPress}
               accessibilityLabel="Close"
               accessibilityRole="button"
               className="w-11 h-11 items-center justify-center rounded-md bg-bg-elevated border border-border"
@@ -57,14 +63,18 @@ export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
             </Pressable>
           </View>
 
-          {/* Content area */}
-          <View className="flex-1">
+          {/* Content area - prevent backdrop tap propagation and allow flex-1 */}
+          <Pressable 
+            className="flex-1"
+            onPress={(e) => e.stopPropagation()}
+            accessibilityRole="none"
+          >
             <EndSessionFlow 
-              onComplete={handleComplete}
-              onCancel={handleCancel}
+              onComplete={handleFlowComplete}
+              onCancel={handleFlowCancel}
             />
-          </View>
-        </Pressable>
+          </Pressable>
+        </View>
       </Pressable>
     </Modal>
   );

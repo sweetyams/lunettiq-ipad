@@ -41,7 +41,8 @@ export function SessionWorkspaceExample() {
       {/* End Session Sheet */}
       <EndSessionSheet
         visible={showEndSession}
-        onClose={handleEndSessionCancel}
+        onDismiss={handleEndSessionCancel}
+        onComplete={handleEndSessionComplete}
       />
     </View>
   );

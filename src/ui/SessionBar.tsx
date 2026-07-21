@@ -51,6 +51,13 @@ export function SessionBar() {
   // Don't render if no active session
   if (mode === 'idle' || !activeClientId) return null;
 
+  // Navigation context - must be declared before use
+  const isOnSessionScreen = pathname?.includes(`/clients/${activeClientId}/session`);
+  const isOnFittingScreen = pathname?.includes(`/clients/${activeClientId}/fitting`);
+
+  // Don't render on session workspace or fitting — those screens have their own topbar
+  if (isOnSessionScreen || isOnFittingScreen) return null;
+
   // Derive client details
   const tier = client?.tags?.find((tag: string) =>
     ['CULT', 'VAULT'].includes(tag.toUpperCase())
@@ -61,10 +68,6 @@ export function SessionBar() {
     : null;
 
   const orderCount = client?.orderCount ?? 0;
-
-  // Navigation context
-  const isOnSessionScreen = pathname?.includes(`/clients/${activeClientId}/session`);
-  const isOnFittingScreen = pathname?.includes(`/clients/${activeClientId}/fitting`);
   const isFitting = mode === 'fitting';
 
   const handleGoToSession = () => {
@@ -87,7 +90,13 @@ export function SessionBar() {
     setShowEndSession(true);
   };
 
-  const handleEndSessionConfirm = () => {
+  const handleEndSessionDismiss = () => {
+    // Just hide the sheet, keep session active
+    setShowEndSession(false);
+  };
+
+  const handleEndSessionComplete = () => {
+    // Flow completed successfully - end session and navigate
     setShowEndSession(false);
     endSession();
     router.replace('/(app)/home');
@@ -212,7 +221,8 @@ export function SessionBar() {
       {/* End Session Sheet (modal) */}
       <EndSessionSheet
         visible={showEndSession}
-        onClose={handleEndSessionConfirm}
+        onDismiss={handleEndSessionDismiss}
+        onComplete={handleEndSessionComplete}
       />
     </>
   );

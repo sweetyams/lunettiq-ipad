@@ -13,6 +13,7 @@ import { LoadingState, ErrorState, EmptyState, Button, FitBadge, StockDot } from
 import { ColourSiblings } from '@/src/ui/ColourSiblings';
 import { ConfiguratorSheet } from '@/src/features/configurator/ConfiguratorSheet';
 import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet';
+import { toast } from '@/src/ui/useToastStore';
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import type { ProductVariant } from '@/src/api/products.types';
 
@@ -104,6 +105,8 @@ export default function ProductDetailScreen() {
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [configuredCart, setConfiguredCart] = useState<CartResult | null>(null);
   const [configuredPrice, setConfiguredPrice] = useState<ConfiguratorPriceSummary | null>(null);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isShortlisted, setIsShortlisted] = useState(false);
 
   // Log 'viewed' interaction once per session visit
   useEffect(() => {
@@ -187,15 +190,37 @@ export default function ProductDetailScreen() {
     // TODO: Navigate to fitting mode or add to shelf
   }, [product, activeClientId, selectedVariant, sessionId]);
 
-  const handleWishlist = useCallback(() => {
+  const handleWishlist = useCallback(async () => {
     if (!product || !activeClientId) return;
-    logInteraction.mutate({
-      clientId: activeClientId,
-      productId: product.id ?? product.shopifyId,
-      type: 'liked',
-      sessionId,
-    });
-  }, [product, activeClientId, sessionId]);
+    try {
+      await logInteraction.mutateAsync({
+        clientId: activeClientId,
+        productId: product.id ?? product.shopifyId,
+        type: 'liked',
+        sessionId,
+      });
+      setIsLiked(true);
+      toast.success('Added to wishlist', `${title} saved`);
+    } catch (error) {
+      // Error handling is managed by the mutation hook
+    }
+  }, [product, activeClientId, sessionId, title]);
+
+  const handleRecommend = useCallback(async () => {
+    if (!product || !activeClientId) return;
+    try {
+      await logInteraction.mutateAsync({
+        clientId: activeClientId,
+        productId: product.id ?? product.shopifyId,
+        type: 'shortlisted',
+        sessionId,
+      });
+      setIsShortlisted(true);
+      toast.success('Shortlisted', `${title} added to shortlist`);
+    } catch (error) {
+      // Error handling is managed by the mutation hook
+    }
+  }, [product, activeClientId, sessionId, title]);
 
   // --- Loading / Error / Empty states ---
   if (isLoading) return <LoadingState />;
@@ -424,15 +449,23 @@ export default function ProductDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Add to wishlist"
             >
-              <Heart size={20} color="#171717" />
+              <Heart 
+                size={20} 
+                color={isLiked ? "#DC2626" : "#171717"} 
+                fill={isLiked ? "#DC2626" : "transparent"}
+              />
             </Pressable>
             <Pressable
-              onPress={() => {}}
+              onPress={handleRecommend}
               className="min-h-[44px] min-w-[44px] items-center justify-center border border-border rounded-md px-md"
               accessibilityRole="button"
               accessibilityLabel="Recommend"
             >
-              <Star size={20} color="#171717" />
+              <Star 
+                size={20} 
+                color={isShortlisted ? "#CA8A04" : "#171717"} 
+                fill={isShortlisted ? "#CA8A04" : "transparent"}
+              />
             </Pressable>
           </View>
         ) : (

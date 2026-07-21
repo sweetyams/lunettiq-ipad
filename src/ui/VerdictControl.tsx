@@ -42,7 +42,7 @@ export function VerdictControl({ value, onChange }: VerdictControlProps) {
             key={verdict}
             onPress={() => onChange(verdict)}
             className={`
-              w-[52px] h-[40px] items-center justify-center
+              w-[52px] h-[44px] items-center justify-center
               ${isActive ? '' : 'bg-bg-elevated'}
               ${!isLast ? 'border-r border-border' : ''}
             `}
