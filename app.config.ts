@@ -10,11 +10,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
   scheme: 'lunettiq',
-  splash: {
-    image: './assets/splash.png',
-    resizeMode: 'contain',
-    backgroundColor: '#0A153D',
-  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.lunettiq.ipad',
@@ -23,12 +18,34 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSCameraUsageDescription: 'Lunettiq uses the camera to capture fitting photos and Second Sight trade-in documentation.',
       NSPhotoLibraryUsageDescription: 'Allow Lunettiq to save fitting photos.',
       UIRequiredDeviceCapabilities: ['armv7', 'camera-flash'],
+      NSAppTransportSecurity: {
+        NSAllowsLocalNetworking: true,
+        NSExceptionDomains: {
+          'lunettiq.localhost': {
+            NSExceptionAllowsInsecureHTTPLoads: true,
+            NSIncludesSubdomains: true,
+          },
+          'localhost': {
+            NSExceptionAllowsInsecureHTTPLoads: true,
+            NSIncludesSubdomains: true,
+          },
+        },
+      },
     },
   },
   plugins: [
     'expo-router',
     'expo-camera',
     'expo-secure-store',
+    './plugins/withSimdjson',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        backgroundColor: '#0A153D',
+        imageWidth: 200,
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

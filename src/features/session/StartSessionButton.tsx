@@ -32,11 +32,11 @@ export function StartSessionButton({ clientId, clientName }: StartSessionButtonP
       onPress={handlePress}
       disabled={isDisabled}
       className={`
-        ${isDisabled ? 'bg-midGrey' : 'bg-green'} 
+        ${isDisabled ? 'bg-text-muted' : 'bg-accent'} 
         rounded-md min-h-[44px] px-lg py-sm items-center justify-center
       `}
     >
-      <Text className="text-white text-bodyStrong">
+      <Text className="text-text-inverse text-bodyStrong">
         {getButtonText()}
       </Text>
     </Pressable>

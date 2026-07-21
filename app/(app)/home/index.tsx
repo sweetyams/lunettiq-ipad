@@ -1,181 +1,222 @@
-import { View, Text, FlatList, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAppointments, useUpdateAppointment } from '@/src/api/useAppointments';
+import { useCallback, useState } from 'react';
+import { Calendar } from 'lucide-react-native';
+import { useTodayAppointments, useCheckIn, useMarkNoShow } from '@/src/api/useAppointments';
+import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { AppointmentCard } from '@/src/ui/AppointmentCard';
-import { Appointment } from '@/src/api/appointments.types';
+import { ActiveHoldsCard } from '@/src/ui/ActiveHoldsCard';
+import { RecentClientsCard } from '@/src/ui/RecentClientsCard';
+import { QuickActionsGrid } from '@/src/ui/QuickActionsGrid';
+import { LoadingState } from '@/src/ui/LoadingState';
+import { ErrorState } from '@/src/ui/ErrorState';
+import { toast } from '@/src/ui/useToastStore';
+import type { Appointment, InventoryHold } from '@/src/api/appointments.types';
 
 export default function HomeScreen() {
   const router = useRouter();
-  
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
-  
-  const { 
-    data: appointments = [], 
-    isLoading, 
-    error, 
-    refetch 
-  } = useAppointments({ date: today });
-  
-  const updateAppointment = useUpdateAppointment();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleCheckIn = (appointmentId: string) => {
-    updateAppointment.mutate({
-      id: appointmentId,
-      data: { status: 'in_progress' }
-    });
-  };
+  const {
+    data: appointments,
+    isLoading,
+    error,
+    refetch,
+  } = useTodayAppointments();
 
-  const handleStartSession = (appointmentId: string) => {
-    // Find the appointment to get client info
-    const appointment = appointments.find(apt => apt.id === appointmentId);
-    if (appointment?.clientId) {
-      router.push(`/clients/${appointment.clientId}/session`);
+  const checkIn = useCheckIn();
+  const markNoShow = useMarkNoShow();
+  const { setClient } = useSessionStore();
+
+  // Sort appointments: in_progress first, then by startsAt, past at bottom
+  const sortedAppointments = [...(appointments ?? [])].sort((a, b) => {
+    // in_progress always at top
+    if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+    if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
+    // completed/no_show at bottom
+    const aDone = a.status === 'completed' || a.status === 'no_show';
+    const bDone = b.status === 'completed' || b.status === 'no_show';
+    if (aDone && !bDone) return 1;
+    if (bDone && !aDone) return -1;
+    // Sort by start time
+    return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+  });
+
+  const handleCheckIn = useCallback((appointmentId: string) => {
+    checkIn.mutate(appointmentId);
+  }, [checkIn]);
+
+  const handleStartSession = useCallback((appointmentId: string) => {
+    const appointment = appointments?.find((a) => a.id === appointmentId);
+    if (!appointment?.clientId) {
+      toast.warning('No Client', 'This appointment has no linked client.');
+      return;
     }
-  };
+    // Set client in session store (starts session mode + timer)
+    setClient(appointment.clientId);
+    // Navigate to session workspace
+    router.push(`/clients/${appointment.clientId}/session`);
+  }, [appointments, setClient, router]);
 
-  const handleAppointmentPress = (appointmentId: string) => {
-    // Navigate to appointments tab - dynamic route will be added later
-    router.push('/appointments');
-  };
+  const handleAppointmentPress = useCallback((appointmentId: string) => {
+    // Could show detail popover in future; for now do nothing
+  }, []);
+
+  const handleAppointmentLongPress = useCallback((appointment: Appointment) => {
+    const actions: Array<{ text: string; style?: 'destructive' | 'cancel'; onPress?: () => void }> = [];
+
+    if (appointment.status !== 'no_show' && appointment.status !== 'completed') {
+      actions.push({
+        text: 'Mark No-show',
+        style: 'destructive',
+        onPress: () => markNoShow.mutate(appointment.id),
+      });
+    }
+
+    if (appointment.clientId) {
+      actions.push({
+        text: 'View profile',
+        onPress: () => router.push(`/clients/${appointment.clientId}`),
+      });
+    }
+
+    actions.push({ text: 'Cancel', style: 'cancel' });
+
+    Alert.alert(
+      appointment.clientName || 'Appointment',
+      undefined,
+      actions
+    );
+  }, [markNoShow, router]);
+
+  const handleHoldPress = useCallback((hold: InventoryHold) => {
+    router.push(`/products/${hold.productId}`);
+  }, [router]);
+
+  const handleClientPress = useCallback((clientId: string) => {
+    router.push(`/clients/${clientId}`);
+  }, [router]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const formatDate = () => {
     const date = new Date();
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString('en-US', {
       weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+      month: 'long',
+      day: 'numeric',
     });
   };
 
-  // Sort appointments by start time
-  const sortedAppointments = [...appointments].sort((a, b) => 
-    new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
-  );
-
-  const renderAppointment = ({ item }: { item: Appointment }) => (
+  const renderAppointmentCard = useCallback(({ item }: { item: Appointment }) => (
     <AppointmentCard
       appointment={item}
       onCheckIn={handleCheckIn}
       onStartSession={handleStartSession}
       onPress={handleAppointmentPress}
+      onLongPress={() => handleAppointmentLongPress(item)}
     />
-  );
+  ), [handleCheckIn, handleStartSession, handleAppointmentPress, handleAppointmentLongPress]);
 
-  const renderQuickActions = () => (
-    <View className="bg-white rounded-lg border border-warmGrey p-lg">
-      <Text className="text-headline text-charcoal mb-lg">Quick Actions</Text>
-      
-      <View className="gap-sm">
-        <Pressable 
-          onPress={() => router.push('/clients')}
-          className="bg-navy px-lg py-md rounded-md min-h-[44px] items-center justify-center"
-        >
-          <Text className="text-bodyStrong text-white">Search Client</Text>
-        </Pressable>
-        
-        <Pressable 
-          onPress={() => router.push('/clients/new')}
-          className="bg-navy px-lg py-md rounded-md min-h-[44px] items-center justify-center"
-        >
-          <Text className="text-bodyStrong text-white">New Client</Text>
-        </Pressable>
-        
-        <Pressable 
-          onPress={() => router.push('/products')}
-          className="bg-navy px-lg py-md rounded-md min-h-[44px] items-center justify-center"
-        >
-          <Text className="text-bodyStrong text-white">Browse Products</Text>
-        </Pressable>
+  // Full loading state
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-bg-page">
+        <View className="px-xl pt-2xl pb-lg border-b border-border">
+          <Text className="text-displayLg text-text-primary">Today</Text>
+          <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+        </View>
+        <View className="flex-1 flex-row">
+          <View className="flex-[3] p-xl">
+            <LoadingState />
+          </View>
+          <View className="flex-[2] border-l border-border p-lg">
+            <LoadingState />
+          </View>
+        </View>
       </View>
-    </View>
-  );
+    );
+  }
 
-  const renderEmptyState = () => (
-    <View className="flex-1 items-center justify-center p-xl">
-      <Text className="text-displayMd text-charcoal mb-sm text-center">
-        No appointments today
-      </Text>
-      <Text className="text-body text-midGrey mb-lg text-center">
-        Ready to help walk-in clients
-      </Text>
-      <Pressable 
-        onPress={() => router.push('/products')}
-        className="bg-green px-xl py-md rounded-md"
-      >
-        <Text className="text-bodyStrong text-white">Browse Products</Text>
-      </Pressable>
-    </View>
-  );
+  // Error state — show as empty if network/auth error (offline-first), real error otherwise
+  if (error) {
+    const isRecoverableError = error instanceof Error && (
+      error.message.includes('Network request failed') ||
+      error.message.includes('fetch') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('Not authenticated') ||
+      error.message.includes('UNAUTHORIZED') ||
+      error.name === 'TypeError' ||
+      (error as any).code === 'UNAUTHORIZED'
+    );
 
-  const renderErrorState = () => (
-    <View className="flex-1 items-center justify-center p-xl">
-      <Text className="text-headline text-error mb-sm text-center">
-        Unable to load appointments
-      </Text>
-      <Text className="text-body text-midGrey mb-lg text-center">
-        {error instanceof Error ? error.message : 'Something went wrong'}
-      </Text>
-      <Pressable 
-        onPress={() => refetch()}
-        className="bg-navy px-xl py-md rounded-md"
-      >
-        <Text className="text-bodyStrong text-white">Try Again</Text>
-      </Pressable>
-    </View>
-  );
-
-  const renderLoadingState = () => (
-    <View className="flex-1 p-lg">
-      <View className="bg-white rounded-lg border border-warmGrey p-md mb-sm opacity-60">
-        <View className="h-5 bg-warmGrey rounded mb-sm" />
-        <View className="h-4 bg-warmGrey rounded w-3/4 mb-xs" />
-        <View className="h-3 bg-warmGrey rounded w-1/2" />
-      </View>
-      <View className="bg-white rounded-lg border border-warmGrey p-md mb-sm opacity-40">
-        <View className="h-5 bg-warmGrey rounded mb-sm" />
-        <View className="h-4 bg-warmGrey rounded w-3/4 mb-xs" />
-        <View className="h-3 bg-warmGrey rounded w-1/2" />
-      </View>
-    </View>
-  );
+    if (!isRecoverableError) {
+      return (
+        <View className="flex-1 bg-bg-page">
+          <View className="px-xl pt-2xl pb-lg border-b border-border">
+            <Text className="text-displayLg text-text-primary">Today</Text>
+            <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+          </View>
+          <View className="flex-1 items-center justify-center p-xl">
+            <ErrorState error="Failed to load appointments" onRetry={refetch} />
+          </View>
+        </View>
+      );
+    }
+    // Network errors fall through to render the main view with empty data
+  }
 
   return (
-    <View className="flex-1 bg-offWhite">
-      <View className="flex-row flex-1">
-        {/* Left panel - Appointments */}
-        <View className="flex-[3] p-2xl">
-          <View className="mb-lg">
-            <Text className="text-displayLg text-charcoal font-bold mb-xs">Today</Text>
-            <Text className="text-body text-midGrey">{formatDate()}</Text>
-          </View>
-          
-          {isLoading ? (
-            renderLoadingState()
-          ) : error ? (
-            renderErrorState()
-          ) : sortedAppointments.length === 0 ? (
-            renderEmptyState()
+    <View className="flex-1 bg-bg-page">
+      {/* Header */}
+      <View className="px-xl pt-2xl pb-lg border-b border-border">
+        <Text className="text-displayLg text-text-primary">Today</Text>
+        <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+      </View>
+
+      <View className="flex-1 flex-row">
+        {/* Left Panel — Appointments */}
+        <View className="flex-[3]">
+          {sortedAppointments.length === 0 ? (
+            <View className="flex-1 items-center justify-center p-xl">
+              <Calendar color="#A3A3A3" size={40} />
+              <Text className="text-headline text-text-primary mt-lg">
+                No appointments today
+              </Text>
+              <Text className="text-body text-text-muted mt-sm text-center">
+                Walk-in clients can be started from the Clients tab
+              </Text>
+            </View>
           ) : (
             <FlatList
               data={sortedAppointments}
-              renderItem={renderAppointment}
+              renderItem={renderAppointmentCard}
               keyExtractor={(item) => item.id}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isLoading}
-                  onRefresh={refetch}
-                />
-              }
+              contentContainerStyle={{ padding: 24 }}
+              ItemSeparatorComponent={() => <View className="h-sm" />}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+              }
             />
           )}
         </View>
-        
-        {/* Right panel - Quick Actions */}
-        <View className="flex-[2] p-2xl border-l border-warmGrey">
-          {renderQuickActions()}
+
+        {/* Right Panel — Sidebar */}
+        <View className="flex-[2] border-l border-border">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ padding: 24 }}
+            showsVerticalScrollIndicator={false}
+          >
+            <ActiveHoldsCard onHoldPress={handleHoldPress} />
+            <RecentClientsCard onClientPress={handleClientPress} />
+            <QuickActionsGrid />
+          </ScrollView>
         </View>
       </View>
     </View>

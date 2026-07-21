@@ -1,0 +1,20 @@
+{
+  "enabled": false,
+  "name": "Error Context Injection (Template)",
+  "description": "Inject recent dev server errors into agent context when a prompt is submitted. Helps the agent see what's broken without being told.",
+  "version": "1",
+  "when": {
+    "type": "userPromptSubmit"
+  },
+  "then": {
+    "type": "injectContext",
+    "source": {
+      "type": "logFile",
+      "path": ".dev-errors.log",
+      "tailLines": 20,
+      "filter": "error|Error|ERROR|FAIL|fail"
+    },
+    "prefix": "## Recent Dev Server Errors (last 20 lines)\n",
+    "onlyIfNonEmpty": true
+  }
+}

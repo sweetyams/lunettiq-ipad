@@ -9,14 +9,14 @@ interface EmptyStateProps {
 
 export function EmptyState({ message, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <View className="flex-1 bg-offWhite justify-center items-center p-xl">
+    <View className="flex-1 bg-bg-page justify-center items-center p-xl">
       <View className="max-w-md items-center">
-        {/* Empty state icon placeholder - could be replaced with actual icon */}
-        <View className="w-20 h-20 bg-warmGrey rounded-full mb-lg items-center justify-center">
-          <Text className="text-midGrey text-2xl">📭</Text>
+        {/* Empty state icon placeholder - clean Foundry style */}
+        <View className="w-20 h-20 bg-bg-surface rounded-full mb-lg items-center justify-center border border-border">
+          <Text className="text-text-muted text-2xl">📭</Text>
         </View>
         
-        <Text className="text-charcoal text-headline font-semibold text-center mb-lg">
+        <Text className="text-text-primary text-headline font-semibold text-center mb-lg">
           {message}
         </Text>
         

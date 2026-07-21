@@ -7,13 +7,15 @@ interface AppointmentCardProps {
   onCheckIn?: (id: string) => void;
   onStartSession?: (id: string) => void;
   onPress?: (id: string) => void;
+  onLongPress?: () => void;
 }
 
 export function AppointmentCard({ 
   appointment, 
   onCheckIn, 
   onStartSession, 
-  onPress 
+  onPress,
+  onLongPress,
 }: AppointmentCardProps) {
   const privacyMode = usePrivacyStore((s) => s.mode);
   
@@ -37,20 +39,20 @@ export function AppointmentCard({
   const getStatusStyles = () => {
     switch (appointment.status) {
       case 'in_progress':
-        return 'border-l-[3px] border-l-green border-warmGrey';
+        return 'border-l-[3px] border-l-green border-border';
       case 'completed':
-        return 'border-warmGrey opacity-60';
+        return 'border-border opacity-60';
       case 'no_show':
-        return 'border-warmGrey opacity-60';
+        return 'border-border opacity-60';
       default:
-        return 'border-warmGrey';
+        return 'border-border';
     }
   };
 
   const getTimeStyles = () => {
     return appointment.status === 'no_show' 
-      ? 'text-bodyStrong text-midGrey line-through' 
-      : 'text-bodyStrong text-charcoal';
+      ? 'text-bodyStrong text-text-muted line-through' 
+      : 'text-bodyStrong text-text-primary';
   };
 
   const formatAppointmentType = (type: string) => {
@@ -67,11 +69,11 @@ export function AppointmentCard({
 
   const getStatusBadge = () => {
     const badges = {
-      scheduled: { text: 'Scheduled', style: 'bg-warmGrey text-charcoal' },
-      confirmed: { text: 'Confirmed', style: 'bg-blue text-white' },
-      in_progress: { text: 'In Progress', style: 'bg-green text-white' },
-      completed: { text: 'Completed', style: 'bg-midGrey text-white' },
-      no_show: { text: 'No Show', style: 'bg-error text-white' },
+      scheduled: { text: 'Scheduled', style: 'bg-bg-surface text-text-primary' },
+      confirmed: { text: 'Confirmed', style: 'bg-accent text-text-inverse' },
+      in_progress: { text: 'In Progress', style: 'bg-accent text-text-inverse' },
+      completed: { text: 'Completed', style: 'bg-muted text-text-inverse' },
+      no_show: { text: 'No Show', style: 'bg-error text-text-inverse' },
     };
     
     const badge = badges[appointment.status as keyof typeof badges];
@@ -98,7 +100,8 @@ export function AppointmentCard({
   return (
     <Pressable 
       onPress={() => onPress?.(appointment.id)}
-      className={`bg-white rounded-lg border ${getStatusStyles()} p-md mb-sm`}
+      onLongPress={onLongPress}
+      className={`bg-bg-elevated rounded-lg border ${getStatusStyles()} p-md mb-sm`}
     >
       <View className="flex-row items-center justify-between mb-sm">
         <Text className={`${getTimeStyles()} font-mono`}>
@@ -108,12 +111,12 @@ export function AppointmentCard({
       </View>
       
       {clientDisplay && (
-        <Text className="text-headline text-charcoal mb-xs">
+        <Text className="text-headline text-text-primary mb-xs">
           {clientDisplay}
         </Text>
       )}
       
-      <Text className="text-caption text-midGrey mb-sm">
+      <Text className="text-caption text-text-muted mb-sm">
         {formatAppointmentType(appointment.type)} • {appointment.duration} min
       </Text>
       
@@ -122,18 +125,18 @@ export function AppointmentCard({
           {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && onCheckIn && (
             <Pressable 
               onPress={() => onCheckIn(appointment.id)}
-              className="bg-navy px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
+              className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-white">Check In</Text>
+              <Text className="text-bodyStrong text-text-inverse">Check In</Text>
             </Pressable>
           )}
           
           {appointment.status === 'in_progress' && onStartSession && (
             <Pressable 
               onPress={() => onStartSession(appointment.id)}
-              className="bg-green px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
+              className="bg-accent px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-white">Start Session</Text>
+              <Text className="text-bodyStrong text-text-inverse">Start Session</Text>
             </Pressable>
           )}
         </View>

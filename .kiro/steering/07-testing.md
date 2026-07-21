@@ -58,7 +58,7 @@ import { useClients } from './useClients';
 
 // MSW handler
 server.use(
-  http.get('*/api/admin/clients', () => HttpResponse.json({ data: [mockClient] }))
+  http.get('*/api/clients', () => HttpResponse.json({ data: [mockClient] }))
 );
 
 it('fetches clients', async () => {

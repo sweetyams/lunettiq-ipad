@@ -13,8 +13,8 @@ export function PrivacyToggle() {
       className={`
         w-[44px] h-[44px] items-center justify-center rounded-md
         ${isStaffMode 
-          ? 'bg-white border border-warmGrey' 
-          : 'bg-green'
+          ? 'bg-bg-elevated border border-border' 
+          : 'bg-accent'
         }
       `}
       accessibilityLabel={`Toggle privacy mode. Currently ${mode} mode`}

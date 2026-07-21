@@ -49,7 +49,7 @@ export function TimelineEntry({ interaction }: TimelineEntryProps) {
   const IconComponent = getInteractionIcon(interaction.type);
 
   return (
-    <View className="flex-row items-start p-md border-b border-warmGrey bg-white">
+    <View className="flex-row items-start p-md border-b border-border bg-bg-elevated">
       {/* Icon */}
       <View className="mr-sm mt-xs">
         <IconComponent size={20} color="#6B6B6B" />
@@ -58,24 +58,24 @@ export function TimelineEntry({ interaction }: TimelineEntryProps) {
       {/* Content */}
       <View className="flex-1 mr-sm">
         {interaction.subject && (
-          <Text className="text-[17px] font-medium text-charcoal mb-xs">
+          <Text className="text-[17px] font-medium text-text-primary mb-xs">
             {interaction.subject}
           </Text>
         )}
         {interaction.body && (
-          <Text className="text-[17px] text-charcoal leading-relaxed">
+          <Text className="text-[17px] text-text-primary leading-relaxed">
             {interaction.body}
           </Text>
         )}
         {!interaction.subject && !interaction.body && (
-          <Text className="text-[17px] text-midGrey italic">
+          <Text className="text-[17px] text-text-muted italic">
             {interaction.type === 'session' ? 'Consultation session' : 'No details'}
           </Text>
         )}
       </View>
 
       {/* Date */}
-      <Text className="text-[14px] text-midGrey mt-xs">
+      <Text className="text-[14px] text-text-muted mt-xs">
         {formatDate(interaction.occurredAt)}
       </Text>
     </View>

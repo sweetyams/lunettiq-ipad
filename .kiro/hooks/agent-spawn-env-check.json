@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Agent Spawn Environment Check",
+  "description": "Validate development environment when an AI agent session starts. Warns about missing dependencies.",
+  "version": "1",
+  "when": { "type": "agentSpawn" },
+  "then": {
+    "type": "checkEnvironment",
+    "checks": [
+      { "type": "nodeVersion", "minimum": "20.0.0", "level": "error" },
+      { "type": "directoryExists", "path": ".kiro/steering", "level": "error", "message": "No .kiro/steering/ found. Run foundry-method init." },
+      { "type": "fileExists", "path": "foundry-method.json", "level": "warn", "message": "No foundry-method.json. Methodology may not be initialized." }
+    ],
+    "failOnError": false,
+    "injectContext": true
+  }
+}

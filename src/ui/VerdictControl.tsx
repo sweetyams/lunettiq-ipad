@@ -18,7 +18,7 @@ export function VerdictControl({ value, onChange }: VerdictControlProps) {
   const verdictOptions: Verdict[] = ['loved', 'liked', 'unsure', 'rejected'];
 
   return (
-    <View className="border border-warmGrey rounded-md flex-row overflow-hidden">
+    <View className="border border-border rounded-md flex-row overflow-hidden">
       {verdictOptions.map((verdict, index) => {
         const isActive = value === verdict;
         const isLast = index === verdictOptions.length - 1;
@@ -30,8 +30,8 @@ export function VerdictControl({ value, onChange }: VerdictControlProps) {
             onPress={() => onChange(verdict)}
             className={`
               w-[52px] h-[40px] items-center justify-center
-              ${isActive ? '' : 'bg-white'}
-              ${!isLast ? 'border-r border-warmGrey' : ''}
+              ${isActive ? '' : 'bg-bg-elevated'}
+              ${!isLast ? 'border-r border-border' : ''}
             `}
             style={isActive ? { backgroundColor: color } : undefined}
           >

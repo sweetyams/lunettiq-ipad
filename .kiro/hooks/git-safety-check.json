@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "Git Safety Check",
+  "description": "Prevents destructive git operations (stash, reset --hard, clean -f) that can lose concurrent work",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [".*shell.*", ".*terminal.*", ".*bash.*"]
+  },
+  "then": {
+    "type": "rejectIfMatch",
+    "patterns": ["git stash", "git reset --hard", "git clean -f", "git checkout -- ."],
+    "message": "Destructive git operation blocked. Commit your work first (git commit -m 'wip: ...'), then use non-destructive alternatives."
+  }
+}

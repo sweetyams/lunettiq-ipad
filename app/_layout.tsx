@@ -7,8 +7,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient, api } from '@/src/api/client';
 import { PrivacyModeProvider } from '@/src/features/privacy/PrivacyModeProvider';
 import { SyncProvider } from '@/src/sync/SyncProvider';
+import { AuthProvider } from '@/src/features/auth/AuthProvider';
+import { ModeStrip } from '@/src/ui/ModeStrip';
+import { ToastContainer } from '@/src/ui/Toast';
 import { tokenCache } from '@/src/api/tokenCache';
-import { ModeStrip } from '@/src/ui';
+import { DevErrorBoundary } from '@/src/ui/DevErrorBoundary';
+import { EnvGate } from '@/src/ui/EnvGate';
 
 function InitialLayout() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -35,13 +39,13 @@ function InitialLayout() {
   }, [isLoaded, isSignedIn, segments]);
 
   if (!isLoaded) {
-    // Loading state while Clerk initializes
+    // Clean loading state with Foundry design language
     return (
-      <View className="flex-1 bg-navy items-center justify-center">
-        <Text className="text-offWhite text-2xl font-bold tracking-wider">
+      <View className="flex-1 bg-brand items-center justify-center">
+        <Text className="text-text-inverse text-2xl font-bold tracking-wider">
           LUNETTIQ
         </Text>
-        <Text className="text-offWhite/70 text-lg mt-2">
+        <Text className="text-text-inverse/70 text-lg mt-2">
           Loading...
         </Text>
       </View>
@@ -50,7 +54,10 @@ function InitialLayout() {
 
   return (
     <View className="flex-1">
-      <ModeStrip />
+      {/* ModeStrip at the very top, above all content */}
+      {isSignedIn && <ModeStrip />}
+      {/* Toast notifications — positioned below ModeStrip, above content */}
+      {isSignedIn && <ToastContainer />}
       <Slot />
     </View>
   );
@@ -58,17 +65,25 @@ function InitialLayout() {
 
 export default function RootLayout() {
   return (
-    <ClerkProvider 
-      publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-      tokenCache={tokenCache}
-    >
-      <QueryClientProvider client={queryClient}>
-        <SyncProvider>
-          <PrivacyModeProvider>
-            <InitialLayout />
-          </PrivacyModeProvider>
-        </SyncProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <DevErrorBoundary context="root">
+      <EnvGate>
+        <ClerkProvider 
+          publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+          tokenCache={tokenCache}
+        >
+          <QueryClientProvider client={queryClient}>
+            <SyncProvider>
+              <PrivacyModeProvider>
+                <AuthProvider>
+                  <DevErrorBoundary context="app">
+                    <InitialLayout />
+                  </DevErrorBoundary>
+                </AuthProvider>
+              </PrivacyModeProvider>
+            </SyncProvider>
+          </QueryClientProvider>
+        </ClerkProvider>
+      </EnvGate>
+    </DevErrorBoundary>
   );
 }

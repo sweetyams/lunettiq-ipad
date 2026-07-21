@@ -1,143 +1,105 @@
-import { View, Text, FlatList, Pressable } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { useClient } from '@/src/api/useClients';
-import { useProducts } from '@/src/api/useProducts';
+import { useState, useEffect, useCallback } from 'react';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
+import { SessionTopBar } from '@/src/features/session/SessionTopBar';
+import { ProductBrowserPanel } from '@/src/features/session/ProductBrowserPanel';
 import { ClientContextPanel } from '@/src/features/session/ClientContextPanel';
-import { ProductCard } from '@/src/ui/ProductCard';
-import { SearchBar } from '@/src/ui/SearchBar';
-import { Button } from '@/src/ui/Button';
-import { LoadingState } from '@/src/ui/LoadingState';
-import { ErrorState } from '@/src/ui/ErrorState';
-import { EmptyState } from '@/src/ui/EmptyState';
+import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
+import { useClient } from '@/src/api/useClients';
+import { LoadingState, ErrorState } from '@/src/ui';
 
 export default function SessionWorkspaceScreen() {
   const { id: clientId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { data: client, isLoading: clientLoading, error: clientError } = useClient(clientId);
-  const { activeClientId, mode, sessionStartedAt } = useSessionStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sessionDuration, setSessionDuration] = useState(0);
+  const { activeClientId, activeClientName, mode, startSession, endSession } = useSessionStore();
+  const [showEndSession, setShowEndSession] = useState(false);
 
-  // Redirect if no active session or wrong client
+  // Fetch client profile (for name fallback + data)
+  const { data: client, isLoading, error } = useClient(clientId);
+
+  // Start session on mount if not already active for this client
   useEffect(() => {
-    if (!clientLoading && (!activeClientId || activeClientId !== clientId || mode !== 'session')) {
+    if (!clientId) return;
+    if (activeClientId === clientId && (mode === 'session' || mode === 'fitting')) return;
+
+    // Derive client name for the chip
+    if (client) {
+      const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Client';
+      startSession(clientId, name);
+    }
+  }, [clientId, client, activeClientId, mode, startSession]);
+
+  // Redirect if session ended externally or wrong client
+  useEffect(() => {
+    if (mode === 'idle' && !isLoading) {
       router.replace(`/clients/${clientId}`);
     }
-  }, [activeClientId, clientId, mode, clientLoading, router]);
+  }, [mode, clientId, isLoading, router]);
 
-  // Update session duration timer
-  useEffect(() => {
-    if (!sessionStartedAt) return;
-    
-    const timer = setInterval(() => {
-      setSessionDuration(Math.floor((Date.now() - sessionStartedAt) / 1000));
-    }, 1000);
+  // Handlers
+  const handleBack = useCallback(() => {
+    // Going back doesn't end the session — it persists via chip
+    router.back();
+  }, [router]);
 
-    return () => clearInterval(timer);
-  }, [sessionStartedAt]);
+  const handleStartFitting = useCallback(() => {
+    router.push(`/clients/${clientId}/fitting`);
+  }, [router, clientId]);
 
-  const {
-    data: products,
-    isLoading: productsLoading,
-    error: productsError,
-    refetch: refetchProducts,
-  } = useProducts({
-    q: searchQuery || undefined,
-    limit: 50,
-  });
+  const handleEndSession = useCallback(() => {
+    setShowEndSession(true);
+  }, []);
 
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  const handleEndSessionConfirm = useCallback(() => {
+    setShowEndSession(false);
+    endSession();
+    router.replace(`/clients/${clientId}`);
+  }, [endSession, router, clientId]);
 
-  const handleProductPress = (shopifyId: string) => {
-    router.push(`/products/${shopifyId}`);
-  };
+  const handleProductPress = useCallback((productId: string) => {
+    router.push(`/products/${productId}`);
+  }, [router]);
 
-  const handleStartFitting = () => {
-    // TODO: Navigate to fitting mode
-    console.log('Start fitting');
-  };
+  // Loading state
+  if (isLoading) return <LoadingState />;
+  if (error) return <ErrorState error={error} onRetry={() => {}} />;
 
-  if (clientLoading) return <LoadingState />;
-  if (clientError) return <ErrorState error={clientError} onRetry={() => router.back()} />;
-  if (!client) return <ErrorState error={new Error('Client not found')} onRetry={() => router.back()} />;
-
-  const clientName = [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Unknown';
-
-  const renderProduct = ({ item }: { item: any }) => (
-    <ProductCard product={item} onPress={handleProductPress} />
-  );
+  const clientName = activeClientName
+    ?? [client?.firstName, client?.lastName].filter(Boolean).join(' ')
+    ?? 'Client';
 
   return (
-    <View className="flex-1 bg-offWhite">
-      {/* TopBar with session chip */}
-      <View className="bg-white border-b border-warmGrey p-lg flex-row items-center justify-between">
-        <View className="flex-row items-center flex-1">
-          {/* Session chip */}
-          <View className="bg-navy rounded-full px-md py-sm mr-lg">
-            <Text className="text-white text-caption font-medium">
-              Session · {clientName} · {formatDuration(sessionDuration)}
-            </Text>
-          </View>
-        </View>
+    <View className="flex-1 bg-bg-page">
+      {/* Session TopBar */}
+      <SessionTopBar
+        onBack={handleBack}
+        onStartFitting={handleStartFitting}
+        onEndSession={handleEndSession}
+      />
 
-        {/* Start fitting button */}
-        <Button variant="primary" onPress={handleStartFitting}>
-          Start fitting
-        </Button>
-      </View>
-
+      {/* Split view: Products (left) | Client context (right) */}
       <View className="flex-1 flex-row">
-        {/* Left panel - Product browser */}
-        <View className="flex-[3] bg-white">
-          {/* Browser header */}
-          <View className="p-lg border-b border-warmGrey">
-            <Text className="text-charcoal text-bodyStrong mb-md">
-              Browsing for {clientName}
-            </Text>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search frames…"
-            />
-          </View>
-
-          {/* Product grid */}
-          <View className="flex-1">
-            {productsLoading ? (
-              <LoadingState />
-            ) : productsError ? (
-              <ErrorState error={productsError} onRetry={refetchProducts} />
-            ) : !products || products.length === 0 ? (
-              <EmptyState 
-                message={searchQuery ? `No frames match "${searchQuery}"` : 'No frames available'}
-                actionLabel={searchQuery ? 'Clear search' : undefined}
-                onAction={searchQuery ? () => setSearchQuery('') : undefined}
-              />
-            ) : (
-              <FlatList
-                data={products}
-                renderItem={renderProduct}
-                keyExtractor={(item) => item.shopifyId}
-                numColumns={3}
-                columnWrapperStyle={{ paddingHorizontal: 16, gap: 16 }}
-                contentContainerStyle={{ padding: 16, gap: 16 }}
-                showsVerticalScrollIndicator={false}
-              />
-            )}
-          </View>
+        {/* Left panel — product browser (762pt equiv / flex-[762]) */}
+        <View className="flex-[762] border-r border-border">
+          <ProductBrowserPanel
+            clientId={clientId}
+            clientName={clientName}
+            onProductPress={handleProductPress}
+          />
         </View>
 
-        {/* Right panel - Client context */}
-        <View className="flex-[2] border-l border-warmGrey">
+        {/* Right panel — client context (492pt equiv / flex-[492]) */}
+        <View className="flex-[492]">
           <ClientContextPanel clientId={clientId} />
         </View>
       </View>
+
+      {/* End Session Sheet */}
+      <EndSessionSheet
+        visible={showEndSession}
+        onClose={handleEndSessionConfirm}
+      />
     </View>
   );
 }

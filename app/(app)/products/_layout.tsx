@@ -4,6 +4,7 @@ export default function ProductsLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="scanner" />
       <Stack.Screen name="[id]" />
     </Stack>
   );

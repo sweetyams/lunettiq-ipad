@@ -1,0 +1,13 @@
+{
+  "name": "app-dev",
+  "description": "Expo / React Native app agent. Offline-first, API consumer, NativeWind styling.",
+  "tools": ["*"],
+  "resources": [
+    "file://.kiro/steering/**/*.md",
+    "file://.kiro/working-method/**/*.md"
+  ],
+  "hooks": {},
+  "includeMcpJson": true,
+  "model": "claude-sonnet-4",
+  "welcomeMessage": "Expo/RN agent ready. Stack: Expo Router + TanStack Query + Zustand + WatermelonDB + NativeWind. Say 'create feature X' to start a buildflow, or ask about patterns."
+}

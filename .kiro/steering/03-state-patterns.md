@@ -23,7 +23,7 @@ import { api } from './client';
 export function useClients(search?: string) {
   return useQuery({
     queryKey: ['clients', { search }],
-    queryFn: () => api.get('/api/admin/clients', { params: { q: search, limit: 50 } }),
+    queryFn: () => api.get('/api/clients', { params: { q: search, limit: 50 } }),
     staleTime: 5 * 60 * 1000, // 5 min — clients don't change often
   });
 }
@@ -31,7 +31,7 @@ export function useClients(search?: string) {
 export function useClient(id: string) {
   return useQuery({
     queryKey: ['clients', id],
-    queryFn: () => api.get(`/api/admin/clients/${id}`),
+    queryFn: () => api.get(`/api/clients/${id}`),
     enabled: !!id,
   });
 }
@@ -40,7 +40,7 @@ export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Client> }) =>
-      api.patch(`/api/admin/clients/${id}`, data),
+      api.patch(`/api/clients/${id}`, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['clients', id] });
     },

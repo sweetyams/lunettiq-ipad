@@ -1,0 +1,21 @@
+{
+  "enabled": false,
+  "name": "File Guard (Template)",
+  "description": "Restrict which agents can modify which files. Disabled by default — enable and customize for your project.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [".*write.*", ".*edit.*", ".*create.*"]
+  },
+  "then": {
+    "type": "scopeRestriction",
+    "rules": [
+      {
+        "agent": "secondary",
+        "allowPaths": ["src/components/**", "src/ui/**"],
+        "denyPaths": ["src/core/**", "src/api/**", ".kiro/**"],
+        "message": "Secondary agent cannot modify core/api files. Use the primary agent."
+      }
+    ]
+  }
+}

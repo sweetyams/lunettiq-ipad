@@ -16,12 +16,12 @@ export function ConsentModal({ isVisible, clientName, onConsent }: ConsentModalP
       statusBarTranslucent
     >
       <View className="flex-1 bg-black/50 items-center justify-center p-xl">
-        <View className="bg-white rounded-lg p-xl max-w-md w-full">
-          <Text className="text-displayMd text-charcoal font-bold mb-lg text-center">
+        <View className="bg-bg-elevated rounded-lg p-xl max-w-md w-full">
+          <Text className="text-displayMd text-text-primary font-bold mb-lg text-center">
             Photo Consent
           </Text>
           
-          <Text className="text-body text-charcoal mb-xl text-center leading-relaxed">
+          <Text className="text-body text-text-primary mb-xl text-center leading-relaxed">
             Can we take and save photos of {clientName} trying on frames today? 
             Photos help with comparison and will be saved to their profile.
           </Text>
@@ -42,7 +42,7 @@ export function ConsentModal({ isVisible, clientName, onConsent }: ConsentModalP
             </Button>
           </View>
           
-          <Text className="text-caption text-midGrey mt-lg text-center">
+          <Text className="text-caption text-text-muted mt-lg text-center">
             Photos can be deleted at any time from the client profile
           </Text>
         </View>

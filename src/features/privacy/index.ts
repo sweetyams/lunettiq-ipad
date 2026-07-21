@@ -1,1 +1,1 @@
-export { usePrivacyStore, PrivacyModeProvider } from './PrivacyModeProvider';
+export { usePrivacyStore, PrivacyModeProvider, completeReclaimFromClient } from './PrivacyModeProvider';

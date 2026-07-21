@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Pre-Commit Verify",
+  "description": "Run project verify command before committing. Ensures lint, typecheck, and tests pass.",
+  "version": "1",
+  "when": { "type": "preCommit" },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run verify",
+    "failOnError": true,
+    "message": "Verify failed. Fix issues before committing."
+  }
+}

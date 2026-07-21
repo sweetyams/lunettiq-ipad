@@ -6,7 +6,8 @@ interface CardProps {
 }
 
 export function Card({ children, className = '' }: CardProps) {
-  const baseClasses = 'bg-white rounded-lg p-md shadow-sm';
+  // Foundry-style border-based depth, no shadows
+  const baseClasses = 'bg-bg-elevated rounded-lg border border-border p-md';
   
   return (
     <View className={`${baseClasses} ${className}`}>

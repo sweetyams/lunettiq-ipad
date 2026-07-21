@@ -5,21 +5,34 @@ import type { Client, ClientProfile, ClientListResponse, ClientSearchParams } fr
 export function useClients(params?: ClientSearchParams) {
   const searchParams: Record<string, string> = {};
   if (params?.q) searchParams.q = params.q;
+  if (params?.sort) searchParams.sort = params.sort;
   if (params?.limit) searchParams.limit = String(params.limit);
   if (params?.offset) searchParams.offset = String(params.offset);
 
   return useQuery({
     queryKey: ['clients', params],
-    queryFn: () => api.get<ClientListResponse>('/api/admin/clients', { params: searchParams }),
+    queryFn: () => api.get<ClientListResponse>('/api/clients', { params: searchParams }),
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useClient(shopifyId: string) {
+/** Fetch the 5 most recently updated clients */
+export function useRecentClients() {
   return useQuery({
-    queryKey: ['clients', shopifyId],
-    queryFn: () => api.get<ClientProfile>(`/api/admin/clients/${shopifyId}`),
-    enabled: !!shopifyId,
+    queryKey: ['clients', 'recent'],
+    queryFn: () =>
+      api.get<ClientListResponse>('/api/clients', {
+        params: { sort: 'updatedAt', limit: '5' },
+      }),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useClient(id: string) {
+  return useQuery({
+    queryKey: ['clients', id],
+    queryFn: () => api.get<ClientProfile>(`/api/clients/${id}`),
+    enabled: !!id,
     staleTime: 60 * 1000,
   });
 }
@@ -27,10 +40,10 @@ export function useClient(shopifyId: string) {
 export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ shopifyId, data }: { shopifyId: string; data: Record<string, unknown> }) =>
-      api.patch<unknown>(`/api/admin/clients/${shopifyId}/enrichment`, data),
-    onSuccess: (_, { shopifyId }) => {
-      qc.invalidateQueries({ queryKey: ['clients', shopifyId] });
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.patch<unknown>(`/api/clients/${id}/enrichment`, data),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['clients', id] });
     },
   });
 }

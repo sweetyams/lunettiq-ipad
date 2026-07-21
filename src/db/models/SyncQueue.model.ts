@@ -118,7 +118,7 @@ export class SyncQueue extends Model {
       operation: 'create',
       entityType: 'photo',
       entityId: photoId,
-      endpoint: '/api/admin/media/confirm',
+      endpoint: '/api/media/upload',
       method: 'POST',
       payload,
       priority: 'normal',

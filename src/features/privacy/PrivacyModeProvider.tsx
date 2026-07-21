@@ -23,12 +23,12 @@ interface PrivacyState {
   handedToClient: boolean;
   toggleMode: () => void;
   handToClient: () => void;
-  reclaimFromClient: () => void;
+  reclaimFromClient: () => Promise<boolean>;
 }
 
 export const usePrivacyStore = create<PrivacyState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       mode: 'staff',
       handedToClient: false,
       
@@ -43,11 +43,15 @@ export const usePrivacyStore = create<PrivacyState>()(
           handedToClient: true 
         }),
       
-      reclaimFromClient: () => 
-        set({ 
-          mode: 'staff', 
-          handedToClient: false 
-        }),
+      reclaimFromClient: async () => {
+        // Only allow reclaiming if currently handed to client
+        if (!get().handedToClient) return true;
+        
+        // This is a workaround since we can't use hooks in Zustand
+        // The actual biometric check should be done by the calling component
+        // and then call a separate action to complete the reclaim
+        return false;
+      },
     }),
     {
       name: 'privacy-mode',
@@ -55,6 +59,14 @@ export const usePrivacyStore = create<PrivacyState>()(
     }
   )
 );
+
+// Separate action for completing the reclaim after biometric success
+export const completeReclaimFromClient = () => {
+  usePrivacyStore.setState({ 
+    mode: 'staff', 
+    handedToClient: false 
+  });
+};
 
 interface PrivacyModeProviderProps {
   children: React.ReactNode;

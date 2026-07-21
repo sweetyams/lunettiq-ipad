@@ -1,11 +1,12 @@
 import { View, Text, Pressable } from 'react-native';
-import { Heart, ThumbsUp, HelpCircle, XCircle } from 'lucide-react-native';
+import { Heart, ThumbsUp, HelpCircle, XCircle, User } from 'lucide-react-native';
 import type { Verdict } from './fitting.types';
 
 interface VerdictControlProps {
   value: Verdict | null;
   onChange: (verdict: Verdict) => void;
   size?: 'small' | 'medium' | 'large';
+  clientVoice?: boolean; // Shows person icon when client set the verdict
 }
 
 const verdictOptions = [
@@ -15,7 +16,7 @@ const verdictOptions = [
   { key: 'rejected' as const, label: 'No', color: '#6B6B6B', icon: XCircle },
 ];
 
-export function VerdictControl({ value, onChange, size = 'medium' }: VerdictControlProps) {
+export function VerdictControl({ value, onChange, size = 'medium', clientVoice = false }: VerdictControlProps) {
   const sizeClasses = {
     small: 'px-sm py-xs',
     medium: 'px-md py-sm',
@@ -29,7 +30,7 @@ export function VerdictControl({ value, onChange, size = 'medium' }: VerdictCont
   };
 
   return (
-    <View className="flex-row bg-white rounded-lg p-xs border border-warmGrey">
+    <View className="flex-row bg-bg-elevated rounded-lg p-xs border border-border">
       {verdictOptions.map((option) => {
         const isSelected = value === option.key;
         const Icon = option.icon;
@@ -48,14 +49,22 @@ export function VerdictControl({ value, onChange, size = 'medium' }: VerdictCont
             accessibilityState={{ checked: isSelected }}
             accessibilityLabel={`Rate as ${option.label}`}
           >
-            <Icon 
-              size={iconSizes[size]} 
-              color={isSelected ? option.color : '#6B6B6B'} 
-              strokeWidth={isSelected ? 2.5 : 2}
-            />
+            <View className="relative">
+              <Icon 
+                size={iconSizes[size]} 
+                color={isSelected ? option.color : '#6B6B6B'} 
+                strokeWidth={isSelected ? 2.5 : 2}
+              />
+              {/* Person icon when client set the verdict */}
+              {isSelected && clientVoice && (
+                <View className="absolute -top-1 -right-1 bg-accent rounded-full p-1">
+                  <User size={8} color="white" strokeWidth={2} />
+                </View>
+              )}
+            </View>
             <Text 
               className={`text-captionStrong mt-xs ${
-                isSelected ? 'text-charcoal' : 'text-midGrey'
+                isSelected ? 'text-text-primary' : 'text-text-muted'
               }`}
               style={isSelected ? { color: option.color } : undefined}
             >

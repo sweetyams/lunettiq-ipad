@@ -94,12 +94,12 @@ X-Found-Surface: tablet
 Base URL: `https://lunettiq.bentspline.com` (prod) / `http://lunettiq.localhost:4000` (dev)
 
 Key endpoints:
-- `GET /api/admin/clients` — search, list
-- `GET /api/admin/products` — catalogue browse
-- `GET /api/admin/appointments` — today's calendar
-- `POST /api/admin/interactions` — log timeline entries
-- `POST /api/admin/second-sight` — trade-in intake
-- `POST /api/admin/media/upload-url` — presigned R2 URLs for photos
+- `GET /api/clients` — search, list
+- `GET /api/storefront/products` — catalogue browse
+- `GET /api/scheduling` — today's calendar
+- `POST /api/clients/{id}/interactions` — log timeline entries
+- `POST /api/second-sight` — trade-in intake
+- `POST /api/media/upload` — photo upload (multipart)
 
 ## Kiro Agent
 

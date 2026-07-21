@@ -42,23 +42,31 @@ Capture (native camera)
 ## Upload Flow
 
 ```typescript
-// 1. Request presigned URL from Foundry
-const { uploadUrl, key } = await api.post('/api/admin/media/upload-url', {
-  filename: `session-${sessionId}-${Date.now()}.jpg`,
-  contentType: 'image/jpeg',
-  context: 'fitting-session',
+// Multipart upload directly to Foundry — server normalizes (strips EXIF, auto-rotate, sRGB, caps 3200px)
+const formData = new FormData();
+formData.append('file', {
+  uri: photo.localUri,
+  type: 'image/jpeg',
+  name: `session-${sessionId}-${Date.now()}.jpg`,
 });
+formData.append('context', 'fitting-session');
+formData.append('sessionId', sessionId);
+formData.append('clientId', clientId);
 
-// 2. Upload to R2 directly
-await fetch(uploadUrl, {
-  method: 'PUT',
-  headers: { 'Content-Type': 'image/jpeg' },
-  body: photoBlob,
+const result = await fetch(`${BASE_URL}/api/media/upload`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'X-Found-Surface': 'tablet',
+    // Do NOT set Content-Type — let fetch set multipart boundary
+  },
+  body: formData,
 });
-
-// 3. Confirm upload to Foundry (associate with session/client)
-await api.post('/api/admin/media/confirm', { key, sessionId, clientId });
+// Returns: { data: { id, url, key }, error: null }
+// No confirm step — media record is created and linked immediately
 ```
+
+For PDFs/receipts (not photos): use `POST /api/admin/media/upload-url` for presigned URL pattern.
 
 ## Offline Photo Behavior
 

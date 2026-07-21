@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "foundry-methodology": {
+      "type": "http",
+      "url": "${FOUNDRY_METHOD_URL:-https://foundry.vercel.app/api/methodology}",
+      "headers": {
+        "Authorization": "Bearer ${FOUNDRY_METHOD_TOKEN}"
+      }
+    }
+  }
+}

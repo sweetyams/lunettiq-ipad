@@ -1,6 +1,6 @@
 /**
- * Client types — matches Foundry API response shape.
- * Source: shopifyCustomers + crmClientEnrichments tables.
+ * Client types — matches actual Foundry API response shape.
+ * Source: Foundry's /api/clients endpoint.
  */
 
 export interface ClientEnrichment {
@@ -17,19 +17,18 @@ export interface ClientEnrichment {
 }
 
 export interface Client {
-  shopifyId: string;
+  id: string;               // UUID (primary key)
+  projectId: string;
+  email: string | null;
   firstName: string | null;
   lastName: string | null;
-  email: string | null;
   phone: string | null;
-  tags: string[];
+  totalSpent: number | null;
   orderCount: number | null;
-  totalSpent: string | null;
-  note: string | null;
-  state: string | null;
-  syncedAt: string;
-  createdAt: string;
-  updatedAt: string;
+  tags: string[];
+  status: string;           // 'active', 'merged', etc.
+  updatedAt: string;        // ISO date
+  createdAt: string;        // ISO date
 }
 
 export interface ClientProfile extends Client {
@@ -43,6 +42,7 @@ export interface ClientListResponse {
 
 export interface ClientSearchParams {
   q?: string;
+  sort?: string;
   limit?: number;
   offset?: number;
 }

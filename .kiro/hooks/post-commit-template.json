@@ -1,0 +1,30 @@
+{
+  "enabled": false,
+  "name": "Post-Commit Automation (Template)",
+  "description": "Template for post-commit automation. Enable and customize for your project. Common uses: changelog update, doc regeneration, KB reindex.",
+  "version": "1",
+  "when": {
+    "type": "postCommit"
+  },
+  "then": {
+    "type": "runCommands",
+    "commands": [
+      {
+        "name": "Update changelog",
+        "command": "echo 'Add changelog automation here'",
+        "enabled": false
+      },
+      {
+        "name": "Regenerate docs",
+        "command": "echo 'Add doc generation here'",
+        "enabled": false
+      },
+      {
+        "name": "Reindex knowledge base",
+        "command": "echo 'Add KB reindex here'",
+        "enabled": false
+      }
+    ],
+    "failOnError": false
+  }
+}

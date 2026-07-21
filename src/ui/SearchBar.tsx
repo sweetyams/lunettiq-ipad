@@ -32,14 +32,14 @@ export function SearchBar({
   }, [localValue, debounceMs]);
 
   return (
-    <View className="flex-row items-center bg-white border border-warmGrey rounded-md px-md h-[44px]">
-      <Search size={18} color="#6B6B6B" />
+    <View className="flex-row items-center bg-bg-elevated border border-border rounded-md px-md h-[44px]">
+      <Search size={18} color="#A1A1A1" />
       <TextInput
         value={localValue}
         onChangeText={setLocalValue}
         placeholder={placeholder}
-        placeholderTextColor="#6B6B6B"
-        className="flex-1 ml-sm text-body text-charcoal"
+        placeholderTextColor="#A1A1A1"
+        className="flex-1 ml-sm text-body text-text-primary"
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"

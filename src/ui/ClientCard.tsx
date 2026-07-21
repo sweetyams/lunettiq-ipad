@@ -1,15 +1,13 @@
 import { View, Text, Pressable } from 'react-native';
 import type { Client } from '@/src/api/clients.types';
-import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 
 interface ClientCardProps {
   client: Client;
-  onPress: (shopifyId: string) => void;
+  onPress: (id: string) => void;
   isSelected?: boolean;
 }
 
 export function ClientCard({ client, onPress, isSelected = false }: ClientCardProps) {
-  const mode = usePrivacyStore((s) => s.mode);
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || client.email || 'Unknown';
   const initials = [client.firstName?.[0], client.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?';
 
@@ -19,33 +17,33 @@ export function ClientCard({ client, onPress, isSelected = false }: ClientCardPr
 
   return (
     <Pressable
-      onPress={() => onPress(client.shopifyId)}
+      onPress={() => onPress(client.id)}
       accessibilityRole="button"
       accessibilityLabel={`View profile for ${name}`}
-      className={`flex-row items-center p-md border-b border-warmGrey min-h-[44px] ${
-        isSelected ? 'bg-warmGrey/50' : 'bg-white'
+      className={`flex-row items-center p-md border-b border-border min-h-[44px] ${
+        isSelected ? 'bg-bg-surface' : 'bg-bg-page'
       }`}
     >
       {/* Avatar */}
-      <View className="w-[44px] h-[44px] rounded-full bg-navy items-center justify-center mr-md">
-        <Text className="text-white text-caption font-bold">{initials}</Text>
+      <View className="w-[44px] h-[44px] rounded-full bg-brand items-center justify-center mr-md">
+        <Text className="text-brand-text text-caption font-medium">{initials}</Text>
       </View>
 
       {/* Name + meta */}
       <View className="flex-1 min-w-0">
-        <Text className="text-charcoal text-body font-medium" numberOfLines={1}>
+        <Text className="text-text-primary text-bodyStrong" numberOfLines={1}>
           {name}
         </Text>
-        <Text className="text-midGrey text-caption" numberOfLines={1}>
-          {client.email ?? 'No email'}
+        <Text className="text-text-muted text-caption" numberOfLines={1}>
+          {client.email || 'No email'}
           {client.orderCount ? ` · ${client.orderCount} orders` : ''}
         </Text>
       </View>
 
-      {/* Tier badge — hidden in client-visible mode */}
-      {tier && mode === 'staff' && (
-        <View className="bg-navy rounded-full px-sm py-[2px]">
-          <Text className="text-white text-captionStrong">{tier}</Text>
+      {/* Tier badge */}
+      {tier && (
+        <View className="bg-brand rounded-full px-md py-xs">
+          <Text className="text-brand-text text-captionStrong">{tier}</Text>
         </View>
       )}
     </Pressable>

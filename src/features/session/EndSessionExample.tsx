@@ -33,9 +33,9 @@ export function SessionWorkspaceExample() {
       {/* End Session Button */}
       <Pressable
         onPress={handleEndSession}
-        className="bg-navy rounded-md py-md px-lg items-center"
+        className="bg-brand rounded-md py-md px-lg items-center"
       >
-        <Text className="text-white text-body font-medium">End Session</Text>
+        <Text className="text-text-inverse text-body font-medium">End Session</Text>
       </Pressable>
 
       {/* End Session Sheet */}

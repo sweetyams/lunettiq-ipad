@@ -32,8 +32,8 @@ The 6 golden flows that define the core iPad experience. Each screen spec includ
 
 **Data bindings:**
 ```typescript
-GET /api/storefront/scheduling/appointments?date=today&locationId=
-GET /api/admin/inventory-protections?reason=try_on_hold
+GET /api/scheduling?date=today&locationId=
+GET /api/inventory/protections?reason=try_on_hold
 // Local: recent clients from WatermelonDB
 ```
 
@@ -64,9 +64,9 @@ GET /api/admin/inventory-protections?reason=try_on_hold
 
 **Data bindings:**
 ```typescript
-GET /api/admin/clients/{id}
-GET /api/admin/clients/{id}/suggestions?limit=12
-POST /api/admin/clients/{id}/ai-styler  // on-demand
+GET /api/clients/{id}
+GET /api/clients/{id}/suggestions?limit=12
+POST /api/clients/{id}/ai-styler  // on-demand
 ```
 
 **States:**

@@ -28,7 +28,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress }: ShelfThumbnailPro
       {/* Photo area with selection outline */}
       <View
         className={`
-          w-[120px] h-[88px] rounded-lg bg-warmGrey overflow-hidden relative
+          w-[120px] h-[88px] rounded-lg bg-border overflow-hidden relative
           ${isSelected ? 'ring-[3px] ring-green' : ''}
         `}
       >
@@ -62,7 +62,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress }: ShelfThumbnailPro
 
       {/* Product name caption */}
       <Text
-        className="text-caption text-midGrey mt-1"
+        className="text-caption text-text-muted mt-1"
         numberOfLines={1}
         ellipsizeMode="tail"
       >

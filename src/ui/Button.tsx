@@ -6,38 +6,46 @@ interface ButtonProps {
   disabled?: boolean;
   children: React.ReactNode;
   loading?: boolean;
+  className?: string;
 }
 
-export function Button({ variant, onPress, disabled = false, children, loading = false }: ButtonProps) {
+export function Button({ 
+  variant, 
+  onPress, 
+  disabled = false, 
+  children, 
+  loading = false, 
+  className = '' 
+}: ButtonProps) {
   const baseClasses = 'p-md rounded-md min-h-[44px] min-w-[44px] flex-row items-center justify-center';
   
   const variantClasses = {
-    primary: 'bg-green',
-    secondary: 'bg-navy',
-    ghost: 'bg-transparent border border-warmGrey',
-    danger: 'bg-error',
+    primary: 'bg-accent',           // Single primary action — accent color
+    secondary: 'bg-brand',          // Navigation actions — brand color
+    ghost: 'bg-transparent border border-border',
+    danger: 'bg-transparent',       // Destructive — text-only, red text
   };
 
   const textClasses = {
-    primary: 'text-white',
-    secondary: 'text-white',
-    ghost: 'text-navy',
-    danger: 'text-white',
+    primary: 'text-accent-text',
+    secondary: 'text-brand-text',
+    ghost: 'text-text-primary',
+    danger: 'text-error',
   };
 
-  const disabledClasses = disabled || loading ? 'opacity-50' : '';
+  const disabledClasses = disabled || loading ? 'opacity-40' : '';
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
       accessibilityRole="button"
-      className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses}`}
+      className={`${baseClasses} ${variantClasses[variant]} ${disabledClasses} ${className}`}
     >
       {loading ? (
         <ActivityIndicator 
           size="small" 
-          color={variant === 'ghost' ? '#0A153D' : '#FFFFFF'} 
+          color={variant === 'ghost' || variant === 'danger' ? '#1D1F21' : '#FFFFFF'} 
         />
       ) : (
         <Text className={`${textClasses[variant]} text-body font-medium text-center`}>

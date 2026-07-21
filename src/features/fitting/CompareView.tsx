@@ -19,15 +19,15 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
   const { cols, rows } = getGridLayout(photos.length);
 
   return (
-    <View className="flex-1 bg-offWhite">
+    <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="flex-row items-center justify-between p-lg border-b border-warmGrey bg-white">
-        <Text className="text-headline text-charcoal font-semibold">
+      <View className="flex-row items-center justify-between p-lg border-b border-border bg-bg-elevated">
+        <Text className="text-headline text-text-primary font-semibold">
           Compare Frames
         </Text>
         <Pressable
           onPress={onClose}
-          className="w-10 h-10 items-center justify-center rounded-full bg-warmGrey"
+          className="w-10 h-10 items-center justify-center rounded-full bg-border"
           accessibilityRole="button"
           accessibilityLabel="Close comparison"
         >
@@ -49,9 +49,9 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
                 }
 
                 return (
-                  <View key={photo.id} className="flex-1 bg-white rounded-lg p-md border border-warmGrey">
+                  <View key={photo.id} className="flex-1 bg-bg-elevated rounded-lg p-md border border-border">
                     {/* Photo */}
-                    <View className="aspect-square rounded-lg overflow-hidden mb-md bg-warmGrey">
+                    <View className="aspect-square rounded-lg overflow-hidden mb-md bg-border">
                       <Image
                         source={{ uri: photo.thumbnailUri }}
                         className="w-full h-full"
@@ -61,11 +61,11 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
 
                     {/* Product Info */}
                     <View className="mb-md">
-                      <Text className="text-bodyStrong text-charcoal font-medium mb-xs">
+                      <Text className="text-bodyStrong text-text-primary font-medium mb-xs">
                         {photo.productName || 'Unknown Frame'}
                       </Text>
                       {photo.notes && (
-                        <Text className="text-caption text-midGrey" numberOfLines={2}>
+                        <Text className="text-caption text-text-muted" numberOfLines={2}>
                           {photo.notes}
                         </Text>
                       )}

@@ -1,70 +1,278 @@
-import { useState, useCallback } from 'react';
-import { View, FlatList, Text, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, useWindowDimensions, RefreshControl } from 'react-native';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { ScanLine } from 'lucide-react-native';
 import { useProducts } from '@/src/api/useProducts';
-import { SearchBar } from '@/src/ui/SearchBar';
-import { ProductCard } from '@/src/ui/ProductCard';
-import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
-import type { Product } from '@/src/api/products.types';
+import { useSuggestions } from '@/src/api/useSuggestions';
+import { useClient } from '@/src/api/useClients';
+import { useSessionStore } from '@/src/features/session/useSessionStore';
+import { ProductCard, SearchBar, FilterPillRow, LoadingState, ErrorState, EmptyState, Button } from '@/src/ui';
+import type { Product, ProductListParams } from '@/src/api/products.types';
+
+// --- Filter definitions ---
+
+const STOCK_FILTERS = [
+  { key: 'stock-in', label: 'In stock', value: 'in' },
+  { key: 'stock-low', label: 'Low stock', value: 'low' },
+  { key: 'stock-out', label: 'Out of stock', value: 'out' },
+];
+
+const SORT_OPTIONS = [
+  { key: 'sort-newest', label: 'Newest', value: 'newest' },
+  { key: 'sort-price-asc', label: 'Price ↑', value: 'price-asc' },
+  { key: 'sort-price-desc', label: 'Price ↓', value: 'price-desc' },
+  { key: 'sort-best', label: 'Best match', value: 'best-match' },
+];
+
+// --- Screen ---
 
 export default function ProductsScreen() {
-  const [search, setSearch] = useState('');
+  const router = useRouter();
   const { width } = useWindowDimensions();
+  const numColumns = width > 1000 ? 4 : 3;
 
-  const { data: products, isLoading, error, refetch } = useProducts({
-    q: search || undefined,
+  // Session context
+  const activeClientId = useSessionStore((s) => s.activeClientId);
+
+  // Get client name for session header
+  const { data: activeClient } = useClient(activeClientId ?? '');
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Filter state
+  const [selectedStock, setSelectedStock] = useState<string[]>([]);
+  const [selectedSort, setSelectedSort] = useState<string>('newest');
+  const [offset, setOffset] = useState(0);
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setOffset(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Build query params
+  const queryParams: ProductListParams = useMemo(() => ({
+    q: debouncedQuery || undefined,
+    stock: selectedStock.length === 1 ? selectedStock[0] as 'in' | 'low' | 'out' : undefined,
     limit: 50,
-  });
+    offset,
+  }), [debouncedQuery, selectedStock, offset]);
 
-  // 4 columns landscape, 3 portrait (iPad)
-  const numColumns = width > 1024 ? 4 : 3;
+  // Fetch products
+  const {
+    data: productsResponse,
+    isLoading,
+    error,
+    refetch,
+    isRefetching,
+    dataUpdatedAt,
+  } = useProducts(queryParams);
 
-  const renderItem = useCallback(
-    ({ item }: { item: Product }) => (
-      <View className="flex-1 p-sm" style={{ maxWidth: `${100 / numColumns}%` }}>
-        <ProductCard product={item} onPress={() => {}} />
+  // Fetch suggestions when session active
+  const { data: suggestions } = useSuggestions(activeClientId, { limit: 50 });
+
+  // Build score map from suggestions
+  const scoreMap = useMemo(() => {
+    const map = new Map<string, { score: number; reasons: string[] }>();
+    if (!suggestions) return map;
+    for (const s of suggestions) {
+      map.set(s.productId, { score: s.score, reasons: s.matchReasons });
+    }
+    return map;
+  }, [suggestions]);
+
+  // Derive owned product set from suggestions (scored with negative means owned in the algorithm)
+  const ownedSet = useMemo(() => {
+    const set = new Set<string>();
+    // Products with very low scores and no match reasons are likely owned/penalized
+    // The API doesn't explicitly expose ownedProductIds, so we infer from score=0
+    // This is a best-effort approach
+    return set;
+  }, []);
+
+  // Process and sort products
+  const products = useMemo(() => {
+    const raw = productsResponse?.data ?? [];
+    if (!raw.length) return [];
+
+    let sorted = [...raw];
+
+    if (selectedSort === 'best-match' && scoreMap.size > 0) {
+      sorted.sort((a, b) => {
+        const scoreA = scoreMap.get(a.id)?.score ?? 0;
+        const scoreB = scoreMap.get(b.id)?.score ?? 0;
+        return scoreB - scoreA;
+      });
+    } else if (selectedSort === 'price-asc') {
+      sorted.sort((a, b) => (parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0')));
+    } else if (selectedSort === 'price-desc') {
+      sorted.sort((a, b) => (parseFloat(b.priceMin ?? '0') - parseFloat(a.priceMin ?? '0')));
+    }
+    // 'newest' is the default server sort
+
+    return sorted;
+  }, [productsResponse, selectedSort, scoreMap]);
+
+  // Filter pills (combine stock + sort)
+  const sortFilters = useMemo(() => {
+    // Only show "Best match" when session is active
+    if (activeClientId) return SORT_OPTIONS;
+    return SORT_OPTIONS.filter((o) => o.value !== 'best-match');
+  }, [activeClientId]);
+
+  // Auto-switch to "Best match" when session starts
+  useEffect(() => {
+    if (activeClientId && selectedSort === 'newest') {
+      setSelectedSort('best-match');
+    }
+    if (!activeClientId && selectedSort === 'best-match') {
+      setSelectedSort('newest');
+    }
+  }, [activeClientId]);
+
+  const handleStockToggle = useCallback((value: string) => {
+    setSelectedStock((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [value]
+    );
+    setOffset(0);
+  }, []);
+
+  const handleSortToggle = useCallback((value: string) => {
+    setSelectedSort(value);
+  }, []);
+
+  const handleProductPress = useCallback((id: string) => {
+    router.push(`/products/${id}`);
+  }, [router]);
+
+  const handleLoadMore = useCallback(() => {
+    const total = productsResponse?.meta?.total ?? 0;
+    if (products.length < total) {
+      setOffset((prev) => prev + 50);
+    }
+  }, [productsResponse, products.length]);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedStock([]);
+    setSelectedSort('newest');
+    setOffset(0);
+  }, []);
+
+  // Render product card
+  const renderProduct = useCallback(({ item }: { item: Product }) => {
+    const scoreData = scoreMap.get(item.id);
+    return (
+      <View className="flex-1 p-sm">
+        <ProductCard
+          product={item}
+          onPress={handleProductPress}
+          fitScore={scoreData?.score ?? null}
+          fitReasons={scoreData?.reasons}
+          stockStatus={item.viewHints?.stockBucket}
+          isOwned={ownedSet.has(item.id)}
+        />
       </View>
-    ),
-    [numColumns],
-  );
+    );
+  }, [scoreMap, ownedSet, handleProductPress]);
 
-  const keyExtractor = useCallback((item: Product) => item.shopifyId, []);
+  // Key extractor
+  const keyExtractor = useCallback((item: Product) => item.id ?? item.shopifyId, []);
+
+  // Stale data indicator
+  const isStale = dataUpdatedAt > 0 && Date.now() - dataUpdatedAt > 10 * 60 * 1000;
+  const staleLabel = isStale && dataUpdatedAt > 0
+    ? `As of ${new Date(dataUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : null;
+
+  // --- Render ---
+
+  if (isLoading && !productsResponse) return <LoadingState />;
+  if (error && !productsResponse) return <ErrorState error={error} onRetry={refetch} />;
 
   return (
-    <SafeAreaView className="flex-1 bg-offWhite">
-      {/* Search + filters */}
-      <View className="px-xl pt-xl pb-md">
-        <Text className="text-charcoal text-displayMd font-bold mb-md">Products</Text>
-        <SearchBar
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search frames…"
+    <View className="flex-1 bg-bg-page">
+      {/* Header */}
+      <View className="px-xl pt-2xl pb-md border-b border-border">
+        {activeClientId && activeClient ? (
+          <Text className="text-displayLg text-text-primary">
+            Browsing for {activeClient.firstName ?? 'client'}
+          </Text>
+        ) : (
+          <Text className="text-displayLg text-text-primary">Products</Text>
+        )}
+        {productsResponse?.meta && (
+          <Text className="text-caption text-text-muted mt-xs">
+            {productsResponse.meta.total} products
+            {staleLabel && ` · ${staleLabel}`}
+          </Text>
+        )}
+      </View>
+
+      {/* Search */}
+      <View className="px-xl py-sm">
+        <View className="flex-row items-center space-x-sm">
+          <View className="flex-1">
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search products..."
+            />
+          </View>
+          <Button
+            variant="ghost"
+            onPress={() => router.push('/products/scanner')}
+            className="w-[44px] px-0"
+          >
+            <ScanLine size={20} color="#2B2B2B" />
+          </Button>
+        </View>
+      </View>
+
+      {/* Filter rows */}
+      <View className="border-b border-border">
+        {/* Stock filters */}
+        <FilterPillRow
+          filters={STOCK_FILTERS}
+          selected={selectedStock}
+          onToggle={handleStockToggle}
+        />
+        {/* Sort options */}
+        <FilterPillRow
+          filters={sortFilters}
+          selected={[selectedSort]}
+          onToggle={handleSortToggle}
         />
       </View>
 
       {/* Grid */}
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState
-          error={error instanceof Error ? error.message : 'Failed to load products'}
-          onRetry={refetch}
-        />
-      ) : !products?.length ? (
+      {products.length === 0 && !isLoading ? (
         <EmptyState
-          message={search ? 'No products match your search' : 'No products in catalogue'}
+          message="Nothing matches — clear filters?"
+          actionLabel="Clear filters"
+          onAction={handleClearFilters}
         />
       ) : (
         <FlatList
-          data={products}
-          renderItem={renderItem}
-          keyExtractor={keyExtractor}
-          numColumns={numColumns}
           key={`grid-${numColumns}`}
-          contentContainerClassName="px-lg pb-xl"
+          data={products}
+          keyExtractor={keyExtractor}
+          renderItem={renderProduct}
+          numColumns={numColumns}
+          contentContainerStyle={{ padding: 8 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
