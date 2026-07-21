@@ -7,6 +7,7 @@ import { useFittingStore } from '../fitting/useFittingStore';
 import { useCreateInteraction } from '@/src/api/useInteractions';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
 import { toast } from '@/src/ui/useToastStore';
+import { useDesignTokens } from '@/src/features/design';
 import type { QuickTag } from '@/src/api/sessions.types';
 
 type Step = 1 | 2 | 3;
@@ -19,6 +20,7 @@ interface EndSessionFlowProps {
 }
 
 export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
+  const { colors } = useDesignTokens();
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [outcome, setOutcome] = useState<OutcomeTag | null>(null);
@@ -27,6 +29,34 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
   const [language, setLanguage] = useState<Language>('en');
   const [internalNotes, setInternalNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<QuickTag[]>([]);
+
+  // Outcome options with proper icons and colors using design tokens
+  const outcomeOptions = [
+    { 
+      key: 'purchased' as const, 
+      label: 'Purchased', 
+      icon: ShoppingBag,
+      color: colors.success // green accent
+    },
+    { 
+      key: 'booked_next_visit' as const, 
+      label: 'Booked next visit', 
+      icon: Calendar,
+      color: colors.textPrimary // brand
+    },
+    { 
+      key: 'shortlist_emailed' as const, 
+      label: 'Shortlist to review', 
+      icon: Star,
+      color: colors.textPrimary // brand
+    },
+    { 
+      key: 'left_empty_handed' as const, 
+      label: 'Left empty-handed', 
+      icon: DoorOpen,
+      color: colors.textPrimary // brand
+    },
+  ];
 
   const { 
     activeClientId, 
@@ -54,34 +84,6 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
     { key: 'size_up', label: 'Size up' },
     { key: 'rx_needed', label: 'Rx needed' },
     { key: 'budget_concern', label: 'Budget concern' },
-  ];
-
-  // Outcome options with proper icons and colors
-  const outcomeOptions = [
-    { 
-      key: 'purchased' as const, 
-      label: 'Purchased', 
-      icon: ShoppingBag,
-      color: '#005D23' // green accent
-    },
-    { 
-      key: 'booked_next_visit' as const, 
-      label: 'Booked next visit', 
-      icon: Calendar,
-      color: '#1D1F21' // brand
-    },
-    { 
-      key: 'shortlist_emailed' as const, 
-      label: 'Shortlist to review', 
-      icon: Star,
-      color: '#1D1F21' // brand
-    },
-    { 
-      key: 'left_empty_handed' as const, 
-      label: 'Left empty-handed', 
-      icon: DoorOpen,
-      color: '#1D1F21' // brand
-    },
   ];
 
   // Get shortlisted frames from photos
@@ -204,9 +206,11 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
             <Pressable
               key={option.key}
               onPress={() => handleOutcomeSelect(option.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Session outcome: ${option.label}`}
               className="bg-bg-elevated rounded-lg border border-border p-lg items-center justify-center min-h-[120px] w-[48%] mb-md"
               style={{ 
-                borderColor: option.key === 'purchased' ? '#005D23' : '#E8E4DE',
+                borderColor: option.key === 'purchased' ? colors.success : colors.border,
                 borderWidth: option.key === 'purchased' ? 2 : 1
               }}
             >
@@ -238,6 +242,8 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
             />
             <Pressable
               onPress={handleBarcodeScan}
+              accessibilityRole="button"
+              accessibilityLabel="Scan receipt barcode"
               className="ml-sm bg-brand rounded-md p-md min-h-[44px] min-w-[44px] items-center justify-center"
             >
               <ScanLine size={20} color="#FFFFFF" />
@@ -295,6 +301,9 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
                 <Pressable
                   key={lang.key}
                   onPress={() => setLanguage(lang.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set language to ${lang.key === 'en' ? 'English' : 'French'}`}
+                  accessibilityState={{ selected: language === lang.key }}
                   className={`px-md py-sm rounded-md mr-sm min-w-[44px] min-h-[44px] items-center justify-center ${
                     language === lang.key
                       ? 'bg-brand'
@@ -363,6 +372,8 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       {/* Next button */}
       <Pressable
         onPress={() => setStep(3)}
+        accessibilityRole="button"
+        accessibilityLabel="Next step"
         className="bg-brand rounded-md py-md px-lg items-center min-h-[44px] justify-center"
       >
         <Text className="text-body font-medium text-text-inverse">Next</Text>
@@ -409,6 +420,9 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
               <Pressable
                 key={tag.key}
                 onPress={() => handleTagToggle(tag.key)}
+                accessibilityRole="button"
+                accessibilityLabel={`Tag: ${tag.label}`}
+                accessibilityState={{ selected: isSelected }}
                 className={`rounded-md px-md py-sm mr-sm mb-sm min-h-[44px] items-center justify-center ${
                   isSelected
                     ? 'bg-brand'
@@ -433,6 +447,8 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
           createInteractionMutation.isPending ||
           createProductInteractionsMutation.isPending
         }
+        accessibilityRole="button"
+        accessibilityLabel="Save session and return to home"
         className="bg-accent rounded-md py-md px-lg items-center min-h-[44px] justify-center opacity-100"
         style={{ 
           opacity: (

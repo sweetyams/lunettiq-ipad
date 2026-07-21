@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { Heart, ThumbsUp, HelpCircle, XCircle, User } from 'lucide-react-native';
 import type { Verdict } from './fitting.types';
+import { useDesignTokens } from '@/src/features/design';
 
 interface VerdictControlProps {
   value: Verdict | null;
@@ -10,13 +11,15 @@ interface VerdictControlProps {
 }
 
 const verdictOptions = [
-  { key: 'loved' as const, label: 'Loved', color: '#005D23', icon: Heart },
-  { key: 'liked' as const, label: 'Liked', color: '#2D4A8A', icon: ThumbsUp },
-  { key: 'unsure' as const, label: 'Unsure', color: '#D4A017', icon: HelpCircle },
-  { key: 'rejected' as const, label: 'No', color: '#6B6B6B', icon: XCircle },
+  { key: 'loved' as const, label: 'Loved', icon: Heart },
+  { key: 'liked' as const, label: 'Liked', icon: ThumbsUp },  
+  { key: 'unsure' as const, label: 'Unsure', icon: HelpCircle },
+  { key: 'rejected' as const, label: 'No', icon: XCircle },
 ];
 
 export function VerdictControl({ value, onChange, size = 'medium', clientVoice = false }: VerdictControlProps) {
+  const { colors, semantic } = useDesignTokens();
+  
   const sizeClasses = {
     small: 'px-sm py-xs',
     medium: 'px-md py-sm',
@@ -29,11 +32,22 @@ export function VerdictControl({ value, onChange, size = 'medium', clientVoice =
     large: 18,
   };
 
+  const getVerdictColor = (verdictKey: Verdict): string => {
+    switch (verdictKey) {
+      case 'loved': return semantic.verdictLoved;
+      case 'liked': return semantic.verdictLiked;
+      case 'unsure': return semantic.verdictUnsure;
+      case 'rejected': return semantic.verdictRejected;
+      default: return colors.textMuted;
+    }
+  };
+
   return (
     <View className="flex-row bg-bg-elevated rounded-lg p-xs border border-border">
       {verdictOptions.map((option) => {
         const isSelected = value === option.key;
         const Icon = option.icon;
+        const verdictColor = getVerdictColor(option.key);
         
         return (
           <Pressable
@@ -44,15 +58,14 @@ export function VerdictControl({ value, onChange, size = 'medium', clientVoice =
               ${sizeClasses[size]}
               ${isSelected ? 'bg-opacity-10' : 'bg-transparent'}
             `}
-            style={isSelected ? { backgroundColor: `${option.color}20` } : undefined}
+            style={isSelected ? { backgroundColor: `${verdictColor}20` } : undefined}
             accessibilityRole="radio"
-            accessibilityState={{ checked: isSelected }}
-            accessibilityLabel={`Rate as ${option.label}`}
+            accessibilityState={{ selected: isSelected }}
           >
             <View className="relative">
               <Icon 
                 size={iconSizes[size]} 
-                color={isSelected ? option.color : '#6B6B6B'} 
+                color={isSelected ? verdictColor : colors.textMuted} 
                 strokeWidth={isSelected ? 2.5 : 2}
               />
               {/* Person icon when client set the verdict */}
@@ -66,7 +79,7 @@ export function VerdictControl({ value, onChange, size = 'medium', clientVoice =
               className={`text-captionStrong mt-xs ${
                 isSelected ? 'text-text-primary' : 'text-text-muted'
               }`}
-              style={isSelected ? { color: option.color } : undefined}
+              style={isSelected ? { color: verdictColor } : undefined}
             >
               {option.label}
             </Text>

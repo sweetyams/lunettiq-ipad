@@ -33,7 +33,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
   return (
     <View className="mb-lg">
       <View className="flex-row items-center mb-sm">
-        <Sparkles size={16} color="#005D23" />
+        <Sparkles size={16} color="#16A34A" />
         <Text className="text-text-primary text-bodyStrong ml-xs">AI Stylist</Text>
       </View>
 
@@ -56,7 +56,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
           accessibilityRole="button"
           accessibilityLabel="Get AI styling suggestions"
           className={`min-h-[44px] rounded-md items-center justify-center flex-row ${
-            aiStylist.isPending ? 'bg-brand/60' : 'bg-[#005D23]'
+            aiStylist.isPending ? 'bg-brand/60' : 'bg-success'
           }`}
         >
           {aiStylist.isPending ? (
@@ -73,7 +73,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
 
         {/* Error */}
         {aiStylist.isError && (
-          <Text className="text-[#C53030] text-caption mt-sm">
+          <Text className="text-color-error text-caption mt-sm">
             {aiStylist.error?.message ?? 'Something went wrong'}
           </Text>
         )}

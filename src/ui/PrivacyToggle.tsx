@@ -17,7 +17,7 @@ export function PrivacyToggle() {
           : 'bg-accent'
         }
       `}
-      accessibilityLabel={`Toggle privacy mode. Currently ${mode} mode`}
+      accessibilityLabel={`Switch to ${isStaffMode ? 'client-visible' : 'staff'} mode`}
       accessibilityRole="button"
     >
       {isStaffMode ? (

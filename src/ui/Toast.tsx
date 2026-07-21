@@ -7,32 +7,32 @@ const TOAST_DURATION_DEFAULT = 4000;
 
 const typeConfig: Record<ToastType, { bg: string; border: string; icon: typeof AlertCircle; iconColor: string; titleColor: string }> = {
   error: {
-    bg: 'bg-[#FEF3F2]',
-    border: 'border-[#FECDCA]',
+    bg: 'bg-red-50',
+    border: 'border-red-200',
     icon: AlertCircle,
     iconColor: '#B42318',
-    titleColor: 'text-[#B42318]',
+    titleColor: 'text-color-error',
   },
   success: {
-    bg: 'bg-[#ECFDF3]',
-    border: 'border-[#ABEFC6]',
+    bg: 'bg-green-50',
+    border: 'border-green-200',
     icon: CheckCircle,
     iconColor: '#067647',
-    titleColor: 'text-[#067647]',
+    titleColor: 'text-color-success',
   },
   warning: {
-    bg: 'bg-[#FFFAEB]',
-    border: 'border-[#FEDF89]',
+    bg: 'bg-yellow-50',
+    border: 'border-yellow-200',
     icon: AlertTriangle,
     iconColor: '#B54708',
-    titleColor: 'text-[#B54708]',
+    titleColor: 'text-color-warning',
   },
   info: {
-    bg: 'bg-[#EFF4FF]',
-    border: 'border-[#B2CCFF]',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
     icon: Info,
     iconColor: '#023891',
-    titleColor: 'text-[#023891]',
+    titleColor: 'text-color-brand',
   },
 };
 

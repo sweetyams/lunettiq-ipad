@@ -613,6 +613,8 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
                         }
                       );
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Issue courtesy credit, 5 dollars"
                   >
                     <Text className="text-body text-navy text-center">Issue courtesy credit</Text>
                   </Pressable>
@@ -678,6 +680,8 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
                         }
                       )
                     }
+                    accessibilityRole="button"
+                    accessibilityLabel={`Resend receipt for ${receipt.insurerName}, ${(receipt.amount / 100).toFixed(2)} dollars`}
                     className="min-h-[44px] px-md items-center justify-center border border-border rounded-md"
                   >
                     <Text className="text-caption text-navy">Resend</Text>

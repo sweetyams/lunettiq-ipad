@@ -132,6 +132,8 @@ export function CaptureView({
         <Pressable
           onPress={handlePermissionRequest}
           className="bg-accent rounded-md px-lg py-sm"
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera permission"
         >
           <Text className="text-text-inverse text-bodyStrong">Grant Permission</Text>
         </Pressable>
@@ -169,6 +171,8 @@ export function CaptureView({
               onPress={onClose}
               className="w-11 h-11 justify-center items-center"
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Close camera"
             >
               <Text className="text-text-inverse text-headline">✕</Text>
             </Pressable>
@@ -187,6 +191,8 @@ export function CaptureView({
               onPress={toggleFacing}
               className="w-11 h-11 justify-center items-center"
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Switch camera"
             >
               <RotateCcw size={24} color="white" />
             </Pressable>
@@ -210,6 +216,14 @@ export function CaptureView({
                   : 'border-white bg-bg-elevated/20'
               }`}
               style={{ minWidth: 72, minHeight: 72 }} // Ensure 72pt touch target
+              accessibilityRole="button"
+              accessibilityLabel={
+                isAtPhotoLimit 
+                  ? "Photo limit reached" 
+                  : isCapturing 
+                  ? "Capturing photo" 
+                  : "Capture photo"
+              }
             >
               <View className={`w-12 h-12 rounded-full ${
                 isAtPhotoLimit || disabled

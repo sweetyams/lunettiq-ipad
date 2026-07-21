@@ -163,6 +163,8 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
         <Pressable
           onPress={handlePermissionRequest}
           className="bg-accent rounded-md px-lg py-sm"
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera permission"
         >
           <Text className="text-text-inverse text-bodyStrong">Grant Permission</Text>
         </Pressable>
@@ -189,6 +191,8 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
             onPress={onClose}
             className="w-11 h-11 justify-center items-center"
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel scan"
           >
             <X size={24} color="white" />
           </Pressable>
@@ -272,6 +276,8 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
               <Pressable
                 onPress={handleRescan}
                 className="bg-bg-elevated/20 rounded-md px-4 py-2"
+                accessibilityRole="button"
+                accessibilityLabel="Scan again"
               >
                 <Text className="text-text-inverse text-bodyStrong">Rescan</Text>
               </Pressable>
@@ -279,6 +285,8 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
               <Pressable
                 onPress={handleManualConfirm}
                 className="bg-bg-elevated rounded-md px-6 py-2"
+                accessibilityRole="button"
+                accessibilityLabel="Confirm product selection"
               >
                 <Text className="text-accent text-bodyStrong">Confirm</Text>
               </Pressable>

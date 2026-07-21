@@ -43,6 +43,8 @@ export function SessionBanner() {
       
       <Pressable
         onPress={reset}
+        accessibilityRole="button"
+        accessibilityLabel="End current session"
         className="bg-bg-elevated bg-opacity-20 rounded-md px-md py-sm min-h-[44px] items-center justify-center"
       >
         <Text className="text-text-inverse text-bodyStrong">End session</Text>

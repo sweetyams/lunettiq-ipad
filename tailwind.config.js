@@ -1,20 +1,21 @@
 /**
  * Tailwind / NativeWind config — Lunettiq iPad
  *
- * COLOR RULE: Every color value here is the exact value from Foundry's
- * TENANT_BRAND.lunettiq (src/lib/design/tenant-brand.ts).
- * Token names mirror the --color-* CSS var names (drop the -- prefix, camelCase the dash).
+ * COLOR RULE: Every color value here MUST match GET /api/design/native.
+ * Token names mirror the API response keys, prefixed with 'color-' for NativeWind.
  *
- * Source of truth for each token:
- *   Colors   → foundry/src/lib/design/tenant-brand.ts   (TENANT_BRAND.lunettiq)
- *   Type     → foundry/src/lib/design/lunettiq-typography.ts  (LUNETTIQ_TYPOGRAPHY)
- *   Font     → foundry/src/lib/design/tenant-fonts.ts   (TENANT_FONTS.lunettiq)
+ * Source of truth:
+ *   GET https://lunettiq.bentspline.com/api/design/native
+ *   (public, no auth required — same data served to storefront CSS)
+ *
+ * At runtime, DesignTokenProvider fetches the live token values at boot
+ * and applies them via useDesignTokens(). This file is the static fallback
+ * used by NativeWind for className resolution and the first render frame.
+ *
+ * Last synced: 2026-07-21 (version 9adbdbe8)
  *
  * DO NOT hardcode hex values in component code. Use className tokens only.
- * LINT: no-hardcoded-colors (see .eslintrc.js) rejects bare hex/rgba in style={}.
- *
- * To update: sync the values below with the three Foundry source files above.
- * Runtime fetch (V2): GET /api/design/full with Bearer token at app boot.
+ * LINT: audit-design-drift.ts rejects bare hex/rgba in style props.
  */
 
 /** @type {import('tailwindcss').Config} */
@@ -27,108 +28,145 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ─── Foundry storefront tokens — TENANT_BRAND.lunettiq ───────────────
-        // Each key mirrors --color-{key} from the Foundry CSS var.
-        // Values are kept in sync with tenant-brand.ts.
+        // ─── Foundry storefront tokens — live from GET /api/design/native ────
+        // Last synced: 2026-07-21 version 9adbdbe8
+        // These are the fallback values when the runtime fetch hasn't completed.
+        // The DesignTokenProvider applies live values at boot.
+        //
+        // Key structure matches NativeWind className usage:
+        //   bg-bg-page       → colors.bg.page
+        //   text-text-primary → colors.text.primary
+        //   border-border     → colors.border.DEFAULT
 
-        // Backgrounds (5 core)
-        'color-bg-page':           '#FFFFFF',
-        'color-bg-surface':        '#FFFFFF',
-        'color-bg-surface-hover':  '#FAFAFA',
-        'color-bg-muted':          '#F5F5F5',
-        'color-bg-inverse':        '#0A0A0A',
+        // Backgrounds → bg-bg-{key}
+        bg: {
+          page:           '#ffffff',
+          surface:        '#F8F6F7',
+          'surface-hover':'#F8F6F7',
+          muted:          '#F8F6F7',
+          inverse:        '#111111',
+          elevated:       '#FFFFFF',
+          overlay:        'rgba(17, 17, 17, 0.5)',
+        },
 
-        // Text (4 core)
-        'color-text-primary':      '#171717',
-        'color-text-secondary':    '#404040',
-        'color-text-muted':        '#737373',
-        'color-text-inverse':      '#FAFAFA',
+        // Text → text-text-{key}
+        text: {
+          primary:        '#1D1F21',
+          secondary:      'rgba(29, 31, 33, 0.65)',
+          tertiary:       'rgba(29, 31, 33, 0.55)',
+          muted:          'rgba(29, 31, 33, 0.45)',
+          inverse:        '#FFFFFF',
+          link:           '#1D1F21',
+          error:          '#B42318',
+        },
 
-        // Borders (3 core)
-        'color-border':            '#D4D4D4',
-        'color-border-inverse':    'rgba(255,255,255,0.18)',
-        'color-focus-ring':        '#0010DF',
+        // Borders → border-border, border-border-{key}
+        border: {
+          DEFAULT:        'rgba(17, 17, 17, 0.18)',
+          hover:          'rgba(17,17,17,0.28)',
+          strong:         'rgba(17,17,17,0.24)',
+          inverse:        'rgba(255,255,255,0.18)',
+        },
 
-        // Brand (3 core) — electric blue, Lunettiq identity
-        'color-brand':             '#000EC7',
-        'color-brand-hover':       '#000CA3',
-        'color-brand-text':        '#FFFFFF',
+        // Focus ring → ring-focus-ring
+        'focus-ring':     'rgba(17,17,17,0.4)',
 
-        // Accent (3 core) — dark neutral
-        'color-accent':            '#525252',
-        'color-accent-hover':      '#404040',
-        'color-accent-text':       '#FFFFFF',
+        // Brand → bg-brand, text-brand-text, etc.
+        brand: {
+          DEFAULT:        '#1D1F21',
+          hover:          '#1D1F21',
+          text:           '#FFFFFF',
+          soft:           'rgba(17,17,17,0.08)',
+        },
 
-        // Feedback (4 core)
-        'color-sale':              '#DC2626',
-        'color-error':             '#DC2626',
-        'color-success':           '#16A34A',
-        'color-warning':           '#CA8A04',
+        // Accent → bg-accent, text-accent-text
+        accent: {
+          DEFAULT:        '#023891',
+          hover:          '#022e78',
+          text:           '#FFFFFF',
+        },
 
-        // Skeleton (2 core — derived from bg tokens)
-        'color-skeleton-bg':       '#F5F5F5',   // = color-bg-muted
-        'color-skeleton-shimmer':  '#FAFAFA',   // = color-bg-surface-hover
+        // Feedback → text-error, bg-error, text-success, etc.
+        error:            '#B42318',
+        'error-soft':     'rgba(180,35,24,0.08)',
+        success:          '#067647',
+        'success-soft':   'rgba(6,118,71,0.08)',
+        warning:          '#B54708',
+        'warning-soft':   'rgba(181,71,8,0.08)',
+        info:             '#1D1F21',
+
+        // Commerce
+        sale:             '#B42318',
+        'sold-out':       'rgba(17,17,17,0.45)',
+        limited:          '#7C6F64',
+
+        // Skeleton → bg-skeleton-bg, bg-skeleton-shimmer
+        skeleton: {
+          bg:             '#F7F5F2',
+          shimmer:        '#EFEEE9',
+        },
 
         // ─── iPad-specific semantic tokens ────────────────────────────────────
-        // These have no storefront equivalent. Defined here and nowhere else.
-        // All values are derived from the storefront token set above.
+        // Derived from the storefront tokens above. No new raw colors.
 
-        // Verdicts (fitting session) — mapped to nearest storefront semantic color
-        'verdict-loved':           '#16A34A',   // = color-success
-        'verdict-liked':           '#000EC7',   // = color-brand (info blue)
-        'verdict-unsure':          '#CA8A04',   // = color-warning
-        'verdict-rejected':        '#737373',   // = color-text-muted (neutral, not error)
+        // Verdicts → bg-verdict-loved, text-verdict-liked, etc.
+        verdict: {
+          loved:          '#067647',   // = success
+          liked:          '#023891',   // = accent
+          unsure:         '#B54708',   // = warning
+          rejected:       'rgba(29, 31, 33, 0.45)', // = text-muted
+        },
 
-        // Privacy mode indicators
-        'mode-staff':              '#000EC7',   // = color-brand — 2pt strip
-        'mode-client':             '#16A34A',   // = color-success — 6pt strip + CLIENT VIEW label
+        // Privacy mode → bg-mode-staff, bg-mode-client
+        mode: {
+          staff:          '#023891',   // = accent
+          client:         '#067647',   // = success
+        },
 
-        // Staff UI chrome (data-dense panels — derived from bg-inverse)
-        'chrome-bg':               '#0A0A0A',   // = color-bg-inverse
-        'chrome-text':             '#FAFAFA',   // = color-text-inverse
-        'chrome-border':           'rgba(255,255,255,0.18)', // = color-border-inverse
+        // Staff chrome → bg-chrome-bg, text-chrome-text, border-chrome-border
+        chrome: {
+          bg:             '#111111',   // = bg-inverse
+          text:           '#FFFFFF',   // = text-inverse
+          border:         'rgba(255,255,255,0.18)', // = border-inverse
+        },
 
-        // Overlay / scrim
-        'color-overlay':           'rgba(10,10,10,0.5)', // derived from color-bg-inverse
+        // Legacy compat — some components use these directly
+        warmGrey:         '#F8F6F7',   // = bg-muted (for migration)
       },
 
-      // ─── Typography — LUNETTIQ_TYPOGRAPHY (lunettiq-typography.ts) ───────
-      // Desktop values throughout — iPad never renders at mobile breakpoint.
-      // font-weight baked in per token; override per-component with font-{weight}.
+      // ─── Typography — from /api/design/native.typeScale ──────────────────
+      // Lunettiq's design system is intentionally uniform: 14px/20px/500/0.1px
+      // Differentiation is through spacing, transform, and layout — not size.
+      //
+      // iPad accessibility note: 14px is below the 17pt minimum for CLIENT-VISIBLE
+      // screens. Apply text-[18px] overrides specifically on client-facing surfaces
+      // (FIT-03, FIT-05, SES-03). Staff chrome at 14px is fine.
       fontSize: {
-        // Display (5) — Roboto 400, tight negative tracking
-        'display-xxl':  ['90px', { lineHeight: '90px',  fontWeight: '400', letterSpacing: '-0.02em' }],
-        'display-xl':   ['72px', { lineHeight: '76px',  fontWeight: '400', letterSpacing: '-0.02em' }],
-        'display-lg':   ['48px', { lineHeight: '60px',  fontWeight: '400', letterSpacing: '-0.02em' }],
-        'display-md':   ['36px', { lineHeight: '44px',  fontWeight: '400', letterSpacing: '-0.02em' }],
-        'display-sm':   ['30px', { lineHeight: '38px',  fontWeight: '400' }],
-
-        // Heading (5) — Roboto 400, readable weight
-        'heading-xl':   ['28px', { lineHeight: '34px',  fontWeight: '400' }],
-        'heading-lg':   ['24px', { lineHeight: '32px',  fontWeight: '400' }],
-        'heading-md':   ['20px', { lineHeight: '30px',  fontWeight: '400' }],
-        'heading-sm':   ['18px', { lineHeight: '28px',  fontWeight: '400' }],
-        'heading-xs':   ['16px', { lineHeight: '24px',  fontWeight: '400' }],
-
-        // Body (5) — minimum 17px for accessibility (client may not have glasses)
-        'body-xl':      ['20px', { lineHeight: '30px',  fontWeight: '400' }],
-        'body-lg':      ['18px', { lineHeight: '28px',  fontWeight: '400' }],  // ← 17pt min met
-        'body-md':      ['16px', { lineHeight: '24px',  fontWeight: '400' }],  // staff-only UI only
-        'body-sm':      ['14px', { lineHeight: '20px',  fontWeight: '400' }],  // metadata only
-        'body-xs':      ['12px', { lineHeight: '18px',  fontWeight: '400' }],  // timestamps/badges
-
-        // Caption (4) — last two use mono font stack for tabular data
-        'caption-lg':   ['14px', { lineHeight: '20px',  fontWeight: '400' }],
-        'caption-md':   ['12px', { lineHeight: '18px',  fontWeight: '400' }],
-        'caption-sm':   ['11px', { lineHeight: '16px',  fontWeight: '400' }],  // font-mono
-        'caption-xs':   ['10px', { lineHeight: '14px',  fontWeight: '400' }],  // font-mono
+        'display-xxl':  ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'display-xl':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'display-lg':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'display-md':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'display-sm':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'heading-xl':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'heading-lg':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'heading-md':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'heading-sm':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'heading-xs':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'body-xl':      ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'body-lg':      ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'body-md':      ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'body-sm':      ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'body-xs':      ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'caption-lg':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'caption-md':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'caption-sm':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
+        'caption-xs':   ['14px', { lineHeight: '20px', fontWeight: '500', letterSpacing: '0.1px' }],
       },
 
-      // ─── Font families — TENANT_FONTS.lunettiq (tenant-fonts.ts) ─────────
+      // ─── Font families — from /api/design/native.fonts ─────────────────
       fontFamily: {
-        // Both display and body → Roboto (Google Fonts, loaded at app boot)
-        sans:    ['"Roboto"', '"Inter"', '"Helvetica Neue"', 'sans-serif'],
-        display: ['"Roboto"', '"Inter"', '"Helvetica Neue"', 'sans-serif'],
+        sans:    ['"General Sans"', 'Arial', 'Helvetica', 'sans-serif'],
+        display: ['"General Sans"', 'Arial', 'Helvetica', 'sans-serif'],
         mono:    ['ui-monospace', '"SF Mono"', 'Menlo', 'monospace'],
       },
 

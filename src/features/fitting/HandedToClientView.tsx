@@ -50,13 +50,12 @@ export function HandedToClientView() {
       <Pressable
         onPress={exitGesture}
         onPressIn={() => console.log('[Handed] bar pressed')}
-        className="min-h-[44px] items-center justify-center"
-        style={{ backgroundColor: '#023891' }}
+        className="min-h-[44px] items-center justify-center bg-mode-client"
         accessibilityRole="button"
-        accessibilityLabel="Double tap to return to staff mode"
+        accessibilityLabel="Double-tap to exit client mode"
         accessibilityHint="Quickly tap twice to authenticate and exit client view"
       >
-        <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', letterSpacing: 1.5 }}>
+        <Text className="text-white text-caption-sm font-bold tracking-wider">
           DOUBLE-TAP TO EXIT
         </Text>
       </Pressable>
@@ -97,7 +96,7 @@ export function HandedToClientView() {
                   ${selectedPhoto?.id === photo.id ? 'border-accent border-2' : ''}
                 `}
                 accessibilityRole="button"
-                accessibilityLabel={`Photo ${index + 1}${photo.productName ? ` of ${photo.productName}` : ''}`}
+                accessibilityLabel={`View photo ${index + 1}`}
                 style={{ minHeight: 44, minWidth: 44 }} // Ensure 44pt minimum
               >
                 {/* Mock photo - replace with actual Image component */}

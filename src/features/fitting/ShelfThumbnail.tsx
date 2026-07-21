@@ -27,7 +27,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress, onToggleSelect }: S
         onLongPress={onToggleSelect}
         className={`w-20 h-20 rounded-md overflow-hidden ${selectedBorderClass} ${verdictBorderClass} bg-bg-elevated`}
         accessibilityRole="button"
-        accessibilityLabel={`Photo ${photo.productName ? `of ${photo.productName}` : 'without product'}`}
+        accessibilityLabel={`Photo ${photo.productName ? `of ${photo.productName}` : 'without product'}${photo.verdict ? `, verdict ${photo.verdict}` : ''}`}
       >
         <Image
           source={{ uri: photo.thumbnailUri }}

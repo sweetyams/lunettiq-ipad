@@ -541,6 +541,7 @@ export function ConfiguratorSheet({
                     className="flex-1 h-1.5 rounded-full overflow-hidden"
                     accessibilityRole="progressbar"
                     accessibilityLabel={`Step ${idx + 1}: ${step.name?.en}`}
+                    accessibilityHint={idx < currentStepIdx ? "Double-tap to return to this step" : undefined}
                   >
                     <View
                       className={`h-full rounded-full ${

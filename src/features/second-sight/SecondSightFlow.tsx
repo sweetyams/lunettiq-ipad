@@ -49,6 +49,8 @@ function CaptureView({ isVisible, onCapture, onClose }: CaptureViewProps) {
         <Text className="text-text-inverse text-body mb-lg">Camera access needed for Second Sight</Text>
         <Pressable 
           onPress={requestPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Allow camera access for Second Sight"
           className="bg-accent rounded-md px-lg py-sm"
         >
           <Text className="text-text-inverse text-bodyStrong">Allow Camera</Text>
@@ -77,6 +79,8 @@ function CaptureView({ isVisible, onCapture, onClose }: CaptureViewProps) {
       <View className="absolute top-12 left-4 z-10">
         <Pressable 
           onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close camera"
           className="bg-bg-inverse/50 rounded-full p-2"
         >
           <X size={24} color="white" />
@@ -92,6 +96,8 @@ function CaptureView({ isVisible, onCapture, onClose }: CaptureViewProps) {
       <View className="absolute bottom-8 left-0 right-0 items-center">
         <Pressable 
           onPress={takePicture}
+          accessibilityRole="button"
+          accessibilityLabel="Take picture"
           className="w-18 h-18 bg-bg-elevated rounded-full border-4 border-border justify-center items-center"
         >
           <CameraIcon size={32} color="#0A153D" />
@@ -289,6 +295,9 @@ export function SecondSightFlow({
           <Pressable
             key={option.value}
             onPress={() => setCondition(option.value)}
+            accessibilityRole="button"
+            accessibilityLabel={`Condition: ${option.label}`}
+            accessibilityState={{ selected: intake.condition === option.value }}
             className={`border rounded-md p-md mb-sm ${
               intake.condition === option.value 
                 ? 'border-accent bg-accent/5' 
@@ -333,6 +342,8 @@ export function SecondSightFlow({
             <Pressable
               key={slot.id}
               onPress={() => openCamera(slot.id)}
+              accessibilityRole="button"
+              accessibilityLabel={photoUri ? `Retake ${slot.label} photo` : `Take ${slot.label} photo`}
               className="bg-bg-elevated border border-border rounded-lg p-md aspect-square justify-center items-center"
             >
               {photoUri ? (
@@ -340,6 +351,7 @@ export function SecondSightFlow({
                   source={{ uri: photoUri }} 
                   className="w-full h-full rounded-md" 
                   resizeMode="cover"
+                  accessibilityLabel={`${slot.label} photo`}
                 />
               ) : (
                 <View className="items-center">
@@ -370,6 +382,9 @@ export function SecondSightFlow({
           <Pressable
             key={grade}
             onPress={() => handleGradeSelection(grade)}
+            accessibilityRole="button"
+            accessibilityLabel={`Grade ${grade}: ${info.title}, ${GRADE_CREDIT_MAP[grade] / 100} dollars`}
+            accessibilityState={{ selected: intake.grade === grade }}
             className={`border rounded-lg p-lg ${
               intake.grade === grade 
                 ? 'border-accent bg-accent/5' 
@@ -456,6 +471,8 @@ export function SecondSightFlow({
         <Pressable
           onPress={handleCreditAccept}
           disabled={isProcessing}
+          accessibilityRole="button"
+          accessibilityLabel={`Client accepts ${intake.creditAmount ? intake.creditAmount / 100 : 0} dollar store credit`}
           className="bg-accent rounded-md py-lg px-xl"
         >
           <Text className="text-text-inverse text-bodyStrong text-center">
@@ -465,6 +482,8 @@ export function SecondSightFlow({
         
         <Pressable
           onPress={handleCreditDecline}
+          accessibilityRole="button"
+          accessibilityLabel="Client declines trade-in offer"
           className="border border-border rounded-md py-lg px-xl"
         >
           <Text className="text-text-primary text-bodyStrong text-center">Client Declines</Text>
@@ -501,6 +520,8 @@ export function SecondSightFlow({
 
       <Pressable
         onPress={handleComplete}
+        accessibilityRole="button"
+        accessibilityLabel="Complete Second Sight process"
         className="bg-brand rounded-md py-lg px-xl"
       >
         <Text className="text-text-inverse text-bodyStrong">Done</Text>
@@ -525,7 +546,11 @@ export function SecondSightFlow({
       {/* Header */}
       <View className="bg-bg-elevated border-b border-border px-lg py-md">
         <View className="flex-row items-center justify-between">
-          <Pressable onPress={currentStep === 1 ? handleCancel : prevStep}>
+          <Pressable 
+            onPress={currentStep === 1 ? handleCancel : prevStep}
+            accessibilityRole="button"
+            accessibilityLabel={currentStep === 1 ? "Cancel Second Sight" : "Previous step"}
+          >
             {currentStep === 1 ? (
               <X size={24} color="#0A153D" />
             ) : (
@@ -552,6 +577,8 @@ export function SecondSightFlow({
           <Pressable
             onPress={handleNext}
             disabled={!canProceedFromStep(currentStep) || isProcessing}
+            accessibilityRole="button"
+            accessibilityLabel={currentStep === 2 ? "Save and continue" : "Next step"}
             className={`rounded-md py-lg px-xl ${
               canProceedFromStep(currentStep) && !isProcessing
                 ? 'bg-accent' 

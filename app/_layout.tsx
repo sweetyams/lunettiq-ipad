@@ -6,6 +6,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient, api } from '@/src/api/client';
+import { DesignTokenProvider } from '@/src/features/design';
 import { PrivacyModeProvider } from '@/src/features/privacy/PrivacyModeProvider';
 import { SyncProvider } from '@/src/sync/SyncProvider';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
@@ -71,24 +72,28 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <DevErrorBoundary context="root">
         <EnvGate>
-          <ClerkProvider 
-            publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
-            tokenCache={tokenCache}
-          >
-            <QueryClientProvider client={queryClient}>
-              <SyncProvider>
-                <PrivacyModeProvider>
-                  <AuthProvider>
-                    <PushProvider>
-                      <DevErrorBoundary context="app">
-                        <InitialLayout />
-                      </DevErrorBoundary>
-                    </PushProvider>
-                  </AuthProvider>
-                </PrivacyModeProvider>
-              </SyncProvider>
-            </QueryClientProvider>
-          </ClerkProvider>
+          {/* DesignTokenProvider is outermost — fetches tokens before Clerk loads.
+              No auth required. Falls back to cached/static tokens if offline. */}
+          <DesignTokenProvider>
+            <ClerkProvider
+              publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}
+              tokenCache={tokenCache}
+            >
+              <QueryClientProvider client={queryClient}>
+                <SyncProvider>
+                  <PrivacyModeProvider>
+                    <AuthProvider>
+                      <PushProvider>
+                        <DevErrorBoundary context="app">
+                          <InitialLayout />
+                        </DevErrorBoundary>
+                      </PushProvider>
+                    </AuthProvider>
+                  </PrivacyModeProvider>
+                </SyncProvider>
+              </QueryClientProvider>
+            </ClerkProvider>
+          </DesignTokenProvider>
         </EnvGate>
       </DevErrorBoundary>
     </SafeAreaProvider>

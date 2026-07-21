@@ -21,32 +21,32 @@ function EnvErrorScreen({ result }: { result: EnvValidationResult }) {
   const problems = result.diagnostics.filter((d) => d.status !== 'ok');
 
   return (
-    <View className="flex-1 bg-[#0A153D]">
+    <View className="flex-1 bg-color-bg-inverse">
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 48, paddingTop: 80 }}>
         {/* Header */}
-        <Text className="text-[#D4A017] text-[13px] font-bold tracking-wider mb-xs">
+        <Text className="text-color-warning text-caption-sm font-bold tracking-wider mb-xs">
           ENVIRONMENT CHECK FAILED
         </Text>
-        <Text className="text-text-inverse text-[28px] font-bold mb-sm">
+        <Text className="text-text-inverse text-heading-lg font-bold mb-sm">
           Missing Configuration
         </Text>
-        <Text className="text-text-inverse/70 text-[17px] mb-xl leading-6">
+        <Text className="text-text-inverse/70 text-body-lg mb-xl leading-6">
           The app can't start because required environment variables are missing or invalid.
           Fix these in your{' '}
-          <Text className="font-mono text-[#88aaff]">.env.local</Text> file and restart Metro.
+          <Text className="font-mono text-color-brand">.env.local</Text> file and restart Metro.
         </Text>
 
         {/* Problems */}
         {problems.map((d) => (
           <View key={d.key} className="bg-bg-elevated/10 rounded-lg p-lg mb-md border border-white/20">
             <View className="flex-row items-center mb-xs">
-              <View className="w-2 h-2 rounded-full bg-[#c53030] mr-sm" />
-              <Text className="text-text-inverse/50 text-[12px] font-bold tracking-wider">
+              <View className="w-2 h-2 rounded-full bg-color-error mr-sm" />
+              <Text className="text-text-inverse/50 text-caption-sm font-bold tracking-wider">
                 {d.status === 'missing' ? 'MISSING' : 'INVALID'}
               </Text>
             </View>
-            <Text className="text-text-inverse text-[17px] font-mono mb-sm">{d.key}</Text>
-            <Text className="text-[#88aaff] text-[15px] leading-5">{d.hint}</Text>
+            <Text className="text-text-inverse text-body-lg font-mono mb-sm">{d.key}</Text>
+            <Text className="text-color-brand text-body-md leading-5">{d.hint}</Text>
           </View>
         ))}
 

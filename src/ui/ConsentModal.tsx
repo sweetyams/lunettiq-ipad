@@ -30,6 +30,8 @@ export function ConsentModal({ visible, clientName, onConsent, onDecline }: Cons
           <View className="flex-row gap-3">
             <Pressable
               onPress={onConsent}
+              accessibilityRole="button"
+              accessibilityLabel="Client agrees to photos this session"
               className="flex-1 bg-accent rounded-md py-3 px-4 min-h-[44px] items-center justify-center"
             >
               <Text className="text-text-inverse text-bodyStrong">Client agrees</Text>
@@ -37,6 +39,8 @@ export function ConsentModal({ visible, clientName, onConsent, onDecline }: Cons
 
             <Pressable
               onPress={onDecline}
+              accessibilityRole="button"
+              accessibilityLabel="No photos this session"
               className="flex-1 bg-brand rounded-md py-3 px-4 min-h-[44px] items-center justify-center"
             >
               <Text className="text-text-inverse text-bodyStrong">No photos this session</Text>

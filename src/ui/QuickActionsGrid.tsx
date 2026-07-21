@@ -53,7 +53,7 @@ export function QuickActionsGrid() {
             className="bg-bg-page border border-border rounded-md p-md items-center justify-center min-h-[80px] min-w-[44px]"
             style={{ width: '48%' }}
             accessibilityRole="button"
-            accessibilityLabel={action.accessibilityLabel}
+            accessibilityLabel={action.label}
           >
             {action.icon}
             <Text className="text-caption text-text-primary font-medium mt-sm text-center">

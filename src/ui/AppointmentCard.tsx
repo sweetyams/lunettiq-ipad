@@ -101,6 +101,8 @@ export function AppointmentCard({
     <Pressable 
       onPress={() => onPress?.(appointment.id)}
       onLongPress={onLongPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${formatTime(appointment.startsAt)} appointment with ${appointment.clientName}, ${formatAppointmentType(appointment.type)}, status: ${appointment.status}`}
       className={`bg-bg-elevated rounded-lg border ${getStatusStyles()} p-md mb-sm`}
     >
       <View className="flex-row items-center justify-between mb-sm">
@@ -125,6 +127,8 @@ export function AppointmentCard({
           {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && onCheckIn && (
             <Pressable 
               onPress={() => onCheckIn(appointment.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Check in ${appointment.clientName}`}
               className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
               <Text className="text-bodyStrong text-text-inverse">Check In</Text>
@@ -134,6 +138,8 @@ export function AppointmentCard({
           {appointment.status === 'in_progress' && onStartSession && (
             <Pressable 
               onPress={() => onStartSession(appointment.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Start session with ${appointment.clientName}`}
               className="bg-accent px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
               <Text className="text-bodyStrong text-text-inverse">Start Session</Text>

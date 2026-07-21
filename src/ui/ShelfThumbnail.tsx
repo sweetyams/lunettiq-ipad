@@ -24,6 +24,8 @@ export function ShelfThumbnail({ photo, isSelected, onPress }: ShelfThumbnailPro
     <Pressable
       onPress={() => onPress(photo.id)}
       className="w-[120px] flex-none"
+      accessibilityRole="button"
+      accessibilityLabel={`${photo.productName ?? 'Photo'}, ${photo.verdict ? photo.verdict + ' verdict' : 'no verdict set'}`}
     >
       {/* Photo area with selection outline */}
       <View

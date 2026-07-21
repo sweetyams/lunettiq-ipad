@@ -31,6 +31,8 @@ export function StartSessionButton({ clientId, clientName }: StartSessionButtonP
     <Pressable
       onPress={handlePress}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityLabel={getButtonText()}
       className={`
         ${isDisabled ? 'bg-text-muted' : 'bg-accent'} 
         rounded-md min-h-[44px] px-lg py-sm items-center justify-center

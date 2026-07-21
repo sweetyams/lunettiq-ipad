@@ -50,7 +50,12 @@ export class DevErrorBoundary extends Component<Props, State> {
           <Text className="text-text-primary text-headline font-semibold mb-md">
             Something went wrong
           </Text>
-          <Pressable onPress={this.handleRetry} className="bg-brand rounded-md px-lg py-sm min-h-[44px] justify-center">
+          <Pressable 
+            onPress={this.handleRetry} 
+            accessibilityRole="button"
+            accessibilityLabel="Try again"
+            className="bg-brand rounded-md px-lg py-sm min-h-[44px] justify-center"
+          >
             <Text className="text-text-inverse text-body font-medium">Try Again</Text>
           </Pressable>
         </View>
@@ -58,13 +63,13 @@ export class DevErrorBoundary extends Component<Props, State> {
     }
 
     return (
-      <View className="flex-1 bg-[#1a1a2e]">
+      <View className="flex-1 bg-chrome-bg">
         {/* Header */}
-        <View className="bg-[#c53030] px-xl py-lg pt-[60px]">
-          <Text className="text-text-inverse text-[13px] font-bold tracking-wider mb-xs">
+        <View className="bg-error px-xl py-lg pt-[60px]">
+          <Text className="text-text-inverse text-caption-md font-bold tracking-wider mb-xs">
             RENDER ERROR{this.props.context ? ` · ${this.props.context.toUpperCase()}` : ''}
           </Text>
-          <Text className="text-text-inverse text-[20px] font-semibold" numberOfLines={3}>
+          <Text className="text-text-inverse text-heading-md font-semibold" numberOfLines={3}>
             {error?.message ?? 'Unknown error'}
           </Text>
         </View>
@@ -75,11 +80,11 @@ export class DevErrorBoundary extends Component<Props, State> {
           {error?.message && <DiagnosisHint message={error.message} />}
 
           {/* Stack trace */}
-          <Text className="text-[#8888aa] text-[12px] font-bold tracking-wider mb-sm mt-lg">
+          <Text className="text-text-muted text-caption-md font-bold tracking-wider mb-sm mt-lg">
             COMPONENT STACK
           </Text>
-          <View className="bg-[#0d0d1a] rounded-lg p-md">
-            <Text className="text-[#ccccdd] text-[13px] font-mono leading-5">
+          <View className="bg-chrome-bg rounded-lg p-md">
+            <Text className="text-text-inverse text-caption-md font-mono leading-5">
               {errorInfo?.componentStack?.trim() ?? 'No component stack available'}
             </Text>
           </View>
@@ -87,11 +92,11 @@ export class DevErrorBoundary extends Component<Props, State> {
           {/* JS stack */}
           {error?.stack && (
             <>
-              <Text className="text-[#8888aa] text-[12px] font-bold tracking-wider mb-sm mt-lg">
+              <Text className="text-text-muted text-caption-md font-bold tracking-wider mb-sm mt-lg">
                 JS STACK
               </Text>
-              <View className="bg-[#0d0d1a] rounded-lg p-md">
-                <Text className="text-[#ccccdd] text-[13px] font-mono leading-5">
+              <View className="bg-chrome-bg rounded-lg p-md">
+                <Text className="text-text-inverse text-caption-md font-mono leading-5">
                   {error.stack.split('\n').slice(0, 15).join('\n')}
                 </Text>
               </View>
@@ -100,9 +105,11 @@ export class DevErrorBoundary extends Component<Props, State> {
         </ScrollView>
 
         {/* Retry button */}
-        <View className="absolute bottom-0 left-0 right-0 p-lg pb-[40px] bg-[#1a1a2e]">
+        <View className="absolute bottom-0 left-0 right-0 p-lg pb-[40px] bg-chrome-bg">
           <Pressable
             onPress={this.handleRetry}
+            accessibilityRole="button"
+            accessibilityLabel="Retry after error"
             className="bg-accent rounded-md py-md items-center min-h-[44px] justify-center"
           >
             <Text className="text-text-inverse text-body font-semibold">Retry</Text>
@@ -130,8 +137,8 @@ function DiagnosisHint({ message }: { message: string }) {
   if (!hint) return null;
 
   return (
-    <View className="bg-[#2d4a8a]/30 rounded-lg p-md mt-md border border-[#2d4a8a]">
-      <Text className="text-[#88aaff] text-[14px] font-medium">{hint}</Text>
+    <View className="bg-brand/30 rounded-lg p-md mt-md border border-brand">
+      <Text className="text-brand text-body-sm font-medium">{hint}</Text>
     </View>
   );
 }

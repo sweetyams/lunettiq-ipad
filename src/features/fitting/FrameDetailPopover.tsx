@@ -169,6 +169,7 @@ export function FrameDetailPopover({
                   source={{ uri: photo.localUri }} 
                   className="w-full h-full"
                   resizeMode="contain"
+                  accessibilityLabel={`Photo of ${photo.productName || 'frame'}`}
                 />
               )}
             </ScrollView>

@@ -33,11 +33,14 @@ export function EndSessionSheet({ visible, onClose }: EndSessionSheetProps) {
       <Pressable 
         className="flex-1 bg-brand/40 items-center justify-center p-lg"
         onPress={handleBackdropPress}
+        accessibilityRole="button"
+        accessibilityLabel="Close end session dialog"
       >
         {/* Modal content */}
         <Pressable 
           className="bg-bg-page rounded-lg w-full max-w-[600px] max-h-[85%] shadow-lg"
           onPress={(e) => e.stopPropagation()} // Prevent backdrop dismiss when tapping content
+          accessibilityRole="none"
         >
           {/* Header with close button */}
           <View className="flex-row items-center justify-between p-lg border-b border-border">

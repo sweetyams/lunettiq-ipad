@@ -92,7 +92,7 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
           onPress={() => onHoldPress?.(hold)}
           className="flex-row items-center py-sm border-b border-border last:border-b-0 min-h-[44px]"
           accessibilityRole="button"
-          accessibilityLabel={`${hold.productName}, ${formatExpiry(hold.expiresAt)}`}
+          accessibilityLabel={`Hold for ${hold.productName}, expires ${hold.expiresAt ? new Date(hold.expiresAt).toLocaleDateString() : 'unknown'}`}
         >
           <Package color="#737373" size={16} />
           <View className="flex-1 ml-sm">

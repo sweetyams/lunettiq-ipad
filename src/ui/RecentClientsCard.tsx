@@ -88,7 +88,7 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
             onPress={() => onClientPress?.(client.id)}
             className="flex-row items-center py-sm border-b border-border last:border-b-0 min-h-[44px]"
             accessibilityRole="button"
-            accessibilityLabel={`View ${name} profile`}
+            accessibilityLabel={`Open profile for ${client.firstName} ${client.lastName}`}
           >
             <View className="w-8 h-8 rounded-full bg-brand items-center justify-center">
               <Text className="text-brand-text text-caption font-medium">

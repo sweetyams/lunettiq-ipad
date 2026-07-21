@@ -310,6 +310,76 @@ Call on every login (idempotent — ON CONFLICT DO NOTHING).
 | GET | `/api/storefront/locations` | Public | Store locations |
 | GET | `/api/storefront/filters` | Public | Product filter taxonomy |
 
+### Design Tokens (`/api/design/native`)
+
+**No auth required. Call at cold boot, before Clerk login.**
+
+```typescript
+GET https://lunettiq.bentspline.com/api/design/native
+// No Authorization header — public endpoint, same pattern as /api/design/css
+// No X-Found-Surface header — not an authenticated call
+// Caching: s-maxage=60, stale-while-revalidate=300 (Vercel CDN)
+```
+
+Returns `NativeDesignTokens` — a flat, resolved token map purpose-built for native apps:
+- All `var(--...)` references pre-resolved to concrete hex/rgba values
+- Single breakpoint (desktop/iPad scale — no mobile values)
+- camelCase keys, no CSS kebab-case
+- `meta.version` is an 8-char hash of all token values
+
+```typescript
+interface NativeDesignTokens {
+  meta: { tenant: string; version: string; fetchedAt: string }
+  fonts: {
+    display: { family: string; fallbacks: string[]; googleFontsUrl: string | null; weights: number[] }
+    body:    { family: string; fallbacks: string[]; googleFontsUrl: string | null; weights: number[] }
+    mono:    { family: string; fallbacks: string[]; googleFontsUrl: string | null; weights: number[] }
+  }
+  colors: {
+    // 7 backgrounds, 7 text, 5 borders, 4 brand, 3 accent, 7 feedback, 3 commerce, 2 skeleton
+    bgPage: string; bgSurface: string; bgSurfaceHover: string; bgMuted: string
+    bgInverse: string; bgElevated: string; bgOverlay: string
+    textPrimary: string; textSecondary: string; textTertiary: string; textMuted: string
+    textInverse: string; textLink: string; textError: string
+    border: string; borderHover: string; borderStrong: string; borderInverse: string; focusRing: string
+    brand: string; brandHover: string; brandText: string; brandSoft: string
+    accent: string; accentHover: string; accentText: string
+    error: string; errorSoft: string; success: string; successSoft: string
+    warning: string; warningSoft: string; info: string
+    sale: string; soldOut: string; limited: string
+    skeletonBase: string; skeletonShimmer: string
+  }
+  typeScale: Array<{
+    name: string; category: string; fontFamily: 'display'|'body'|'mono'
+    fontSize: number; lineHeight: number; fontWeight: number
+    letterSpacing?: string; textTransform?: string
+  }>
+  spacing: { xs: 4; sm: 8; md: 16; lg: 24; xl: 32; xxl: 48 }
+  radius:  { sm: 6; md: 10; lg: 14; full: 9999 }
+}
+```
+
+**iPad caching strategy:**
+```typescript
+// MMKV key: 'tokens' (in 'design-tokens' storage instance)
+// Version key: 'version'
+// On fetch: compare meta.version to cached version → skip re-apply if same
+// Refresh interval: meta.fetchedAt + 24h max, or whenever version changes
+// Offline: serve from MMKV indefinitely, no error
+```
+
+**What the iPad derives from this (not in the API response):**
+```typescript
+// iPad-only semantic mappings — computed from the token set:
+verdictLoved    = colors.success    // #16A34A
+verdictLiked    = colors.brand      // #000EC7
+verdictUnsure   = colors.warning    // #CA8A04
+verdictRejected = colors.textMuted  // #737373
+modeStaff       = colors.brand      // 2pt strip
+modeClient      = colors.success    // 6pt strip + CLIENT VIEW
+chromeBg        = colors.bgInverse  // dark panel bg
+```
+
 ## Idempotency (Offline Queue)
 
 For mutating requests from the sync queue, include:

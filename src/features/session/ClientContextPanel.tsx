@@ -9,6 +9,7 @@ import { useSessionStore } from './useSessionStore';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { PermissionGate } from '@/src/ui/PermissionGate';
+import { useDesignTokens } from '@/src/features/design';
 import { AiStylistPanel } from '@/src/ui/AiStylistPanel';
 import type { FrameTried } from './useSessionStore';
 
@@ -19,10 +20,10 @@ const AUTOSAVE_INTERVAL_MS = 30_000; // 30 seconds per spec
 // --- Verdict display helpers ---
 
 const VERDICT_ICONS = {
-  loved: { icon: Heart, color: '#005D23', label: 'Loved' },
-  liked: { icon: ThumbsUp, color: '#2D4A8A', label: 'Liked' },
-  unsure: { icon: HelpCircle, color: '#D4A017', label: 'Unsure' },
-  rejected: { icon: XCircle, color: '#6B6B6B', label: 'Rejected' },
+  loved: { icon: Heart, label: 'Loved' },
+  liked: { icon: ThumbsUp, label: 'Liked' },
+  unsure: { icon: HelpCircle, label: 'Unsure' },
+  rejected: { icon: XCircle, label: 'Rejected' },
 } as const;
 
 // --- Component ---
@@ -195,7 +196,7 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
           <View className="gap-sm">
             {recentInteractions.map((interaction) => (
               <View key={interaction.id} className="flex-row items-start">
-                <FileText color="#6B6B6B" size={14} className="mt-[2px]" />
+                <FileText className="text-text-muted mt-[2px]" size={14} />
                 <View className="flex-1 ml-sm">
                   <Text className="text-text-primary text-body" numberOfLines={1}>
                     {interaction.subject ?? interaction.type}
@@ -239,20 +240,33 @@ function DataRow({ label, value }: { label: string; value: string }) {
 }
 
 function FrameTriedRow({ frame }: { frame: FrameTried }) {
+  const { semantic } = useDesignTokens();
   const verdictInfo = frame.verdict ? VERDICT_ICONS[frame.verdict] : null;
   const VerdictIcon = verdictInfo?.icon;
+
+  const getVerdictColor = (verdict: string) => {
+    switch (verdict) {
+      case 'loved': return semantic.verdictLoved;
+      case 'liked': return semantic.verdictLiked;
+      case 'unsure': return semantic.verdictUnsure;
+      case 'rejected': return semantic.verdictRejected;
+      default: return semantic.verdictRejected;
+    }
+  };
+
+  const verdictColor = frame.verdict ? getVerdictColor(frame.verdict) : undefined;
 
   return (
     <View className="flex-row items-center justify-between py-xs">
       <Text className="text-text-primary text-body flex-1" numberOfLines={1}>
         {frame.productName}
       </Text>
-      {verdictInfo && VerdictIcon && (
+      {verdictInfo && VerdictIcon && verdictColor && (
         <View className="flex-row items-center ml-sm">
-          <VerdictIcon color={verdictInfo.color} size={14} />
+          <VerdictIcon color={verdictColor} size={14} />
           <Text
             className="text-caption ml-xs"
-            style={{ color: verdictInfo.color }}
+            style={{ color: verdictColor }}
           >
             {verdictInfo.label}
           </Text>

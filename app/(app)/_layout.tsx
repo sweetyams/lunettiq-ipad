@@ -5,8 +5,10 @@ import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { HandedToClientView } from '@/src/features/fitting/HandedToClientView';
 import { SessionBar } from '@/src/ui/SessionBar';
+import { useDesignTokens } from '@/src/features/design';
 
 export default function AppLayout() {
+  const { colors } = useDesignTokens();
   const mode = useSessionStore((s) => s.mode);
   const handedToClient = usePrivacyStore((s) => s.handedToClient);
 
@@ -30,8 +32,8 @@ export default function AppLayout() {
           tabBarInactiveTintColor: '#A3A3A3',
           tabBarStyle: {
             display: hideTabBar ? 'none' : 'flex',
-            backgroundColor: '#FFFFFF',
-            borderTopColor: '#E5E5E5',
+            backgroundColor: colors.bgPage,
+            borderTopColor: colors.border,
             borderTopWidth: 1,
             paddingTop: 8,
             paddingBottom: 8,

@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-21] — Design Drift Fixes
+
+### Fixed
+- Replaced hardcoded colors with design tokens across 5 components:
+  - HandedToClientView: Fixed exit strip background and text styling to use proper design tokens
+  - VerdictControl: Updated verdict colors to match design system (loved, liked, unsure, rejected)
+  - AiStylistPanel: Replaced arbitrary bg-[#005D23] with bg-success token
+  - DevErrorBoundary: Fixed hardcoded colors and small font sizes with proper token classes
+  - ClientContextPanel: Replaced hardcoded icon color with text-text-muted class
+- All changes maintain visual consistency while ensuring compliance with design system token usage
+
+## [2026-07-21] — Accessibility Audit Fixes
+
+### Fixed
+- Added missing accessibilityLabel and accessibilityRole props to 45+ interactive elements across session, fitting, and UI components for VoiceOver compatibility
+- Session files: EndSessionFlow.tsx, ProductBrowserPanel.tsx, SessionBanner.tsx, StartSessionButton.tsx
+- Second Sight flow: camera permissions, photo capture, condition selection, grade selection, client decision buttons
+- Custom Design flow: step navigation, photo management, material selection, date picker, form submission
+- UI components: AppointmentCard check-in/session buttons, ClientRow selection, ConsentModal buttons, DevErrorBoundary retry buttons
+- Client profile: interaction timeline, preferences editing, loyalty credit issuing, receipt resending buttons
+
 ## [2026-07-21] — Phase 5 & 6: Offline Sync, Push, Rx Workflows, Full API Coverage
 
 ### Added — Phase 5 (Critical Infrastructure)

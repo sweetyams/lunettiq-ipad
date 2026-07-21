@@ -36,6 +36,8 @@ export function ClientRow({ client, isSelected = false, onPress }: ClientRowProp
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Open profile for ${name}, last activity ${activityText}`}
       className={`
         p-md border-b border-border
         ${isSelected ? 'bg-bg-surface' : 'bg-bg-page active:bg-bg-surface'}

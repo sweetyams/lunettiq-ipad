@@ -113,7 +113,7 @@ export function OrderSummarySheet({
             onPress={onClose}
             className="w-[44px] h-[44px] items-center justify-center"
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel="Close order summary"
           >
             <X size={24} color="#2B2B2B" />
           </Pressable>
@@ -161,6 +161,8 @@ export function OrderSummarySheet({
               <Pressable
                 onPress={() => setShowPrescriptions(!showPrescriptions)}
                 className="flex-row items-center min-h-[44px]"
+                accessibilityRole="button"
+                accessibilityLabel={`${showPrescriptions ? 'Hide' : 'Show'} prescription options`}
               >
                 <FileText size={18} color="#2B2B2B" />
                 <Text className="text-headline text-text-primary ml-sm flex-1">
@@ -182,6 +184,9 @@ export function OrderSummarySheet({
                     className={`py-sm px-md rounded-md mb-sm min-h-[44px] justify-center ${
                       !selectedPrescriptionId ? 'bg-green/10 border border-green' : 'bg-bg-elevated'
                     }`}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: !selectedPrescriptionId }}
+                    accessibilityLabel="No prescription"
                   >
                     <Text className="text-body text-text-primary">No prescription (sunglasses / plano)</Text>
                   </Pressable>
@@ -194,6 +199,11 @@ export function OrderSummarySheet({
                           ? 'bg-green/10 border border-green'
                           : 'bg-bg-elevated'
                       }`}
+                      accessibilityRole="radio"
+                      accessibilityState={{ checked: selectedPrescriptionId === rx.id }}
+                      accessibilityLabel={`${rx.type.replace('_', ' ')} prescription from ${rx.prescribedAt
+                        ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                        : 'unknown date'}${rx.prescribedBy ? ` by ${rx.prescribedBy}` : ''}`}
                     >
                       <Text className="text-body text-text-primary">
                         {rx.type.replace('_', ' ')} — {rx.prescribedAt

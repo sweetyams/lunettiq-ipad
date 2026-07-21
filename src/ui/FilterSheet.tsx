@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
+import { useDesignTokens } from '@/src/features/design';
 import type { FiltersResponse, FilterGroup } from '@/src/api/filters.types';
 
 // Stock filter is always shown at the top
@@ -39,6 +40,7 @@ export function FilterSheet({
   onClear,
   activeCount,
 }: FilterSheetProps) {
+  const { colors } = useDesignTokens();
   const { height } = useWindowDimensions();
 
   return (
@@ -60,6 +62,7 @@ export function FilterSheet({
           onPress={(e) => e.stopPropagation()}
           className="absolute bottom-0 left-0 right-0 bg-bg-elevated rounded-t-2xl"
           style={{ maxHeight: height * 0.72 }}
+          accessible={false}
         >
           {/* Handle */}
           <View className="items-center pt-sm pb-xs">
@@ -193,7 +196,7 @@ function FilterPill({
           : 'bg-bg-page border-border'
       }`}
     >
-      {isSelected && <Check size={14} color="#FFFFFF" style={{ marginRight: 6 }} />}
+      {isSelected && <Check size={14} color="white" style={{ marginRight: 6 }} />}
       <Text
         className={`text-caption font-medium ${
           isSelected ? 'text-brand-text' : 'text-text-primary'
@@ -214,6 +217,7 @@ function SwatchGrid({
   selected: string[];
   onToggle: (value: string) => void;
 }) {
+  const { colors } = useDesignTokens();
   return (
     <View className="flex-row flex-wrap gap-sm px-xl">
       {group.values.map((v) => {
@@ -238,11 +242,11 @@ function SwatchGrid({
             >
               <View
                 className="w-8 h-8 rounded-full border border-border"
-                style={{ backgroundColor: v.swatchHex ?? '#E8E4DE' }}
+                style={{ backgroundColor: v.swatchHex ?? colors.bgMuted }}
               />
               {isSelected && (
                 <View className="absolute inset-0 items-center justify-center">
-                  <Check size={14} color={isLightColour(v.swatchHex) ? '#000' : '#fff'} />
+                  <Check size={14} color={isLightColour(v.swatchHex) ? colors.textPrimary : colors.textInverse} />
                 </View>
               )}
             </View>

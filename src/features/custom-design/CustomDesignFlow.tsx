@@ -151,6 +151,9 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         <View key={step} className="flex-row items-center">
           <Pressable
             onPress={() => goToStep(step)}
+            accessibilityRole="button"
+            accessibilityLabel={`Go to step ${step}`}
+            accessibilityState={{ selected: step === currentStep }}
             className={`w-8 h-8 rounded-full items-center justify-center ${
               step <= currentStep ? 'bg-brand' : 'bg-border'
             }`}
@@ -187,6 +190,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             />
             <Pressable
               onPress={() => removeReferencePhoto(index)}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove reference photo ${index + 1}`}
               className="absolute -top-2 -right-2 w-6 h-6 bg-error rounded-full items-center justify-center"
             >
               <X size={14} color="white" />
@@ -205,6 +210,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           <View className="gap-sm">
             <Pressable
               onPress={handleTakePhoto}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo with camera"
               className="w-24 h-24 bg-border rounded-md items-center justify-center border-2 border-dashed border-border-strong"
             >
               <Camera size={24} color="#6B6B6B" />
@@ -213,6 +220,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             
             <Pressable
               onPress={handleAddPhoto}
+              accessibilityRole="button"
+              accessibilityLabel="Add photo from library"
               className="w-24 h-24 bg-border rounded-md items-center justify-center border-2 border-dashed border-border-strong"
             >
               <Plus size={24} color="#6B6B6B" />
@@ -257,6 +266,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               const newMods = current ? `${current}, ${tag}` : tag;
               setModifications(newMods);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Add modification: ${tag}`}
             className="px-md py-sm bg-border rounded-full"
           >
             <Text className="text-captionStrong text-text-primary">{tag}</Text>
@@ -270,6 +281,9 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           <Pressable
             key={material}
             onPress={() => setMaterialPreference(material)}
+            accessibilityRole="button"
+            accessibilityLabel={`Material preference: ${material}`}
+            accessibilityState={{ selected: intake.materialPreference === material }}
             className={`px-md py-sm rounded-md border ${
               intake.materialPreference === material
                 ? 'bg-brand border-brand'
@@ -329,7 +343,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         ))}
       </View>
       
-      <Pressable className="mt-lg p-md bg-border rounded-md items-center">
+      <Pressable 
+        accessibilityRole="button"
+        accessibilityLabel="Copy measurements from current frames"
+        className="mt-lg p-md bg-border rounded-md items-center"
+      >
         <Text className="text-bodyStrong text-text-primary">Copy from Current Frames</Text>
         <Text className="text-caption text-text-muted">Uses client fit profile if available</Text>
       </Pressable>
@@ -349,6 +367,9 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           <Pressable
             key={range}
             onPress={() => setBudgetRange(range)}
+            accessibilityRole="button"
+            accessibilityLabel={`Budget range: ${range}`}
+            accessibilityState={{ selected: intake.budgetRange === range }}
             className={`p-md rounded-md border ${
               intake.budgetRange === range
                 ? 'bg-brand border-brand'
@@ -367,6 +388,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
       <Text className="text-bodyStrong text-text-primary mb-sm">Target Completion Date</Text>
       <Pressable
         onPress={() => setShowDatePicker(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Select target completion date"
         className="p-md bg-bg-elevated rounded-md border border-border"
       >
         <Text className="text-body text-text-primary">
@@ -384,6 +407,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               setTargetDate(dateString);
               setShowDatePicker(false);
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Set target date to 8 weeks from today"
             className="bg-brand rounded-md p-sm items-center"
           >
             <Text className="text-text-inverse text-body">Set to 8 weeks from today</Text>
@@ -415,7 +440,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         <View className="p-md bg-bg-elevated rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
             <Text className="text-bodyStrong text-text-primary">Reference Photos</Text>
-            <Pressable onPress={() => goToStep(1)}>
+            <Pressable 
+              onPress={() => goToStep(1)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit reference photos"
+            >
               <Text className="text-captionStrong text-brand">Edit</Text>
             </Pressable>
           </View>
@@ -428,7 +457,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         <View className="p-md bg-bg-elevated rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
             <Text className="text-bodyStrong text-text-primary">Design Brief</Text>
-            <Pressable onPress={() => goToStep(2)}>
+            <Pressable 
+              onPress={() => goToStep(2)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit design brief"
+            >
               <Text className="text-captionStrong text-brand">Edit</Text>
             </Pressable>
           </View>
@@ -451,7 +484,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         <View className="p-md bg-bg-elevated rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
             <Text className="text-bodyStrong text-text-primary">Measurements</Text>
-            <Pressable onPress={() => goToStep(3)}>
+            <Pressable 
+              onPress={() => goToStep(3)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit measurements"
+            >
               <Text className="text-captionStrong text-brand">Edit</Text>
             </Pressable>
           </View>
@@ -474,7 +511,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         <View className="p-md bg-bg-elevated rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
             <Text className="text-bodyStrong text-text-primary">Quote Details</Text>
-            <Pressable onPress={() => goToStep(4)}>
+            <Pressable 
+              onPress={() => goToStep(4)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit quote details"
+            >
               <Text className="text-captionStrong text-brand">Edit</Text>
             </Pressable>
           </View>
@@ -520,6 +561,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
       <View className="flex-row items-center justify-between p-2xl bg-bg-elevated border-t border-border">
         <Pressable
           onPress={currentStep === 1 ? () => router.back() : prevStep}
+          accessibilityRole="button"
+          accessibilityLabel={currentStep === 1 ? "Cancel custom design" : "Previous step"}
           className="flex-row items-center px-lg py-sm"
         >
           <ChevronLeft size={20} color="#2B2B2B" />
@@ -532,6 +575,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           <Pressable
             onPress={handleSubmit}
             disabled={isSubmitting}
+            accessibilityRole="button"
+            accessibilityLabel="Submit design for quote"
             className={`flex-row items-center px-lg py-sm rounded-md ${
               isSubmitting ? 'bg-text-muted' : 'bg-accent'
             }`}
@@ -545,6 +590,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           <Pressable
             onPress={nextStep}
             disabled={!canProceedFromStep(currentStep)}
+            accessibilityRole="button"
+            accessibilityLabel="Next step"
             className={`flex-row items-center px-lg py-sm rounded-md ${
               canProceedFromStep(currentStep) ? 'bg-brand' : 'bg-text-muted'
             }`}
