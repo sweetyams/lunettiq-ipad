@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, Pressable, TextInput, Switch, ScrollView } from 'react-native';
 import { ShoppingBag, Calendar, Star, DoorOpen, ChevronLeft, ScanLine } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useEndSession } from '@/src/api/useSessions';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
+import { CreateAppointmentSheet } from '@/src/features/appointments/CreateAppointmentSheet';
 import { toast } from '@/src/ui/useToastStore';
 import { useDesignTokens } from '@/src/features/design';
 import type { QuickTag } from '@/src/api/sessions.types';
@@ -29,6 +30,11 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
   const [language, setLanguage] = useState<Language>('en');
   const [internalNotes, setInternalNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<QuickTag[]>([]);
+  const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
+
+  // ─── Session data capture (before reset) ─────────────────────────────────
+  const savedClientIdRef = useRef<string | null>(null);
+  const savedSessionIdRef = useRef<string | null>(null);
 
   // Outcome options with proper icons and colors using design tokens
   const outcomeOptions = [
@@ -143,6 +149,10 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       return;
     }
 
+    // ─── Capture session data BEFORE reset ───────────────────────────────────
+    savedClientIdRef.current = activeClientId;
+    savedSessionIdRef.current = sessionId;
+
     try {
       // 1. Create product interactions for each frame with verdict first
       const productInteractions = framesTried
@@ -182,20 +192,31 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         orderRef: orderRef.trim() || undefined,
       });
 
-      // 3. Reset session and fitting state
+      // 3. Reset session and fitting state (after saving the data)
       resetSession();
       resetFitting();
 
-      // 4. Navigate back to home with success
-      router.replace('/(app)/home');
-      
-      // Complete the flow
-      onComplete();
+      // 4. Check if we need to show follow-up appointment sheet
+      if (outcome === 'booked_next_visit') {
+        setShowFollowUpSheet(true);
+        // Don't navigate or complete yet — wait for appointment sheet to close
+      } else {
+        // Normal completion for other outcomes
+        router.replace('/(app)/home');
+        onComplete();
+      }
       
     } catch (error) {
       console.error('Failed to end session:', error);
       toast.error('Save failed', 'Failed to save session. Please try again.');
     }
+  };
+
+  const handleFollowUpSheetClose = () => {
+    setShowFollowUpSheet(false);
+    // Now complete the flow: navigate home and signal completion
+    router.replace('/(app)/home');
+    onComplete();
   };
 
   const renderStepIndicator = () => (
@@ -515,6 +536,18 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       {step === 1 && renderStep1()}
       {step === 2 && renderStep2()}
       {step === 3 && renderStep3()}
+      
+      {/* ─── Follow-up Appointment Sheet ────────────────────────────────── */}
+      <CreateAppointmentSheet
+        visible={showFollowUpSheet}
+        onClose={handleFollowUpSheetClose}
+        preselectedClientId={savedClientIdRef.current}
+        preselectedServiceType="follow-up"
+        followUpContext={{
+          previousSessionId: savedSessionIdRef.current || undefined,
+          suggestedNotes: `Follow-up from session on ${new Date().toLocaleDateString()}`,
+        }}
+      />
     </View>
   );
 }

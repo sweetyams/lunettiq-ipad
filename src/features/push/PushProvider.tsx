@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/clerk-expo';
 import { usePushSetup } from './usePushSetup';
+import { useAppointmentPushHandler } from './useAppointmentPushHandler';
 
 interface PushProviderProps {
   children: React.ReactNode;
@@ -15,6 +16,9 @@ export function PushProvider({ children }: PushProviderProps) {
   
   // Setup push notifications - only runs when authenticated
   usePushSetup();
+  
+  // Handle appointment-specific push notifications
+  useAppointmentPushHandler();
 
   // This provider doesn't render anything special - it just manages push state
   // The actual notification handling (foreground toasts, etc.) is done in the hook

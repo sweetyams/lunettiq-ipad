@@ -9,7 +9,7 @@
  * Design: presentationStyle="pageSheet" (native iOS sheet, same as ConfiguratorSheet).
  * No transparent overlay — a real system-presented modal.
  */
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useEndSession } from '@/src/api/useSessions';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
+import { CreateAppointmentSheet } from '@/src/features/appointments/CreateAppointmentSheet';
 import { toast } from '@/src/ui/useToastStore';
 import type { QuickTag } from '@/src/api/sessions.types';
 
@@ -102,6 +103,11 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
   const [language, setLanguage] = useState<Language>('en');
   const [internalNotes, setInternalNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<QuickTag[]>([]);
+  const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
+
+  // ─── Session data capture (before reset) ─────────────────────────────────
+  const savedClientIdRef = useRef<string | null>(null);
+  const savedSessionIdRef = useRef<string | null>(null);
 
   // ─── Store access ─────────────────────────────────────────────────────────
   const {
@@ -136,6 +142,9 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     setLanguage('en');
     setInternalNotes('');
     setSelectedTags([]);
+    setShowFollowUpSheet(false);
+    savedClientIdRef.current = null;
+    savedSessionIdRef.current = null;
     onDismiss();
   }, [onDismiss]);
 
@@ -184,6 +193,10 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       return;
     }
 
+    // ─── Capture session data BEFORE reset ───────────────────────────────────
+    savedClientIdRef.current = activeClientId;
+    savedSessionIdRef.current = sessionId;
+
     try {
       // 1. Batch product interactions
       const interactions = framesTried
@@ -220,12 +233,18 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
         orderRef: orderRef.trim() || undefined,
       });
 
-      // 3. Reset stores
+      // 3. Reset stores (after saving the data)
       resetSession();
       resetFitting();
 
-      // 4. Signal completion — caller handles navigation
-      onComplete();
+      // 4. Check if we need to show follow-up appointment sheet
+      if (outcome === 'booked_next_visit') {
+        setShowFollowUpSheet(true);
+        // Don't call onComplete() yet — wait for appointment sheet to close
+      } else {
+        // Normal completion for other outcomes
+        onComplete();
+      }
     } catch (error) {
       console.error('Failed to end session:', error);
       toast.error('Save failed', 'Failed to save session. Please try again.');
@@ -236,6 +255,12 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     batchInteractionsMutation, endSessionMutation, resetSession,
     resetFitting, onComplete,
   ]);
+
+  const handleFollowUpSheetClose = useCallback(() => {
+    setShowFollowUpSheet(false);
+    // Complete the end-session flow now that follow-up is handled
+    onComplete();
+  }, [onComplete]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -366,6 +391,18 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
           </View>
         )}
       </View>
+      
+      {/* ─── Follow-up Appointment Sheet ────────────────────────────────── */}
+      <CreateAppointmentSheet
+        visible={showFollowUpSheet}
+        onClose={handleFollowUpSheetClose}
+        preselectedClientId={savedClientIdRef.current}
+        preselectedServiceType="follow-up"
+        followUpContext={{
+          previousSessionId: savedSessionIdRef.current || undefined,
+          suggestedNotes: `Follow-up from session on ${new Date().toLocaleDateString()}`,
+        }}
+      />
     </Modal>
   );
 }

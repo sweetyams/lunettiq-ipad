@@ -1,5 +1,70 @@
 # Changelog
 
+## [2026-07-23] — Appointment Features Enhancement
+
+### Added
+- Enhanced appointment creation success toast: shows "Confirmation sent to {email}" when client has email, "No email on file — confirm verbally" when client lacks email
+- AppointmentStats component in client profile sidebar: displays total visits (completed appointments), last visit date, and no-show count/rate
+- Send confirmation button in AppointmentDetailPanel: appears for scheduled/confirmed appointments without reminder sent, reuses useSendReminder hook
+
+### Changed
+- CreateAppointmentSheet now provides detailed feedback about confirmation emails based on client email status
+- Client profile sidebar now includes appointment history statistics below NextAppointment component
+
+## [2026-07-23] — Push Notification Deep-Link Handler
+
+### Added
+- Push notification deep-link handler for appointments: useAppointmentPushHandler hook
+- Appointments screen now handles `selected` query parameter from deep links
+- Deep link format: `lunettiq://appointments/{id}` automatically pre-selects appointment
+- Expected notification data format: `{ type: 'appointment', appointmentId: string, action?: 'arriving' | 'reminder' | 'status_change' }`
+
+### Changed
+- Updated PushProvider to include appointment-specific notification handling
+- Added useAppointmentPushHandler to push feature barrel export
+
+## [2026-07-23] — Appointment Detail Enhancements
+
+### Added
+- Reminder status section: shows sent status, manual trigger button for upcoming appointments
+- Client appointment history: displays last 5 appointments with type and outcome for existing clients
+- Intake CTA buttons: actionable buttons replacing text hints for eye-exam, styling, and second-sight flows
+- New API hooks: useSendReminder() and useClientAppointments() in useAppointments.ts
+- Visual reminder indicators: green checkmark for sent reminders, send button for eligible appointments
+- Privacy-aware sections: reminder status and client history hidden in client-visible mode
+
+### Changed
+- Replaced passive intake hints with interactive CTA buttons with brand accent styling
+- Enhanced appointment detail with three new sections improving workflow efficiency
+- Intake routing: styling leads to client preferences, second-sight to intake flow, eye-exam shows coming soon
+
+## [2026-07-23] — Enhanced Appointment Booking Features
+
+### Added
+- Follow-up booking shortcut: FollowUpBookingButton component for quick follow-up/pickup appointments
+- Walk-in appointment shortcut: WalkInButton component creates and checks-in walk-in appointments instantly
+- Enhanced CreateAppointmentSheet: supports pre-selected service types and follow-up context
+- Auto-service selection: matches 'follow-up' or 'pickup' services when preselectedServiceType provided
+- Smart step skipping: bypasses service step when service type pre-selected
+- Follow-up context: pre-fills notes and tracks previous session ID
+
+### Changed
+- CreateAppointmentSheet interface: added preselectedServiceType and followUpContext props
+- Default follow-up appointment date: set to 2 weeks from booking date
+- Appointment barrel exports: added FollowUpBookingButton and WalkInButton
+
+## [2026-07-23] — Walk-in and Follow-up Booking Buttons
+
+### Added
+- WalkInButton component: navigate to client creation for walk-in clients
+- FollowUpBookingButton component: book follow-up appointments from completed appointments
+- Walk-in shortcut button in appointments screen header (before New button)
+- Follow-up booking button in appointment detail panel for completed appointments with clients
+
+### Changed
+- Updated appointments screen header to include walk-in workflow entry point
+- Appointment detail panel now shows follow-up booking option for completed appointments
+
 ## [2026-07-21] — End Session & Client Profile Fixes
 
 ### Fixed

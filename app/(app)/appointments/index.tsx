@@ -1,15 +1,18 @@
 import { View, Text, FlatList, Pressable, RefreshControl, ScrollView } from 'react-native';
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Calendar, Clock, Plus } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useTodayAppointments, useCheckIn, useMarkNoShow, useSchedulingStaff, useAppointmentServices } from '@/src/api/useAppointments';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow, useSchedulingStaff, useAppointmentServices } from '@/src/api/useAppointments';
 import { useStaffSchedules } from '@/src/api/useAppointments';
+import { useOfflineAppointments } from '@/src/sync/useOfflineFallback';
+import { useSyncStore } from '@/src/sync/useSyncStore';
 import { Appointment } from '@/src/api/appointments.types';
 import { AppointmentCard, LoadingState, ErrorState, EmptyState } from '@/src/ui';
-import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet } from '@/src/features/appointments';
+import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet, WalkInButton, FollowUpBookingButton } from '@/src/features/appointments';
 
 export default function AppointmentsScreen() {
   const router = useRouter();
+  const { selected } = useLocalSearchParams<{ selected?: string }>();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'today' | 'week'>('today');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
@@ -24,33 +27,48 @@ export default function AppointmentsScreen() {
     return `${year}-${month}-${day}`;
   })();
   const { data: appointments, isLoading, error, refetch, isRefetching } = useTodayAppointments();
+  const { data: offlineAppointments } = useOfflineAppointments(today);
   const { data: staffSchedules } = useStaffSchedules(today);
   const { data: staff } = useSchedulingStaff();
   const { data: services } = useAppointmentServices();
-  const checkIn = useCheckIn();
+  const markArrived = useMarkArrived();
+  const startAppointment = useStartAppointment();
   const markNoShow = useMarkNoShow();
+  const isOnline = useSyncStore((s) => s.isOnline);
+
+  // Use offline data when online fetch fails
+  const resolvedAppointments: Appointment[] = appointments ?? (offlineAppointments as unknown as Appointment[]) ?? [];
+  const isOfflineData = !appointments && !!offlineAppointments;
+
+  // Set the selected appointment from deep link
+  useEffect(() => {
+    if (selected && !selectedAppointmentId) {
+      setSelectedAppointmentId(selected);
+    }
+  }, [selected, selectedAppointmentId]);
 
   // Filter appointments by staff if selected
   const filteredAppointments = useMemo(() => {
-    if (!appointments) return [];
-    if (!selectedStaffId) return appointments;
-    return appointments.filter(appt => appt.staffId === selectedStaffId);
-  }, [appointments, selectedStaffId]);
+    if (!resolvedAppointments) return [];
+    if (!selectedStaffId) return resolvedAppointments;
+    return resolvedAppointments.filter(appt => appt.staffId === selectedStaffId);
+  }, [resolvedAppointments, selectedStaffId]);
 
-  // Sort appointments: in_progress first, then by time, completed/no-show at bottom
+  // Sort appointments: in_progress first, arrived next, then by time, completed/no-show at bottom
   const sortedAppointments = useMemo(() => {
     if (!filteredAppointments) return [];
     return [...filteredAppointments].sort((a, b) => {
       const statusOrder: Record<string, number> = {
         in_progress: 0,
-        confirmed: 1,
-        scheduled: 2,
-        completed: 3,
-        no_show: 4,
-        cancelled: 5,
+        arrived: 1,
+        confirmed: 2,
+        scheduled: 3,
+        completed: 4,
+        no_show: 5,
+        cancelled: 6,
       };
-      const aOrder = statusOrder[a.status] ?? 3;
-      const bOrder = statusOrder[b.status] ?? 3;
+      const aOrder = statusOrder[a.status] ?? 4;
+      const bOrder = statusOrder[b.status] ?? 4;
       if (aOrder !== bOrder) return aOrder - bOrder;
       return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
     });
@@ -61,18 +79,25 @@ export default function AppointmentsScreen() {
     [sortedAppointments, selectedAppointmentId]
   );
 
-  const handleCheckIn = useCallback(
+  const handleMarkArrived = useCallback(
     (id: string) => {
-      checkIn.mutate(id);
+      markArrived.mutate(id);
     },
-    [checkIn]
+    [markArrived]
+  );
+
+  const handleStartAppointment = useCallback(
+    (id: string) => {
+      startAppointment.mutate(id);
+    },
+    [startAppointment]
   );
 
   const handleStartSession = useCallback(
     (id: string) => {
       const appointment = sortedAppointments.find((a) => a.id === id);
       if (appointment?.clientId) {
-        router.push(`/clients/${appointment.clientId}`);
+        router.push(`/clients/${appointment.clientId}/session`);
       }
     },
     [sortedAppointments, router]
@@ -118,12 +143,13 @@ export default function AppointmentsScreen() {
     ({ item }: { item: Appointment }) => (
       <AppointmentCard
         appointment={item}
-        onCheckIn={handleCheckIn}
+        onMarkArrived={handleMarkArrived}
+        onStartAppointment={handleStartAppointment}
         onStartSession={handleStartSession}
         onPress={handleSelectAppointment}
       />
     ),
-    [handleCheckIn, handleStartSession, handleSelectAppointment]
+    [handleMarkArrived, handleStartAppointment, handleStartSession, handleSelectAppointment]
   );
 
   return (
@@ -137,6 +163,9 @@ export default function AppointmentsScreen() {
           </View>
 
           <View className="flex-row items-center gap-md">
+            {/* Walk-in button */}
+            <WalkInButton />
+            
             {/* New appointment button */}
             <Pressable 
               onPress={() => setShowCreateSheet(true)}
@@ -281,6 +310,11 @@ export default function AppointmentsScreen() {
       <View className="flex-1 flex-row">
         {/* Left panel — Appointment list */}
         <View className="w-[420px] border-r border-border">
+          {isOfflineData && (
+            <View className="bg-color-bg-muted px-md py-sm flex-row items-center gap-sm">
+              <Text className="text-body-sm text-color-text-muted">Showing cached data</Text>
+            </View>
+          )}
           {isLoading ? (
             <LoadingState />
           ) : error ? (
@@ -311,7 +345,8 @@ export default function AppointmentsScreen() {
           {selectedAppointment ? (
             <AppointmentDetailPanel
               appointment={selectedAppointment}
-              onCheckIn={handleCheckIn}
+              onMarkArrived={handleMarkArrived}
+              onStartAppointment={handleStartAppointment}
               onStartSession={handleStartSession}
               onMarkNoShow={handleMarkNoShow}
               onEdit={handleEdit}
@@ -345,6 +380,16 @@ export default function AppointmentsScreen() {
             // Appointment list will auto-refresh via TanStack Query invalidation
           }}
           appointment={selectedAppointment}
+        />
+      )}
+
+      {/* Follow-up booking for completed appointments */}
+      {selectedAppointment?.status === 'completed' && selectedAppointment?.clientId && (
+        <FollowUpBookingButton
+          clientId={selectedAppointment.clientId}
+          clientName={selectedAppointment.clientName ?? undefined}
+          variant="ghost"
+          serviceType="follow-up"
         />
       )}
     </View>

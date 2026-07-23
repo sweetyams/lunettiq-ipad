@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, Modal, Platform } from 'react-native';
 import { X, Check, User, Clock, Calendar as CalendarIcon, Search } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -25,6 +25,12 @@ interface CreateAppointmentSheetProps {
   onClose: () => void;
   preselectedClientId?: string | null;
   preselectedDate?: string | null; // YYYY-MM-DD
+  // NEW:
+  preselectedServiceType?: 'follow-up' | 'pickup' | null;
+  followUpContext?: {
+    previousSessionId?: string;
+    suggestedNotes?: string;
+  } | null;
 }
 
 type Step = 'service' | 'client' | 'staff' | 'datetime' | 'review';
@@ -60,17 +66,37 @@ export function CreateAppointmentSheet({
   onClose,
   preselectedClientId = null,
   preselectedDate = null,
+  preselectedServiceType = null,
+  followUpContext = null,
 }: CreateAppointmentSheetProps) {
-  // Form state
-  const [step, setStep] = useState<Step>('service');
+  // Form state - set initial step based on preselected values
+  const [step, setStep] = useState<Step>(() => {
+    if (preselectedServiceType) {
+      // Skip service step, start at client or datetime
+      if (preselectedClientId) {
+        return 'datetime'; // Both service and client are pre-selected
+      }
+      return 'client'; // Only service is pre-selected
+    }
+    return 'service'; // Normal flow
+  });
   const [selectedService, setSelectedService] = useState<AppointmentService | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    preselectedDate ? new Date(preselectedDate + 'T12:00:00') : new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (preselectedDate) {
+      return new Date(preselectedDate + 'T12:00:00');
+    }
+    if (preselectedServiceType) {
+      // Default to 2 weeks from now for follow-up bookings
+      const twoWeeksFromNow = new Date();
+      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+      return twoWeeksFromNow;
+    }
+    return new Date();
+  });
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(followUpContext?.suggestedNotes || '');
   const [clientSearch, setClientSearch] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -92,6 +118,27 @@ export function CreateAppointmentSheet({
   });
 
   const createMutation = useCreateAppointment();
+
+  // Auto-select service when preselectedServiceType is provided
+  useEffect(() => {
+    if (preselectedServiceType && services && services.length > 0 && !selectedService) {
+      const matchingService = services.find((service) => {
+        const name = serviceName(service.name).toLowerCase();
+        return name.includes(preselectedServiceType);
+      });
+      if (matchingService) {
+        setSelectedService(matchingService);
+      }
+    }
+  }, [preselectedServiceType, services, selectedService]);
+
+  // Auto-select client if preselected
+  useEffect(() => {
+    if (preselectedClientId && !selectedClient) {
+      // The client will be resolved by the parent component passing it
+      // For now, we trust that the parent will provide the client data
+    }
+  }, [preselectedClientId, selectedClient]);
 
   // Derived
   const availableSlots = useMemo(() => {
@@ -144,7 +191,14 @@ export function CreateAppointmentSheet({
 
     createMutation.mutate(payload, {
       onSuccess: () => {
-        toast.success('Appointment created');
+        // Show enhanced toast if client was selected (confirmation email is sent server-side)
+        if (selectedClient?.email) {
+          toast.success('Appointment created', `Confirmation sent to ${selectedClient.email}`);
+        } else if (selectedClient) {
+          toast.success('Appointment created', 'No email on file — confirm verbally');
+        } else {
+          toast.success('Appointment created');
+        }
         resetAndClose();
       },
       onError: (err) => {
@@ -154,16 +208,31 @@ export function CreateAppointmentSheet({
   }, [selectedService, selectedSlot, selectedClient, selectedStaff, notes, createMutation]);
 
   const resetAndClose = useCallback(() => {
-    setStep('service');
+    // Reset to initial state based on preselected values
+    if (preselectedServiceType) {
+      setStep(preselectedClientId ? 'datetime' : 'client');
+    } else {
+      setStep('service');
+    }
     setSelectedService(null);
     setSelectedClient(null);
     setSelectedStaff(null);
-    setSelectedDate(preselectedDate ? new Date(preselectedDate + 'T12:00:00') : new Date());
+    setSelectedDate(() => {
+      if (preselectedDate) {
+        return new Date(preselectedDate + 'T12:00:00');
+      }
+      if (preselectedServiceType) {
+        const twoWeeksFromNow = new Date();
+        twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 14);
+        return twoWeeksFromNow;
+      }
+      return new Date();
+    });
     setSelectedSlot(null);
-    setNotes('');
+    setNotes(followUpContext?.suggestedNotes || '');
     setClientSearch('');
     onClose();
-  }, [onClose, preselectedDate]);
+  }, [onClose, preselectedDate, preselectedServiceType, preselectedClientId, followUpContext]);
 
   const handleDateChange = useCallback((_event: unknown, date?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);

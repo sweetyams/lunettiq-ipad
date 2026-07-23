@@ -150,8 +150,27 @@ export function useUpdateAppointment() {
   });
 }
 
-/** Check in a client (status → in_progress) */
-export function useCheckIn() {
+/** Mark client as arrived (status → arrived) */
+export function useMarkArrived() {
+  const updateAppointment = useUpdateAppointment();
+
+  return {
+    ...updateAppointment,
+    mutate: (appointmentId: string) =>
+      updateAppointment.mutate({
+        id: appointmentId,
+        data: { status: 'arrived' },
+      }),
+    mutateAsync: (appointmentId: string) =>
+      updateAppointment.mutateAsync({
+        id: appointmentId,
+        data: { status: 'arrived' },
+      }),
+  };
+}
+
+/** Start the appointment service (status → in_progress) */
+export function useStartAppointment() {
   const updateAppointment = useUpdateAppointment();
 
   return {
@@ -167,6 +186,11 @@ export function useCheckIn() {
         data: { status: 'in_progress' },
       }),
   };
+}
+
+/** @deprecated Use useMarkArrived + useStartAppointment instead */
+export function useCheckIn() {
+  return useMarkArrived();
 }
 
 /** Mark appointment as no-show */
@@ -284,5 +308,30 @@ export function useConfirmAppointment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
     },
+  });
+}
+
+/** Manually trigger a reminder for an appointment */
+export function useSendReminder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<{ sent: boolean; channel: string }>(`/api/scheduling/${id}/remind`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+}
+
+/** Client's appointment history */
+export function useClientAppointments(clientId: string | null) {
+  return useQuery({
+    queryKey: ['appointments', 'client', clientId],
+    queryFn: () =>
+      api.get<Appointment[]>('/api/scheduling', {
+        params: { clientId: clientId! },
+      }),
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000,
   });
 }

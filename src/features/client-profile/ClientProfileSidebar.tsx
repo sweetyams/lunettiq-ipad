@@ -11,7 +11,7 @@ import {
   useUpdateClient,
   useClientPrescriptions,
 } from '@/src/api/useClients';
-import { useAppointments } from '@/src/api/useAppointments';
+import { useAppointments, useClientAppointments } from '@/src/api/useAppointments';
 import { useInsuranceProfile, useMultiPairQuestionnaire } from '@/src/api/useMultiPair';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Card } from '@/src/ui';
@@ -321,6 +321,42 @@ export function NextAppointment({ clientId }: NextAppointmentProps) {
     <View className="flex-row justify-between items-center py-xs">
       <Text className="text-body text-text-muted">Next Appointment</Text>
       <Text className="text-body text-text-primary font-medium">{displayText}</Text>
+    </View>
+  );
+}
+
+// ─── Appointment Stats ───────────────────────────────────────
+
+interface AppointmentStatsProps {
+  clientId: string;
+}
+
+export function AppointmentStats({ clientId }: AppointmentStatsProps) {
+  const { data: appointments } = useClientAppointments(clientId);
+  
+  if (!appointments || appointments.length === 0) return null;
+  
+  const completed = appointments.filter(a => a.status === 'completed');
+  const noShows = appointments.filter(a => a.status === 'no_show');
+  const lastVisit = completed.length > 0 
+    ? new Date(completed[0]!.startsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+  const noShowRate = appointments.length > 0 
+    ? Math.round((noShows.length / appointments.length) * 100) 
+    : 0;
+
+  return (
+    <View className="mt-lg">
+      <Text className="text-caption-lg font-medium text-color-text-muted uppercase tracking-wide mb-sm">
+        Visit History
+      </Text>
+      <View className="gap-xs">
+        <StatRow label="Total visits" value={`${completed.length}`} />
+        {lastVisit && <StatRow label="Last visit" value={lastVisit} />}
+        {noShows.length > 0 && (
+          <StatRow label="No-shows" value={`${noShows.length} (${noShowRate}%)`} />
+        )}
+      </View>
     </View>
   );
 }
