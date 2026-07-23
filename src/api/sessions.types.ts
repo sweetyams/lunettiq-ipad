@@ -3,7 +3,8 @@
 export interface CreateSessionParams {
   clientId: string;
   staffId?: string;
-  locationId?: string;
+  /** Required by Foundry — session creation fails without it */
+  locationId: string;
 }
 
 export interface EndSessionParams {

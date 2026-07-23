@@ -42,6 +42,10 @@ export function useCreateSession() {
  *
  * The handler sets status='completed', records the outcome, and fires
  * a Klaviyo event for the summary email asynchronously.
+ *
+ * If the sessionId is a local placeholder (starts with "ses_"), it means
+ * the server session was never created (e.g. locationId was missing).
+ * In that case, we skip the API call and just reset locally.
  */
 export function useEndSession() {
   const queryClient = useQueryClient();
@@ -50,6 +54,29 @@ export function useEndSession() {
     mutationFn: async (params: EndSessionParams): Promise<SessionResponse> => {
       const { sessionId, clientId, outcomeTag, sendSummary, summaryLanguage, internalNotes, tags, orderRef } = params;
       
+      // Guard: if sessionId is a local placeholder, the server session was never created.
+      // This happens when createSession failed (e.g. no locationId).
+      // Skip the API call — the session only existed locally.
+      if (sessionId.startsWith('ses_')) {
+        if (__DEV__) {
+          console.warn('[EndSession] Local-only session (no server ID) — skipping API call. Session was never persisted server-side.');
+        }
+        return {
+          id: sessionId,
+          clientId,
+          staffId: '',
+          locationId: '',
+          startedAt: new Date().toISOString(),
+          endedAt: new Date().toISOString(),
+          framesTried: [],
+          outcomeTag,
+          internalNotes: internalNotes || null,
+          summaryEmailed: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
       // Map iPad outcome tags to Foundry's outcome enum
       const outcomeMap: Record<string, string> = {
         purchased: 'purchased',

@@ -8,6 +8,7 @@ import { ClientContextPanel } from '@/src/features/session/ClientContextPanel';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { useClient } from '@/src/api/useClients';
 import { useCreateSession } from '@/src/api/useSessions';
+import { useStaffProfile } from '@/src/features/auth/useStaffProfile';
 import { LoadingState, ErrorState } from '@/src/ui';
 
 export default function SessionWorkspaceScreen() {
@@ -17,6 +18,7 @@ export default function SessionWorkspaceScreen() {
   const [showEndSession, setShowEndSession] = useState(false);
   const [aiSearchTerm, setAiSearchTerm] = useState<string | undefined>(undefined);
   const sessionCreatedRef = useRef(false);
+  const { staffId, locationId } = useStaffProfile();
 
   // Fetch client profile (for name fallback + data)
   const { data: client, isLoading, error } = useClient(clientId);
@@ -33,11 +35,21 @@ export default function SessionWorkspaceScreen() {
     sessionCreatedRef.current = true;
 
     // Create session on server and store the real ID
-    createSession.mutate(
-      { clientId },
-      { onSuccess: (session) => setSessionId(session.id) }
-    );
-  }, [clientId, client, activeClientId, mode, startSession, createSession, setSessionId]);
+    // locationId is required by the Foundry handler
+    if (locationId) {
+      createSession.mutate(
+        { clientId, staffId: staffId || undefined, locationId },
+        {
+          onSuccess: (session) => setSessionId(session.id),
+          onError: (err) => {
+            if (__DEV__) console.warn('[Session] Failed to create server session:', err);
+          },
+        }
+      );
+    } else if (__DEV__) {
+      console.warn('[Session] No locationId available — server session will not be created. Set location in Clerk publicMetadata.');
+    }
+  }, [clientId, client, activeClientId, mode, startSession, createSession, setSessionId, staffId, locationId]);
 
   // Redirect if session ended externally or wrong client
   // Guard: don't fire when we're in the process of ending the session (sheet is open)
