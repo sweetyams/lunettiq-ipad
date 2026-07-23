@@ -1,9 +1,11 @@
 import { View, Text, Pressable } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'expo-router';
-import { Clock, Play, Square, ArrowRight, Camera, User, Sparkles } from 'lucide-react-native';
+import { Clock, Play, Square, ArrowRight, Camera, User, Sparkles, RefreshCw } from 'lucide-react-native';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { useClient } from '@/src/api/useClients';
+import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
+import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 
 /**
@@ -20,6 +22,8 @@ export function SessionBar() {
   const { activeClientId, activeClientName, mode, sessionStartedAt, framesTried, endSession } = useSessionStore();
   const [duration, setDuration] = useState('0:00');
   const [showEndSession, setShowEndSession] = useState(false);
+  const { activeOperator } = useOperatorStore();
+  const { lock } = useAuthContext();
 
   // Fetch client data for pertinent details (tier, last visit, etc.)
   const { data: client } = useClient(activeClientId ?? '');
@@ -178,6 +182,21 @@ export function SessionBar() {
 
         {/* Right: Actions */}
         <View className="flex-row items-center gap-sm">
+          {/* Operator badge — shows who's using the device */}
+          {activeOperator && (
+            <Pressable
+              onPress={lock}
+              accessibilityRole="button"
+              accessibilityLabel={`Signed in as ${activeOperator.name}. Tap to switch user.`}
+              className="flex-row items-center min-h-[36px] px-sm py-xs rounded-md border border-border gap-xs"
+            >
+              <RefreshCw color="#1D1F21" size={12} />
+              <Text className="text-text-secondary text-body-sm" numberOfLines={1}>
+                {activeOperator.name.split(' ')[0]}
+              </Text>
+            </Pressable>
+          )}
+
           {/* View profile */}
           <Pressable
             onPress={handleGoToProfile}

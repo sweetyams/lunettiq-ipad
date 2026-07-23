@@ -1,14 +1,19 @@
 import { View, Text, ScrollView, Pressable, Switch, Alert } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import * as Application from 'expo-application';
-import { Cloud, CloudOff, RefreshCw, Trash2, User, Info, Wifi } from 'lucide-react-native';
+import { Cloud, CloudOff, RefreshCw, Trash2, User, Info, Wifi, Lock } from 'lucide-react-native';
 import { useSyncStore } from '@/src/sync/useSyncStore';
 import { useInitialSync } from '@/src/sync/useInitialSync';
 import { getDatabaseStats, resetDatabase } from '@/src/db';
 import { usePermissions } from '@/src/features/auth/usePermissions';
+import { useStaffProfile } from '@/src/features/auth/useStaffProfile';
+import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
+import { useSetPin } from '@/src/api/useDeviceAuth';
+import { PinPad } from '@/src/ui/PinPad';
 import { Button } from '@/src/ui/Button';
 import { ScreenHeader } from '@/src/ui/ScreenHeader';
+import { toast } from '@/src/ui/useToastStore';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -195,6 +200,14 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Quick Switch PIN */}
+        <View>
+          <Text className="text-displayMd text-text-primary mb-md">Quick Switch PIN</Text>
+          <View className="bg-bg-surface rounded-lg border border-border">
+            <PinSetupSection />
+          </View>
+        </View>
+
         {/* Account Section */}
         <View>
           <Text className="text-displayMd text-text-primary mb-md">Account</Text>
@@ -270,5 +283,124 @@ export default function SettingsScreen() {
         </View>
       </View>
     </ScrollView>
+  );
+}
+
+// --- PIN Setup Section ---
+
+function PinSetupSection() {
+  const { staffId: deviceOwnerStaffId } = useStaffProfile();
+  const { activeOperator } = useOperatorStore();
+  // Use the active operator's staffId — this is who's actually setting the PIN
+  const targetStaffId = activeOperator?.staffId ?? deviceOwnerStaffId;
+  const targetName = activeOperator?.name ?? 'you';
+  const { mutate: setPin, isPending } = useSetPin();
+  const [showPinPad, setShowPinPad] = useState(false);
+  const [step, setStep] = useState<'enter' | 'confirm'>('enter');
+  const [firstPin, setFirstPin] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+
+  const handleStartSetup = useCallback(() => {
+    setShowPinPad(true);
+    setStep('enter');
+    setFirstPin('');
+    setPinError(null);
+  }, []);
+
+  const handlePinComplete = useCallback((pin: string) => {
+    if (step === 'enter') {
+      // Validate: no sequential or repeating
+      if (/^(\d)\1{3}$/.test(pin)) {
+        setPinError('PIN cannot be all the same digit');
+        return;
+      }
+      if (pin === '1234' || pin === '4321' || pin === '0123' || pin === '3210') {
+        setPinError('PIN cannot be sequential');
+        return;
+      }
+      setFirstPin(pin);
+      setStep('confirm');
+      setPinError(null);
+    } else {
+      // Confirm step
+      if (pin !== firstPin) {
+        setPinError('PINs do not match. Try again.');
+        setStep('enter');
+        setFirstPin('');
+        return;
+      }
+
+      // PINs match — save to server
+      if (!targetStaffId) {
+        setPinError('Staff profile not loaded');
+        return;
+      }
+
+      setPin(
+        { staffId: targetStaffId, pin },
+        {
+          onSuccess: () => {
+            toast.success('PIN set', 'You can now use your PIN to unlock the device.');
+            setShowPinPad(false);
+            setStep('enter');
+            setFirstPin('');
+            setPinError(null);
+          },
+          onError: (error) => {
+            setPinError(error instanceof Error ? error.message : 'Failed to set PIN');
+          },
+        }
+      );
+    }
+  }, [step, firstPin, targetStaffId, setPin]);
+
+  const handleCancel = useCallback(() => {
+    setShowPinPad(false);
+    setStep('enter');
+    setFirstPin('');
+    setPinError(null);
+  }, []);
+
+  if (!showPinPad) {
+    return (
+      <View className="px-lg py-md">
+        <View className="flex-row items-center mb-sm">
+          <Lock size={16} color="#404040" />
+          <Text className="text-body text-text-primary ml-sm flex-1">
+            Set a PIN for quick device switching
+          </Text>
+        </View>
+        <Text className="text-caption text-text-muted mb-md">
+          Your PIN lets you quickly switch to your identity on shared devices without a full sign-in.
+        </Text>
+        <Button variant="secondary" onPress={handleStartSetup}>
+          <Text className="text-text-inverse text-body font-medium">Set up PIN</Text>
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <View className="px-lg py-md">
+      <View className="flex-row items-center justify-between mb-md">
+        <Text className="text-body font-medium text-text-primary">
+          {step === 'enter' ? 'Enter a 4-digit PIN' : 'Confirm your PIN'}
+        </Text>
+        <Pressable
+          onPress={handleCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel PIN setup"
+          className="min-h-[44px] min-w-[44px] items-center justify-center"
+        >
+          <Text className="text-body text-text-muted">Cancel</Text>
+        </Pressable>
+      </View>
+      <PinPad
+        title={step === 'enter' ? 'Choose your PIN' : 'Enter the same PIN again'}
+        onComplete={handlePinComplete}
+        error={pinError}
+        disabled={isPending}
+      />
+    </View>
   );
 }

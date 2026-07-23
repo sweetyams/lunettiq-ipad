@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
-import { LockScreen } from './LockScreen';
+import { QuickSwitchLockScreen } from './QuickSwitchLockScreen';
 import { useAutoLock } from './useAutoLock';
 import { useBiometric } from './useBiometric';
+import { useOperatorStore } from './useOperatorStore';
 
 interface AuthContextType {
   isLocked: boolean;
@@ -21,18 +22,24 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, userId } = useAuth();
   const { authenticate } = useBiometric();
   const { locked, unlock: autoUnlock } = useAutoLock();
   const [initialLock, setInitialLock] = useState(true);
+  const { setDeviceOwner, clearOperator } = useOperatorStore();
 
-  // On first load, require biometric
+  // Set device owner when Clerk auth loads
+  useEffect(() => {
+    if (isLoaded && isSignedIn && userId) {
+      setDeviceOwner(userId);
+    }
+  }, [isLoaded, isSignedIn, userId, setDeviceOwner]);
+
+  // On first load, show lock screen (user picks identity via PIN or Face ID)
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // Attempt biometric on launch
-      authenticate('Unlock Lunettiq').then((success) => {
-        if (success) setInitialLock(false);
-      });
+      // Keep initial lock — user must authenticate via QuickSwitchLockScreen
+      setInitialLock(true);
     } else {
       setInitialLock(false);
     }
@@ -40,17 +47,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isLocked = initialLock || locked;
 
-  const handleUnlock = useCallback(async () => {
-    const success = await authenticate('Unlock Lunettiq');
-    if (success) {
-      setInitialLock(false);
-      autoUnlock();
-    }
-  }, [authenticate, autoUnlock]);
+  const handleUnlock = useCallback(() => {
+    setInitialLock(false);
+    autoUnlock();
+  }, [autoUnlock]);
 
   const lock = useCallback(() => {
+    // Clear operator on manual lock — next unlock requires PIN/Face ID
+    clearOperator();
     setInitialLock(true);
-  }, []);
+  }, [clearOperator]);
 
   // Don't show lock if not signed in
   if (!isSignedIn) {
@@ -61,7 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     <AuthContext.Provider value={{ isLocked, lock }}>
       <View className="flex-1">
         {children}
-        {isLocked && <LockScreen onUnlock={handleUnlock} />}
+        {isLocked && <QuickSwitchLockScreen onUnlock={handleUnlock} isAuthReady={isLoaded && isSignedIn} />}
       </View>
     </AuthContext.Provider>
   );

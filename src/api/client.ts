@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 
 const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
   ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
@@ -89,6 +90,12 @@ class FoundryAPI {
       headers['Authorization'] = `Bearer ${DEV_API_KEY}`;
     }
 
+    // Operator header — when a different staff member is active via PIN switch
+    const operatorState = useOperatorStore.getState();
+    if (operatorState.activeOperator && operatorState.activeOperator.clerkUserId !== operatorState.deviceOwnerId) {
+      headers['X-Found-Operator'] = operatorState.activeOperator.clerkUserId;
+    }
+
     const url = `${BASE_URL}${path}`;
     const response = await fetch(url, {
       method,
@@ -113,6 +120,15 @@ class FoundryAPI {
       json = JSON.parse(text);
     } catch {
       throw new APIError('PARSE_ERROR', `Expected JSON from ${path}, got: ${text.substring(0, 100)}`);
+    }
+    
+    // Detect operator revocation — server returns FORBIDDEN when operator is suspended/removed
+    if (json.error?.code === 'FORBIDDEN' && operatorState.activeOperator) {
+      const msg = json.error.message.toLowerCase();
+      if (msg.includes('operator') || msg.includes('not a member') || msg.includes('not active')) {
+        // Clear the operator — caller should show lock screen
+        useOperatorStore.getState().clearOperator();
+      }
     }
     
     if (json.error) {
