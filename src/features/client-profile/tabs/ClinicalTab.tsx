@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { Card, CardHead, CardBody, CardFoot, RowKV, Tag, Button } from '@/src/ui';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
 import { useClientEnrichment } from '@/src/api/useClients';
@@ -7,11 +7,17 @@ import type { Prescription } from '@/src/api/prescriptions.types';
 interface ClinicalTabProps {
   clientId: string;
   onAddPrescription: () => void;
+  onEditFit: () => void;
+  onAddClinicalNote: () => void;
 }
 
-export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
+export function ClinicalTab({ clientId, onAddPrescription, onEditFit, onAddClinicalNote }: ClinicalTabProps) {
   const { data: prescriptions = [], isLoading: prescriptionsLoading } = usePrescriptions({ clientId });
   const { data: enrichment, isLoading: enrichmentLoading } = useClientEnrichment(clientId);
+
+  const handleLiDARCapture = () => {
+    Alert.alert('LiDAR Capture', 'LiDAR measurement capture coming soon!');
+  };
 
   // Calculate sizing guidance from fit profile
   const getSizingGuidance = () => {
@@ -142,7 +148,7 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
             <Card>
               <CardHead>
                 <Text className="text-heading-xs font-medium">Clinical notes (staff only)</Text>
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={onAddClinicalNote}>
                   <Text className="text-body-sm font-medium text-color-brand">Add</Text>
                 </Pressable>
               </CardHead>
@@ -160,7 +166,7 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
             <Card className="mb-lg">
               <CardHead>
                 <Text className="text-heading-xs font-medium">Fit profile</Text>
-                <Pressable onPress={() => {}}>
+                <Pressable onPress={onEditFit}>
                   <Text className="text-body-sm font-medium text-color-brand">Edit</Text>
                 </Pressable>
               </CardHead>
@@ -187,7 +193,7 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
                 )}
               </CardBody>
               <CardFoot>
-                <Button variant="ghost" block onPress={() => {}}>
+                <Button variant="ghost" block onPress={handleLiDARCapture}>
                   Capture with LiDAR
                 </Button>
               </CardFoot>

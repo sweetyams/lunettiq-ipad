@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-29] — Client Profile Sheet Wiring
+
+### Added
+- Wired ContactEditSheet to Overview tab "Contact" section edit button
+- Wired NotesEditSheet to Overview tab "Notes" section edit button  
+- Wired FitProfileEditSheet to Clinical tab "Fit profile" Edit button
+- Wired ClinicalNotesSheet to Clinical tab "Clinical notes" Add button
+- Wired AddNoteSheet to History tab "Add note" button
+- Alert placeholder for "Capture with LiDAR" button in Clinical tab
+
+### Changed
+- ClinicalTab interface: added onEditFit and onAddClinicalNote callbacks
+- HistoryTab interface: added onAddNote callback
+- Client profile screen: added 5 new sheet state variables and render logic
+- Barrel export: exported all new sheet components (ContactEditSheet, NotesEditSheet, etc.)
+
+### Fixed
+- FieldLabel component usage: changed from `label` prop to `children` pattern
+- TypeScript null/undefined type conflicts in form submissions
+- Button variant issues in TagManagementSheet (secondary → ghost)
+
 ## [2026-07-23] — Arrived Status Integration
 
 ### Added

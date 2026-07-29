@@ -7,7 +7,7 @@ import { useClient } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar, Button, Chip, Tag, RowKV, LoadingState, ErrorState, EmptyState } from '@/src/ui';
-import { InsuranceFormSheet, LifestyleQuestionnaireSheet, MultiPairResultsSheet, PrescriptionSheet } from '@/src/features/client-profile';
+import { InsuranceFormSheet, LifestyleQuestionnaireSheet, MultiPairResultsSheet, PrescriptionSheet, ContactEditSheet, NotesEditSheet, FitProfileEditSheet, ClinicalNotesSheet, AddNoteSheet } from '@/src/features/client-profile';
 import { OverviewTab } from '@/src/features/client-profile/tabs/OverviewTab';
 import { ClinicalTab } from '@/src/features/client-profile/tabs/ClinicalTab';
 import { HistoryTab } from '@/src/features/client-profile/tabs/HistoryTab';
@@ -33,6 +33,11 @@ export default function ClientProfileScreen() {
   const [showLifestyleSheet, setShowLifestyleSheet] = useState(false);
   const [showMultiPairSheet, setShowMultiPairSheet] = useState(false);
   const [showPrescriptionSheet, setShowPrescriptionSheet] = useState(false);
+  const [showContactSheet, setShowContactSheet] = useState(false);
+  const [showNotesSheet, setShowNotesSheet] = useState(false);
+  const [showFitSheet, setShowFitSheet] = useState(false);
+  const [showClinicalNotesSheet, setShowClinicalNotesSheet] = useState(false);
+  const [showAddNoteSheet, setShowAddNoteSheet] = useState(false);
 
   // Data
   const { data: client, isLoading, error, refetch } = useClient(id);
@@ -191,14 +196,22 @@ export default function ClientProfileScreen() {
                 clientId={client.id}
                 client={client}
                 onOpenSheet={handleOpenSheet}
-                onEditSection={() => {}}
+                onEditSection={(section) => {
+                  if (section === 'contact') setShowContactSheet(true);
+                  if (section === 'notes') setShowNotesSheet(true);
+                }}
               />
             )}
             {activeTab === 'clinical' && privacyMode === 'staff' && (
-              <ClinicalTab clientId={client.id} onAddPrescription={() => setShowPrescriptionSheet(true)} />
+              <ClinicalTab
+                clientId={client.id}
+                onAddPrescription={() => setShowPrescriptionSheet(true)}
+                onEditFit={() => setShowFitSheet(true)}
+                onAddClinicalNote={() => setShowClinicalNotesSheet(true)}
+              />
             )}
             {activeTab === 'history' && privacyMode === 'staff' && (
-              <HistoryTab clientId={client.id} />
+              <HistoryTab clientId={client.id} onAddNote={() => setShowAddNoteSheet(true)} />
             )}
             {activeTab === 'relationships' && privacyMode === 'staff' && (
               <RelationshipsTab clientId={client.id} />
@@ -219,6 +232,35 @@ export default function ClientProfileScreen() {
       )}
       {showPrescriptionSheet && (
         <PrescriptionSheet visible={showPrescriptionSheet} onClose={() => setShowPrescriptionSheet(false)} clientId={client.id} />
+      )}
+      {showContactSheet && (
+        <ContactEditSheet
+          clientId={client.id}
+          client={client}
+          visible={showContactSheet}
+          onClose={() => setShowContactSheet(false)}
+        />
+      )}
+      {showNotesSheet && (
+        <NotesEditSheet
+          clientId={client.id}
+          currentNotes={client.enrichment?.internalNotes ?? null}
+          visible={showNotesSheet}
+          onClose={() => setShowNotesSheet(false)}
+        />
+      )}
+      {showFitSheet && (
+        <FitProfileEditSheet
+          clientId={client.id}
+          visible={showFitSheet}
+          onClose={() => setShowFitSheet(false)}
+        />
+      )}
+      {showClinicalNotesSheet && (
+        <ClinicalNotesSheet clientId={client.id} visible={showClinicalNotesSheet} onClose={() => setShowClinicalNotesSheet(false)} />
+      )}
+      {showAddNoteSheet && (
+        <AddNoteSheet clientId={client.id} visible={showAddNoteSheet} onClose={() => setShowAddNoteSheet(false)} />
       )}
     </View>
   );

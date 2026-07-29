@@ -6,11 +6,12 @@ import type { Interaction } from '@/src/api/interactions.types';
 
 interface HistoryTabProps {
   clientId: string;
+  onAddNote: () => void;
 }
 
 type FilterType = 'all' | 'orders' | 'tryons' | 'notes' | 'visits';
 
-export function HistoryTab({ clientId }: HistoryTabProps) {
+export function HistoryTab({ clientId, onAddNote }: HistoryTabProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const { data, isLoading, error } = useInteractions(clientId);
   const interactions = data?.interactions;
@@ -98,7 +99,7 @@ export function HistoryTab({ clientId }: HistoryTabProps) {
   };
 
   const handleAddNote = () => {
-    console.log('Add note pressed for client:', clientId);
+    onAddNote();
   };
 
   const handleRxPipeline = () => {
