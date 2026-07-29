@@ -158,7 +158,7 @@ export default function ClientsScreen() {
               onPress={() => router.push('/clients/new')}
               accessibilityLabel="Create new client"
             >
-              + {'\u00A0'}New client
+              + New client
             </Button>
           </View>
         </View>

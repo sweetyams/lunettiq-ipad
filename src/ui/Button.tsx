@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text } from 'react-native';
+import React from 'react';
 
 type ButtonVariant = 'primary' | 'dark' | 'quiet' | 'ghost' | 'danger';
 type ButtonSize = 'default' | 'sm';
@@ -54,6 +55,10 @@ export function Button({
 
   const isDisabled = disabled || loading;
 
+  // Determine if children is a simple text value (string, number, or mix of strings)
+  // vs a complex React element (View with icon + text). Simple values get auto-wrapped.
+  const isComplexElement = React.isValidElement(children);
+
   return (
     <Pressable
       onPress={onPress}
@@ -68,12 +73,12 @@ export function Button({
           size="small"
           color={variant === 'primary' || variant === 'dark' ? '#FFFFFF' : '#1D1F21'}
         />
-      ) : typeof children === 'string' ? (
+      ) : isComplexElement ? (
+        children
+      ) : (
         <Text className={`${textVariants[variant]} ${textSizeClasses[size]} font-medium text-center`}>
           {children}
         </Text>
-      ) : (
-        children
       )}
     </Pressable>
   );
