@@ -4,7 +4,8 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 
 interface AppointmentCardProps {
   appointment: Appointment;
-  onCheckIn?: (id: string) => void;
+  onMarkArrived?: (id: string) => void;
+  onStartAppointment?: (id: string) => void;
   onStartSession?: (id: string) => void;
   onPress?: (id: string) => void;
   onLongPress?: () => void;
@@ -12,7 +13,8 @@ interface AppointmentCardProps {
 
 export function AppointmentCard({ 
   appointment, 
-  onCheckIn, 
+  onMarkArrived,
+  onStartAppointment,
   onStartSession, 
   onPress,
   onLongPress,
@@ -38,6 +40,8 @@ export function AppointmentCard({
 
   const getStatusStyles = () => {
     switch (appointment.status) {
+      case 'arrived':
+        return 'border-l-[3px] border-l-warning border-border';
       case 'in_progress':
         return 'border-l-[3px] border-l-green border-border';
       case 'completed':
@@ -71,6 +75,7 @@ export function AppointmentCard({
     const badges = {
       scheduled: { text: 'Scheduled', style: 'bg-bg-surface text-text-primary' },
       confirmed: { text: 'Confirmed', style: 'bg-accent text-text-inverse' },
+      arrived: { text: 'Arrived', style: 'bg-warning text-text-inverse' },
       in_progress: { text: 'In Progress', style: 'bg-accent text-text-inverse' },
       completed: { text: 'Completed', style: 'bg-muted text-text-inverse' },
       no_show: { text: 'No Show', style: 'bg-error text-text-inverse' },
@@ -90,6 +95,7 @@ export function AppointmentCard({
     if (privacyMode === 'client') return false;
     return appointment.status === 'scheduled' || 
            appointment.status === 'confirmed' || 
+           appointment.status === 'arrived' ||
            appointment.status === 'in_progress';
   };
 
@@ -124,14 +130,25 @@ export function AppointmentCard({
       
       {showActionButtons() && (
         <View className="flex-row gap-sm">
-          {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && onCheckIn && (
+          {(appointment.status === 'scheduled' || appointment.status === 'confirmed') && onMarkArrived && (
             <Pressable 
-              onPress={() => onCheckIn(appointment.id)}
+              onPress={() => onMarkArrived(appointment.id)}
               accessibilityRole="button"
-              accessibilityLabel={`Check in ${appointment.clientName}`}
+              accessibilityLabel={`Mark ${appointment.clientName} as arrived`}
               className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-text-inverse">Check In</Text>
+              <Text className="text-bodyStrong text-text-inverse">Arrived</Text>
+            </Pressable>
+          )}
+
+          {appointment.status === 'arrived' && onStartAppointment && (
+            <Pressable 
+              onPress={() => onStartAppointment(appointment.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Start appointment with ${appointment.clientName}`}
+              className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
+            >
+              <Text className="text-bodyStrong text-text-inverse">Start</Text>
             </Pressable>
           )}
           

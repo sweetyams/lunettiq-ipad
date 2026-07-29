@@ -2,7 +2,7 @@ import { View, Text, FlatList, ScrollView, Alert, RefreshControl } from 'react-n
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Calendar } from 'lucide-react-native';
-import { useTodayAppointments, useCheckIn, useMarkNoShow } from '@/src/api/useAppointments';
+import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow } from '@/src/api/useAppointments';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { AppointmentCard } from '@/src/ui/AppointmentCard';
 import { ActiveHoldsCard } from '@/src/ui/ActiveHoldsCard';
@@ -25,15 +25,19 @@ export default function HomeScreen() {
     refetch,
   } = useTodayAppointments();
 
-  const checkIn = useCheckIn();
+  const markArrived = useMarkArrived();
+  const startAppointment = useStartAppointment();
   const markNoShow = useMarkNoShow();
   const { setClient } = useSessionStore();
 
-  // Sort appointments: in_progress first, then by startsAt, past at bottom
+  // Sort appointments: in_progress first, arrived second, then by startsAt, past at bottom
   const sortedAppointments = [...(appointments ?? [])].sort((a, b) => {
     // in_progress always at top
     if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
     if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
+    // arrived next
+    if (a.status === 'arrived' && b.status !== 'arrived') return -1;
+    if (b.status === 'arrived' && a.status !== 'arrived') return 1;
     // completed/no_show at bottom
     const aDone = a.status === 'completed' || a.status === 'no_show';
     const bDone = b.status === 'completed' || b.status === 'no_show';
@@ -43,9 +47,13 @@ export default function HomeScreen() {
     return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
   });
 
-  const handleCheckIn = useCallback((appointmentId: string) => {
-    checkIn.mutate(appointmentId);
-  }, [checkIn]);
+  const handleMarkArrived = useCallback((appointmentId: string) => {
+    markArrived.mutate(appointmentId);
+  }, [markArrived]);
+
+  const handleStartAppointment = useCallback((appointmentId: string) => {
+    startAppointment.mutate(appointmentId);
+  }, [startAppointment]);
 
   const handleStartSession = useCallback((appointmentId: string) => {
     const appointment = appointments?.find((a) => a.id === appointmentId);
@@ -116,12 +124,13 @@ export default function HomeScreen() {
   const renderAppointmentCard = useCallback(({ item }: { item: Appointment }) => (
     <AppointmentCard
       appointment={item}
-      onCheckIn={handleCheckIn}
+      onMarkArrived={handleMarkArrived}
+      onStartAppointment={handleStartAppointment}
       onStartSession={handleStartSession}
       onPress={handleAppointmentPress}
       onLongPress={() => handleAppointmentLongPress(item)}
     />
-  ), [handleCheckIn, handleStartSession, handleAppointmentPress, handleAppointmentLongPress]);
+  ), [handleMarkArrived, handleStartAppointment, handleStartSession, handleAppointmentPress, handleAppointmentLongPress]);
 
   // Full loading state
   if (isLoading) {

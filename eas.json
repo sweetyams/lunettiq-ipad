@@ -29,12 +29,12 @@
   "submit": {
     "preview": {
       "ios": {
-        "ascAppId": "TODO_YOUR_ASC_APP_ID"
+        "ascAppId": "6793942810"
       }
     },
     "production": {
       "ios": {
-        "ascAppId": "TODO_YOUR_ASC_APP_ID"
+        "ascAppId": "6793942810"
       }
     }
   }

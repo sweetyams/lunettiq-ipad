@@ -3,7 +3,7 @@ import { text, field, date, readonly, relation } from '@nozbe/watermelondb/decor
 import type { Relation } from '@nozbe/watermelondb';
 import type { Client } from './Client.model';
 
-export type AppointmentStatus = 'scheduled' | 'confirmed' | 'in_progress' | 'completed' | 'no_show' | 'cancelled';
+export type AppointmentStatus = 'scheduled' | 'confirmed' | 'arrived' | 'in_progress' | 'completed' | 'no_show' | 'cancelled';
 
 export class Appointment extends Model {
   static table = 'appointments';
@@ -76,11 +76,20 @@ export class Appointment extends Model {
     return `${start}–${end}`;
   }
 
-  canCheckIn(): boolean {
-    return this.status === 'confirmed' && !this.isPast;
+  canMarkArrived(): boolean {
+    return (this.status === 'scheduled' || this.status === 'confirmed') && !this.isPast;
+  }
+
+  canStart(): boolean {
+    return this.status === 'arrived';
   }
 
   canStartSession(): boolean {
     return this.status === 'in_progress';
+  }
+
+  /** @deprecated Use canMarkArrived() instead */
+  canCheckIn(): boolean {
+    return this.canMarkArrived();
   }
 }

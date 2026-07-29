@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-07-23] — Arrived Status Integration
+
+### Added
+- `arrived` status in appointment state machine: scheduled → confirmed → arrived → in_progress → completed
+- `useMarkArrived` hook — transitions appointment to arrived (client walked in)
+- `useStartAppointment` hook — transitions arrived → in_progress (service begins)
+- Arrived status badge (amber) and left-edge indicator on AppointmentCard
+- Two-step flow: "Arrived" button for confirmed, "Start" button for arrived
+- Sort priority: in_progress first, arrived second, upcoming below
+
+### Changed
+- AppointmentCard props: `onCheckIn` → `onMarkArrived` + `onStartAppointment`
+- AppointmentDetailPanel: new arrived status config + split action buttons
+- WalkInButton: uses `useMarkArrived` (walk-ins are immediately arrived)
+- Appointment sort on Home and Appointments screens includes arrived priority
+- WatermelonDB model: added `canMarkArrived()` and `canStart()` methods
+- Offline fallback: supports arrived status in computed properties
+
+### Deprecated
+- `useCheckIn` — alias for `useMarkArrived`, will be removed in next phase
+
 ## [2026-07-23] — Appointment Features Enhancement
 
 ### Added

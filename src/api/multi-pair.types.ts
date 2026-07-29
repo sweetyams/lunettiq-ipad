@@ -20,14 +20,10 @@ export interface MultiPairProduct {
 export interface MultiPairQuestionnaire {
   id: string;
   customerId: string;
-  answers: QuestionnaireAnswer[];
+  responses: LifestyleResponses;
+  completedBy: string | null;
   completedAt?: string;
-}
-
-export interface QuestionnaireAnswer {
-  questionId: string;
-  questionText: string;
-  answer: string | string[] | number;
+  updatedAt?: string;
 }
 
 export interface InsuranceProfile {
@@ -50,7 +46,24 @@ export interface MultiPairSettings {
 
 export interface SaveQuestionnairePayload {
   customerId: string;
-  answers: { questionId: string; answer: string | string[] | number }[];
+  responses: LifestyleResponses;
+}
+
+/**
+ * Structured lifestyle responses — must match the server's lifestyleResponsesSchema.
+ * Keys correspond to QUESTIONNAIRE_FIELDS on the server.
+ */
+export interface LifestyleResponses {
+  driving?: 'none' | 'occasional' | 'daily' | 'professional';
+  screenTime?: 'minimal' | 'moderate' | 'heavy' | 'extreme';
+  sports?: string[];
+  hobbies?: string[];
+  glareSensitivity?: 'none' | 'mild' | 'moderate' | 'severe';
+  outdoorHours?: 'minimal' | 'moderate' | 'heavy';
+  workEnvironment?: 'office' | 'outdoor' | 'mixed' | 'industrial';
+  existingPairs?: number;
+  lastSunglassPurchase?: string;
+  primaryConcern?: 'vision' | 'style' | 'protection' | 'convenience';
 }
 
 export interface AcceptRecommendationPayload {

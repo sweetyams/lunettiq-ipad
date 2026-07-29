@@ -194,7 +194,9 @@ export function useOfflineAppointments(date: string): UseQueryResult<Appointment
             });
             return `${start}–${end}`;
           },
-          canCheckIn: () => a.status === 'confirmed',
+          canCheckIn: () => a.status === 'scheduled' || a.status === 'confirmed',
+          canMarkArrived: () => a.status === 'scheduled' || a.status === 'confirmed',
+          canStart: () => a.status === 'arrived',
           canStartSession: () => a.status === 'in_progress'
         } as Appointment));
       } else {

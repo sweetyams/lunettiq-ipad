@@ -14,7 +14,6 @@ import { PushProvider } from '@/src/features/push';
 import { ModeStrip } from '@/src/ui/ModeStrip';
 import { ToastContainer } from '@/src/ui/Toast';
 import { tokenCache } from '@/src/api/tokenCache';
-import { OperatorBar } from '@/src/ui/OperatorBar';
 import { DevErrorBoundary } from '@/src/ui/DevErrorBoundary';
 import { EnvGate } from '@/src/ui/EnvGate';
 
@@ -61,8 +60,6 @@ function InitialLayout() {
     <View className="flex-1" style={{ paddingTop: insets.top }}>
       {/* ModeStrip at the very top, below the system status bar */}
       {isSignedIn && <ModeStrip />}
-      {/* OperatorBar — shows who's logged in + quick lock */}
-      {isSignedIn && <OperatorBar />}
       {/* Toast notifications — positioned below ModeStrip, above content */}
       <ToastContainer />
       <Slot />

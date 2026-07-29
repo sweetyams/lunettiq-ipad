@@ -152,9 +152,15 @@ Modules that existed before the `/admin/` convention was standardized don't have
 
 **Admin ops** (`/api/scheduling/`):
 
+State machine: `scheduled → confirmed → arrived → in_progress → completed | cancelled | no_show`
+
 | Method | Path | Permission | Notes |
 |--------|------|-----------|-------|
-| PATCH | `/api/scheduling/{id}/transition` | `org:scheduling:write` | Check-in, no-show, status changes |
+| GET | `/api/scheduling?date=&locationId=&clientId=` | `org:scheduling:read` | List appointments (clientId returns all for that customer) |
+| POST | `/api/scheduling` | `org:scheduling:write` | Create appointment |
+| POST | `/api/scheduling/{id}/transition` | `org:scheduling:write` | Status transitions (arrived, in_progress, completed, no_show, cancelled) |
+| POST | `/api/scheduling/{id}/remind` | `org:scheduling:write` | Send reminder email, updates reminderSentAt |
+| POST | `/api/scheduling/{id}/notify` | `org:scheduling:write` | Send notification (any template — confirmation, directions) |
 
 ### Prescriptions (`/api/admin/prescriptions/`)
 

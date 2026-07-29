@@ -1,11 +1,12 @@
 // Appointment status flow:
-// scheduled → confirmed → in_progress → completed
-//                                     → no_show
-//          → cancelled
+// scheduled → confirmed → arrived → in_progress → completed
+//                ↘ cancelled         ↗
+//                ↘ no_show
 
 export type AppointmentStatus =
   | 'scheduled'
   | 'confirmed'
+  | 'arrived'
   | 'in_progress'
   | 'completed'
   | 'no_show'

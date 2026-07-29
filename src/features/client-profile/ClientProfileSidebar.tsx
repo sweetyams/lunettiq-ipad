@@ -347,7 +347,7 @@ export function AppointmentStats({ clientId }: AppointmentStatsProps) {
 
   return (
     <View className="mt-lg">
-      <Text className="text-caption-lg font-medium text-color-text-muted uppercase tracking-wide mb-sm">
+      <Text className="text-caption-lg font-medium text-text-muted uppercase tracking-wide mb-sm">
         Visit History
       </Text>
       <View className="gap-xs">
@@ -459,6 +459,10 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
     );
   }
 
+  const responseEntries = Object.entries(questionnaire.responses ?? {}).filter(
+    ([, v]) => v != null && (Array.isArray(v) ? v.length > 0 : true)
+  );
+
   return (
     <View className="mb-lg">
       <View className="flex-row items-center justify-between mb-sm">
@@ -476,16 +480,16 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
         )}
       </View>
       <Card className="p-md">
-        {questionnaire.answers.slice(0, 5).map((a) => (
+        {responseEntries.slice(0, 5).map(([key, value]) => (
           <StatRow
-            key={a.questionId}
-            label={a.questionText}
-            value={Array.isArray(a.answer) ? a.answer.join(', ') : String(a.answer)}
+            key={key}
+            label={formatFieldLabel(key)}
+            value={Array.isArray(value) ? value.join(', ') : String(value)}
           />
         ))}
-        {questionnaire.answers.length > 5 && (
+        {responseEntries.length > 5 && (
           <Text className="text-caption text-text-muted mt-sm">
-            +{questionnaire.answers.length - 5} more answers
+            +{responseEntries.length - 5} more answers
           </Text>
         )}
       </Card>
@@ -545,4 +549,21 @@ function formatCurrency(amount: number | null | undefined): string {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Convert camelCase field key to readable label */
+function formatFieldLabel(key: string): string {
+  const labels: Record<string, string> = {
+    driving: 'Driving',
+    screenTime: 'Screen time',
+    sports: 'Sports',
+    hobbies: 'Hobbies',
+    glareSensitivity: 'Glare sensitivity',
+    outdoorHours: 'Outdoors',
+    workEnvironment: 'Work',
+    existingPairs: 'Current pairs',
+    lastSunglassPurchase: 'Last sunglasses',
+    primaryConcern: 'Primary concern',
+  };
+  return labels[key] ?? key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
 }

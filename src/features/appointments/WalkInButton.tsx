@@ -3,7 +3,7 @@ import { View, Text, Pressable, Modal } from 'react-native';
 import { UserPlus, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
-import { useCreateAppointment, useCheckIn } from '@/src/api/useAppointments';
+import { useCreateAppointment, useMarkArrived } from '@/src/api/useAppointments';
 import { toast } from '@/src/ui/useToastStore';
 
 interface WalkInButtonProps {
@@ -13,7 +13,7 @@ interface WalkInButtonProps {
 export function WalkInButton({ onWalkInCreated }: WalkInButtonProps) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const createAppointment = useCreateAppointment();
-  const checkIn = useCheckIn();
+  const markArrived = useMarkArrived();
   const router = useRouter();
 
   const handlePress = () => {
@@ -42,8 +42,8 @@ export function WalkInButton({ onWalkInCreated }: WalkInButtonProps) {
         source: 'tablet',
       });
 
-      // Immediately check in the appointment
-      await checkIn.mutateAsync(appointment.id);
+      // Immediately mark the walk-in as arrived
+      await markArrived.mutateAsync(appointment.id);
 
       setShowConfirmation(false);
       toast.success('Walk-in started');
@@ -115,9 +115,9 @@ export function WalkInButton({ onWalkInCreated }: WalkInButtonProps) {
               </Pressable>
               <Pressable
                 onPress={handleConfirm}
-                disabled={createAppointment.isPending || checkIn.isPending}
+                disabled={createAppointment.isPending || markArrived.isPending}
                 className={`flex-1 min-h-[44px] items-center justify-center rounded-md ${
-                  createAppointment.isPending || checkIn.isPending 
+                  createAppointment.isPending || markArrived.isPending 
                     ? 'bg-color-bg-muted' 
                     : 'bg-color-brand'
                 }`}
@@ -125,11 +125,11 @@ export function WalkInButton({ onWalkInCreated }: WalkInButtonProps) {
                 accessibilityLabel="Start walk-in now"
               >
                 <Text className={`text-body-lg font-medium ${
-                  createAppointment.isPending || checkIn.isPending
+                  createAppointment.isPending || markArrived.isPending
                     ? 'text-color-text-muted'
                     : 'text-color-brand-text'
                 }`}>
-                  {createAppointment.isPending || checkIn.isPending ? 'Starting...' : 'Start Now'}
+                  {createAppointment.isPending || markArrived.isPending ? 'Starting...' : 'Start Now'}
                 </Text>
               </Pressable>
             </View>

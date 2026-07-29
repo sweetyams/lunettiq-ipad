@@ -1,70 +1,8 @@
-/**
- * LifestyleQuestionnaireSheet — guided questionnaire for multi-pair recommendations.
- *
- * Questions are predefined (multi-pair module doesn't serve dynamic questions yet).
- * Answers saved via POST /api/admin/multi-pair/questionnaires.
- */
-import { useState, useCallback } from 'react';
-import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
-import { X, ChevronRight, Check } from 'lucide-react-native';
-import { useSaveQuestionnaire } from '@/src/api/useMultiPair';
-import { toast } from '@/src/ui/useToastStore';
-
-// ─── Questions ───────────────────────────────────────────────
-
-interface Question {
-  id: string;
-  text: string;
-  type: 'single' | 'multi';
-  options: string[];
-}
-
-const LIFESTYLE_QUESTIONS: Question[] = [
-  {
-    id: 'primary_use',
-    text: 'What do you primarily use your glasses for?',
-    type: 'multi',
-    options: ['Office/computer work', 'Driving', 'Reading', 'Sports/outdoor', 'All-day wear', 'Social/evening'],
-  },
-  {
-    id: 'screen_hours',
-    text: 'How many hours per day do you spend on screens?',
-    type: 'single',
-    options: ['Less than 2', '2–4 hours', '4–8 hours', '8+ hours'],
-  },
-  {
-    id: 'outdoor_activities',
-    text: 'Which outdoor activities do you enjoy?',
-    type: 'multi',
-    options: ['Cycling', 'Running', 'Golf', 'Water sports', 'Skiing', 'Hiking', 'None regularly'],
-  },
-  {
-    id: 'driving_frequency',
-    text: 'How often do you drive?',
-    type: 'single',
-    options: ['Daily commute', 'Few times a week', 'Weekends only', 'Rarely'],
-  },
-  {
-    id: 'light_sensitivity',
-    text: 'Do you experience light sensitivity?',
-    type: 'single',
-    options: ['Very sensitive', 'Somewhat', 'Not particularly', 'Only in bright sun'],
-  },
-  {
-    id: 'style_preference',
-    text: 'What frame styles appeal to you for a second pair?',
-    type: 'multi',
-    options: ['Bold/statement', 'Classic/timeless', 'Sporty/technical', 'Lightweight/minimal', 'Trendy/fashion-forward'],
-  },
-  {
-    id: 'budget_range',
-    text: 'What budget range are you comfortable with for an additional pair?',
-    type: 'single',
-    options: ['Under $200', '$200–$400', '$400–$600', '$600+', 'Insurance covers it'],
-  },
-];
-
-// ─── Component ───────────────────────────────────────────────
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, ScrollView, Pressable, Alert } from 'react-native'; import { Dimensions } from 'react-native';
+import { Button } from '@/src/ui/Button';
+import { useMultiPairQuestionnaire, useSaveQuestionnaire } from '@/src/api/useMultiPair';
+import type { LifestyleResponses as ApiLifestyleResponses } from '@/src/api/multi-pair.types';
 
 interface LifestyleQuestionnaireSheetProps {
   clientId: string;
@@ -72,149 +10,287 @@ interface LifestyleQuestionnaireSheetProps {
   onClose: () => void;
 }
 
+interface LifestyleResponses {
+  driving: string;
+  screenTime: string;
+  sports: string;
+  hobbies: string;
+  glareSensitivity: string;
+  outdoorHours: string;
+  workEnvironment: string;
+  existingPairs: string;
+  lastSunglassPurchase: string;
+  primaryConcern: string;
+}
+
+interface ChipProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
+function Chip({ label, selected, onPress }: ChipProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`px-md py-sm rounded-md border min-w-[44px] min-h-[44px] justify-center ${
+        selected 
+          ? 'bg-bg-inverse border-bg-inverse' 
+          : 'bg-bg-surface border-border'
+      }`}
+    >
+      <Text className={`text-body-md text-center ${
+        selected ? 'text-text-inverse' : 'text-text-primary'
+      }`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function LifestyleQuestionnaireSheet({ clientId, visible, onClose }: LifestyleQuestionnaireSheetProps) {
+  const { data: questionnaire } = useMultiPairQuestionnaire(clientId);
   const saveQuestionnaire = useSaveQuestionnaire();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  
+  const [mode, setMode] = useState<'staff' | 'guided'>('staff');
+  const [answers, setAnswers] = useState<LifestyleResponses>({
+    driving: '',
+    screenTime: '',
+    sports: '',
+    hobbies: '',
+    glareSensitivity: '',
+    outdoorHours: '',
+    workEnvironment: '',
+    existingPairs: '',
+    lastSunglassPurchase: '',
+    primaryConcern: '',
+  });
 
-  const currentQuestion = LIFESTYLE_QUESTIONS[currentIndex]!;
-  const totalQuestions = LIFESTYLE_QUESTIONS.length;
-  const isLast = currentIndex === totalQuestions - 1;
-
-  const handleSelect = useCallback((option: string) => {
-    setAnswers((prev) => {
-      const q = LIFESTYLE_QUESTIONS[currentIndex]!;
-      if (q.type === 'single') {
-        return { ...prev, [q.id]: option };
+  useEffect(() => {
+    if (questionnaire && questionnaire.length > 0) {
+      const latest = questionnaire[0]?.responses;
+      if (latest) {
+        setAnswers({
+          driving: latest.driving || '',
+          screenTime: latest.screenTime || '',
+          sports: (latest.sports || []).join(','),
+          hobbies: (latest.hobbies || []).join(','),
+          glareSensitivity: latest.glareSensitivity || '',
+          outdoorHours: latest.outdoorHours || '',
+          workEnvironment: latest.workEnvironment || '',
+          existingPairs: latest.existingPairs ? String(latest.existingPairs) : '',
+          lastSunglassPurchase: latest.lastSunglassPurchase || '',
+          primaryConcern: latest.primaryConcern || '',
+        });
       }
-      const existing = (prev[q.id] as string[]) ?? [];
-      const updated = existing.includes(option)
-        ? existing.filter((o) => o !== option)
-        : [...existing, option];
-      return { ...prev, [q.id]: updated };
-    });
-  }, [currentIndex]);
-
-  const isOptionSelected = (option: string): boolean => {
-    const answer = answers[currentQuestion.id];
-    if (!answer) return false;
-    if (Array.isArray(answer)) return answer.includes(option);
-    return answer === option;
-  };
-
-  const canAdvance = (): boolean => {
-    const answer = answers[currentQuestion.id];
-    if (!answer) return false;
-    if (Array.isArray(answer)) return answer.length > 0;
-    return true;
-  };
-
-  const handleNext = useCallback(() => {
-    if (isLast) {
-      handleSubmit();
-    } else {
-      setCurrentIndex((i) => i + 1);
     }
-  }, [isLast]);
+  }, [questionnaire]);
 
-  const handleBack = useCallback(() => {
-    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
-  }, [currentIndex]);
+  const questions = [
+    {
+      key: 'driving' as keyof LifestyleResponses,
+      title: 'How often do they drive?',
+      type: 'single' as const,
+      options: ['none', 'occasional', 'daily', 'professional'],
+    },
+    {
+      key: 'screenTime' as keyof LifestyleResponses,
+      title: 'Daily screen time?',
+      type: 'single' as const,
+      options: ['minimal', 'moderate', 'heavy', 'extreme'],
+    },
+    {
+      key: 'sports' as keyof LifestyleResponses,
+      title: 'Sports & activities?',
+      type: 'multi' as const,
+      options: ['running', 'cycling', 'swimming', 'skiing', 'golf', 'tennis', 'gym', 'yoga', 'none'],
+    },
+    {
+      key: 'hobbies' as keyof LifestyleResponses,
+      title: 'Hobbies? (select all)',
+      type: 'multi' as const,
+      options: ['reading', 'crafts', 'photography', 'cooking', 'gardening', 'gaming', 'travel', 'music'],
+    },
+    {
+      key: 'glareSensitivity' as keyof LifestyleResponses,
+      title: 'Light sensitivity?',
+      type: 'single' as const,
+      options: ['none', 'mild', 'moderate', 'severe'],
+    },
+    {
+      key: 'outdoorHours' as keyof LifestyleResponses,
+      title: 'Time spent outdoors?',
+      type: 'single' as const,
+      options: ['minimal', 'moderate', 'heavy'],
+    },
+    {
+      key: 'workEnvironment' as keyof LifestyleResponses,
+      title: 'Work environment?',
+      type: 'single' as const,
+      options: ['office', 'outdoor', 'mixed', 'industrial'],
+    },
+    {
+      key: 'existingPairs' as keyof LifestyleResponses,
+      title: 'Current pairs owned?',
+      type: 'single' as const,
+      options: ['0', '1', '2', '3+'],
+    },
+    {
+      key: 'primaryConcern' as keyof LifestyleResponses,
+      title: 'Primary concern?',
+      type: 'single' as const,
+      options: ['vision', 'style', 'protection', 'convenience'],
+    },
+  ];
 
-  const handleSubmit = useCallback(async () => {
+  const handleSingleSelect = (key: keyof LifestyleResponses, value: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [key]: prev[key] === value ? '' : value
+    }));
+  };
+
+  const handleMultiSelect = (key: keyof LifestyleResponses, value: string) => {
+    setAnswers(prev => {
+      const current = prev[key] ? prev[key].split(',').filter(Boolean) : [];
+      const updated = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value];
+      return { ...prev, [key]: updated.join(',') };
+    });
+  };
+
+  const answeredCount = Object.values(answers).filter(answer => answer !== '').length;
+
+  const handleSubmit = async () => {
     try {
-      const formattedAnswers = LIFESTYLE_QUESTIONS.map((q) => ({
-        questionId: q.id,
-        answer: answers[q.id] ?? '',
-      }));
-
+      const responses = {
+        driving: answers.driving || undefined,
+        screenTime: answers.screenTime || undefined,
+        sports: answers.sports ? answers.sports.split(',') : undefined,
+        hobbies: answers.hobbies ? answers.hobbies.split(',') : undefined,
+        glareSensitivity: answers.glareSensitivity || undefined,
+        outdoorHours: answers.outdoorHours || undefined,
+        workEnvironment: answers.workEnvironment || undefined,
+        existingPairs: answers.existingPairs ? Number(answers.existingPairs) : undefined,
+        lastSunglassPurchase: answers.lastSunglassPurchase || undefined,
+        primaryConcern: answers.primaryConcern || undefined,
+      } as unknown as ApiLifestyleResponses;
       await saveQuestionnaire.mutateAsync({
         customerId: clientId,
-        answers: formattedAnswers,
+        responses,
       });
-
-      toast.success('Questionnaire saved', 'Multi-pair recommendations unlocked');
-      setCurrentIndex(0);
-      setAnswers({});
       onClose();
-    } catch {
-      toast.error('Failed to save', 'Please try again');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save lifestyle questionnaire');
     }
-  }, [answers, clientId, saveQuestionnaire, onClose]);
+  };
+
+  if (!visible) return null;
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-bg-page">
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-xl pt-xl pb-md border-b border-border">
-          <View>
-            <Text className="text-displayMd text-text-primary">Lifestyle</Text>
-            <Text className="text-caption text-text-muted mt-xs">
-              {currentIndex + 1} of {totalQuestions}
+    <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
+      <View className="flex-1 bg-black/50 items-center justify-center p-xl">
+        <View className="bg-bg-surface rounded-lg border border-border w-full max-w-[640px]" style={{ flex: 1, maxHeight: 720 }}>
+          {/* Header */}
+          <View className="p-lg border-b border-border">
+            <Text className="text-heading-lg text-text-primary font-medium">
+              Lifestyle Questionnaire
             </Text>
-          </View>
-          <Pressable onPress={onClose} className="w-11 h-11 items-center justify-center rounded-full bg-bg-muted" accessibilityRole="button" accessibilityLabel="Close">
-            <X size={20} color="#737373" />
-          </Pressable>
-        </View>
-
-        {/* Progress */}
-        <View className="h-1 bg-bg-muted">
-          <View className="h-1 bg-accent" style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }} />
-        </View>
-
-        {/* Question */}
-        <ScrollView className="flex-1 px-xl py-xl" showsVerticalScrollIndicator={false}>
-          <Text className="text-displayMd text-text-primary mb-lg">{currentQuestion.text}</Text>
-          {currentQuestion.type === 'multi' && (
-            <Text className="text-caption text-text-muted mb-md">Select all that apply</Text>
-          )}
-
-          <View className="gap-sm">
-            {currentQuestion.options.map((option) => {
-              const selected = isOptionSelected(option);
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => handleSelect(option)}
-                  className={`flex-row items-center px-lg py-md rounded-lg border min-h-[52px] ${
-                    selected ? 'border-accent bg-accent/5' : 'border-border bg-bg-elevated'
-                  }`}
-                  accessibilityRole={currentQuestion.type === 'single' ? 'radio' : 'checkbox'}
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={option}
-                >
-                  <Text className={`text-body flex-1 ${selected ? 'text-text-primary font-medium' : 'text-text-primary'}`}>
-                    {option}
-                  </Text>
-                  {selected && <Check size={18} color="#023891" />}
-                </Pressable>
-              );
-            })}
-          </View>
-        </ScrollView>
-
-        {/* Footer */}
-        <View className="flex-row items-center px-xl py-lg border-t border-border gap-md">
-          {currentIndex > 0 && (
-            <Pressable onPress={handleBack} className="border border-border rounded-md px-lg py-md min-h-[44px] items-center justify-center" accessibilityRole="button" accessibilityLabel="Back">
-              <Text className="text-body text-text-primary">Back</Text>
-            </Pressable>
-          )}
-          <View className="flex-1" />
-          <Pressable
-            onPress={handleNext}
-            disabled={!canAdvance() || saveQuestionnaire.isPending}
-            className="bg-accent rounded-md px-xl py-md min-h-[44px] items-center justify-center flex-row"
-            style={{ opacity: canAdvance() ? 1 : 0.4 }}
-            accessibilityRole="button"
-            accessibilityLabel={isLast ? 'Submit' : 'Next'}
-          >
-            <Text className="text-accent-text text-bodyStrong mr-xs">
-              {saveQuestionnaire.isPending ? 'Saving...' : isLast ? 'Submit' : 'Next'}
+            <Text className="text-body-md text-text-secondary mt-xs">
+              Multi-pair recommendations
             </Text>
-            {!isLast && <ChevronRight size={16} color="#FFFFFF" />}
-          </Pressable>
+            
+            {/* Mode Toggle */}
+            <View className="flex-row mt-md gap-sm">
+              <Pressable
+                onPress={() => setMode('staff')}
+                className={`px-md py-sm rounded-md border min-h-[44px] justify-center ${
+                  mode === 'staff' 
+                    ? 'bg-bg-inverse border-bg-inverse' 
+                    : 'bg-bg-surface border-border'
+                }`}
+              >
+                <Text className={`text-body-sm ${
+                  mode === 'staff' ? 'text-text-inverse' : 'text-text-primary'
+                }`}>
+                  Staff — one page
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setMode('guided')}
+                className={`px-md py-sm rounded-md border min-h-[44px] justify-center ${
+                  mode === 'guided' 
+                    ? 'bg-bg-inverse border-bg-inverse' 
+                    : 'bg-bg-surface border-border'
+                }`}
+              >
+                <Text className={`text-body-sm ${
+                  mode === 'guided' ? 'text-text-inverse' : 'text-text-primary'
+                }`}>
+                  Hand to client — guided
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Body */}
+          <ScrollView style={{ flexGrow: 1, flexShrink: 1 }} showsVerticalScrollIndicator={false}>
+            <View className="p-lg gap-xl">
+              {questions.map((question, index) => {
+                const isMulti = question.type === 'multi';
+                const currentValues = isMulti 
+                  ? (answers[question.key] ? answers[question.key].split(',').filter(Boolean) : [])
+                  : [];
+
+                return (
+                  <View key={question.key}>
+                    <Text className="text-heading-sm text-text-primary font-medium mb-md">
+                      {index + 1}. {question.title}
+                    </Text>
+                    <View className="flex-row flex-wrap gap-sm">
+                      {question.options.map((option) => {
+                        const isSelected = isMulti
+                          ? currentValues.includes(option)
+                          : answers[question.key] === option;
+
+                        return (
+                          <Chip
+                            key={option}
+                            label={option}
+                            selected={isSelected}
+                            onPress={() => isMulti
+                              ? handleMultiSelect(question.key, option)
+                              : handleSingleSelect(question.key, option)
+                            }
+                          />
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* Footer */}
+          <View className="p-lg border-t border-border">
+            <Text className="text-body-sm text-text-secondary mb-md">
+              {answeredCount} of {questions.length} answered
+            </Text>
+            <View className="flex-row justify-end gap-md">
+              <Button variant="ghost" onPress={onClose}>
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onPress={handleSubmit}
+                loading={saveQuestionnaire.isPending}
+              >
+                Save Answers
+              </Button>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>

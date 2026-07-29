@@ -23,6 +23,7 @@ export {
   TagManagement,
   RxStatus,
   NextAppointment,
+  AppointmentStats,
   InsuranceSummary,
   LifestyleSummary,
   MultiPairCTA,
@@ -30,3 +31,9 @@ export {
 export { InsuranceFormSheet } from './InsuranceFormSheet';
 export { LifestyleQuestionnaireSheet } from './LifestyleQuestionnaireSheet';
 export { MultiPairResultsSheet } from './MultiPairResultsSheet';
+export { PreferencesSheet } from './PreferencesSheet';
+export { PrescriptionSheet } from './PrescriptionSheet';
+export { ProfileSectionCard } from './ProfileSectionCard';
+export type { KeyValueRow, ChipGroup } from './ProfileSectionCard';
+export { ProfileEditModal } from './ProfileEditModal';
+export type { FieldDef, FieldType } from './ProfileEditModal';

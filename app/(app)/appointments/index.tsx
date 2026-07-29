@@ -132,7 +132,7 @@ export default function AppointmentsScreen() {
   };
 
   const activeCount = sortedAppointments.filter(
-    (a) => a.status === 'in_progress'
+    (a) => a.status === 'in_progress' || a.status === 'arrived'
   ).length;
 
   const upcomingCount = sortedAppointments.filter(

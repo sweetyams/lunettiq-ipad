@@ -92,6 +92,8 @@ export {
   useActiveHolds,
   useUpdateAppointment,
   useCheckIn,
+  useMarkArrived,
+  useStartAppointment,
   useMarkNoShow,
   useAppointmentServices,
   useSchedulingStaff,
@@ -101,6 +103,8 @@ export {
   useCancelAppointment,
   useCompleteAppointment,
   useConfirmAppointment,
+  useSendReminder,
+  useClientAppointments,
 } from './useAppointments';
 export type {
   Appointment,
@@ -163,7 +167,7 @@ export type {
   MultiPairRecommendation,
   MultiPairProduct,
   MultiPairQuestionnaire,
-  QuestionnaireAnswer,
+  LifestyleResponses,
   InsuranceProfile,
   MultiPairSettings,
   SaveQuestionnairePayload,

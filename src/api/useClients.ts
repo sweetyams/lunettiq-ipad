@@ -85,13 +85,17 @@ export function useUpdateClient() {
 
 // ─── Enrichment ──────────────────────────────────────────────
 
+/**
+ * Derives enrichment from the main client profile query.
+ * The server does not expose a GET /api/clients/{id}/enrichment endpoint
+ * (only PUT for updates). Enrichment data is embedded in the client profile.
+ */
 export function useClientEnrichment(clientId: string) {
-  return useQuery({
-    queryKey: ['clients', clientId, 'enrichment'],
-    queryFn: () => api.get<ClientEnrichment>(`/api/clients/${clientId}/enrichment`),
-    enabled: !!clientId,
-    staleTime: 60 * 1000,
-  });
+  const clientQuery = useClient(clientId);
+  return {
+    ...clientQuery,
+    data: clientQuery.data?.enrichment ?? null,
+  };
 }
 
 export function useUpdateEnrichment() {
@@ -100,7 +104,6 @@ export function useUpdateEnrichment() {
     mutationFn: ({ clientId, data }: { clientId: string; data: EnrichmentUpdateParams }) =>
       api.put<ClientEnrichment>(`/api/clients/${clientId}/enrichment`, data),
     onSuccess: (_, { clientId }) => {
-      qc.invalidateQueries({ queryKey: ['clients', clientId, 'enrichment'] });
       qc.invalidateQueries({ queryKey: ['clients', clientId] });
     },
   });

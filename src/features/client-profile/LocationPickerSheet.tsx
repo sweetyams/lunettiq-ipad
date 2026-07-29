@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal } from 'react-native'; import { Dimensions } from 'react-native';
 import { MapPin, Clock, X } from 'lucide-react-native';
 import { useLocations, type Location } from '@/src/api/useLocations';
 import { Card, LoadingState, ErrorState } from '@/src/ui';
@@ -42,9 +42,9 @@ export function LocationPickerSheet({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-color-bg-surface">
+      <View className="flex-1 bg-bg-surface">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-xl pt-xl pb-md border-b border-color-border">
+        <View className="flex-row items-center justify-between px-xl pt-xl pb-md border-b border-border">
           <Pressable
             onPress={onClose}
             className="min-h-[44px] min-w-[44px] items-center justify-center"
@@ -53,7 +53,7 @@ export function LocationPickerSheet({
           >
             <X color="#404040" size={22} />
           </Pressable>
-          <Text className="text-heading-md text-color-text-primary font-medium">Select Home Location</Text>
+          <Text className="text-heading-md text-text-primary font-medium">Select Home Location</Text>
           <View className="min-w-[44px]" />
         </View>
 
@@ -90,13 +90,13 @@ export function LocationPickerSheet({
                   <Card 
                     className={`p-md ${
                       selectedLocationId === location.id 
-                        ? 'ring-2 ring-color-brand bg-color-brand/5' 
+                        ? 'ring-2 ring-brand bg-brand/5' 
                         : ''
                     }`}
                   >
                     <View className="flex-row items-start justify-between">
                       <View className="flex-1">
-                        <Text className="text-heading-sm text-color-text-primary font-semibold mb-xs">
+                        <Text className="text-heading-sm text-text-primary font-semibold mb-xs">
                           {location.name}
                         </Text>
                         
@@ -107,10 +107,10 @@ export function LocationPickerSheet({
                             className="mt-0.5 mr-xs" 
                           />
                           <View className="flex-1">
-                            <Text className="text-body-md text-color-text-secondary">
+                            <Text className="text-body-md text-text-secondary">
                               {location.address}
                             </Text>
-                            <Text className="text-body-md text-color-text-secondary">
+                            <Text className="text-body-md text-text-secondary">
                               {location.city}, {location.province} {location.postalCode}
                             </Text>
                           </View>
@@ -118,21 +118,21 @@ export function LocationPickerSheet({
 
                         <View className="flex-row items-center">
                           <Clock color="#737373" size={16} className="mr-xs" />
-                          <Text className="text-body-sm text-color-text-muted">
+                          <Text className="text-body-sm text-text-muted">
                             {formatHours(location)}
                           </Text>
                         </View>
 
                         {location.phone && (
-                          <Text className="text-body-sm text-color-text-muted mt-xs">
+                          <Text className="text-body-sm text-text-muted mt-xs">
                             {location.phone}
                           </Text>
                         )}
                       </View>
 
                       {selectedLocationId === location.id && (
-                        <View className="w-6 h-6 rounded-full bg-color-brand items-center justify-center ml-md">
-                          <View className="w-2 h-2 rounded-full bg-color-brand-text" />
+                        <View className="w-6 h-6 rounded-full bg-brand items-center justify-center ml-md">
+                          <View className="w-2 h-2 rounded-full bg-brand-text" />
                         </View>
                       )}
                     </View>
@@ -146,7 +146,7 @@ export function LocationPickerSheet({
         {locations && locations.length === 0 && (
           <View className="flex-1 items-center justify-center p-lg">
             <MapPin color="#737373" size={48} />
-            <Text className="text-heading-md text-color-text-muted mt-md text-center">
+            <Text className="text-heading-md text-text-muted mt-md text-center">
               No locations available
             </Text>
           </View>

@@ -1,6 +1,5 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
-
-export default ({ config }: ConfigContext): ExpoConfig => ({
+/** @type {import('expo/config').ExpoConfig} */
+module.exports = ({ config }) => ({
   ...config,
   name: 'Lunettiq',
   slug: 'lunettiq-ipad',
@@ -25,7 +24,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             NSExceptionAllowsInsecureHTTPLoads: true,
             NSIncludesSubdomains: true,
           },
-          'localhost': {
+          localhost: {
             NSExceptionAllowsInsecureHTTPLoads: true,
             NSIncludesSubdomains: true,
           },
@@ -52,7 +51,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     eas: {
-      projectId: 'YOUR_EAS_PROJECT_ID',
+      projectId: '6a335bcd-0d56-4a98-b64f-c9c1c23df9c2',
     },
     clerkPublishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY,
     foundryBaseUrl: process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL ?? 'http://lunettiq.localhost:4000',
