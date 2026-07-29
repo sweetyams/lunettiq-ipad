@@ -26,6 +26,19 @@ export interface VerifyPinError {
   details: { remainingAttempts?: number; lockedUntil?: string };
 }
 
+/**
+ * PIN-as-identity: server resolves who you are from the PIN alone.
+ * No staffId needed — PIN is unique across all staff in the project.
+ */
+export interface AuthenticateResponse {
+  staffId: string;
+  clerkUserId: string;
+  name: string;
+  email: string;
+  role: string;
+  imageUrl: string | null;
+}
+
 // --- Query Hooks ---
 
 /**
@@ -76,6 +89,25 @@ export function useSetPin() {
       pin: string;
     }): Promise<{ success: true }> => {
       return api.post('/api/admin/device/set-pin', params);
+    },
+  });
+}
+
+/**
+ * PIN-as-identity authentication.
+ * POST /api/admin/device/authenticate
+ *
+ * No staffId needed — the PIN uniquely identifies the staff member.
+ * Server resolves identity from PIN alone.
+ *
+ * Errors:
+ * - INVALID_PIN: no staff matches this PIN
+ * - LOCKED: too many failed attempts from this device
+ */
+export function useAuthenticate() {
+  return useMutation({
+    mutationFn: async (params: { pin: string }): Promise<AuthenticateResponse> => {
+      return api.post('/api/admin/device/authenticate', params);
     },
   });
 }

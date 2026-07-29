@@ -4,6 +4,7 @@ import { useSignIn, useSSO } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import { admitAfterClerkLogin } from '@/src/features/auth/AuthProvider';
 
 // Warm up the browser for Android to reduce auth load time
 // On iOS, this is a no-op but we call it for consistency
@@ -54,6 +55,7 @@ export default function LoginScreen() {
       });
       if (createdSessionId && ssoSetActive) {
         await ssoSetActive({ session: createdSessionId });
+        admitAfterClerkLogin();
         router.replace('/(app)/home');
       }
     } catch (err: any) {
@@ -72,6 +74,7 @@ export default function LoginScreen() {
         const attempt = await signIn.create({ identifier: email, password });
         if (attempt.status === 'complete') {
           await setActive({ session: attempt.createdSessionId });
+          admitAfterClerkLogin();
           router.replace('/(app)/home');
         } else {
           Alert.alert('Sign In', `Status: ${attempt.status}`);
@@ -81,6 +84,7 @@ export default function LoginScreen() {
         const attempt = await signIn.create({ identifier: email });
         if (attempt.status === 'complete') {
           await setActive({ session: attempt.createdSessionId });
+          admitAfterClerkLogin();
           router.replace('/(app)/home');
         } else {
           Alert.alert('Check your email', 'A sign-in link or code was sent to your email.');

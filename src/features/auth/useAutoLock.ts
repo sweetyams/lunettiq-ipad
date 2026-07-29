@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { AppState } from 'react-native';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { useDeviceSettings } from './useDeviceSettings';
 
 interface AutoLockState {
   locked: boolean;
   unlock: () => void;
+  /** Call this on any user interaction to reset the inactivity timer */
+  resetActivity: () => void;
 }
-
-const LOCK_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
 
 export function useAutoLock(): AutoLockState {
   const [locked, setLocked] = useState(false);
@@ -17,43 +18,56 @@ export function useAutoLock(): AutoLockState {
 
   const sessionMode = useSessionStore((s) => s.mode);
   const handedToClient = usePrivacyStore((s) => s.handedToClient);
+  const { pinSystemEnabled, lockTimeout } = useDeviceSettings();
+
+  // Resolve timeout in ms ('never' = no timer)
+  const timeoutMs = lockTimeout === 'never' ? null : lockTimeout * 60 * 1000;
 
   // Check if lock should be suppressed
-  const suppressLock = sessionMode === 'fitting' || handedToClient;
+  const suppressLock = !pinSystemEnabled || sessionMode === 'fitting' || handedToClient || timeoutMs === null;
 
-  const resetTimer = () => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
+  }, []);
 
-    if (!suppressLock) {
+  const startTimer = useCallback(() => {
+    clearTimer();
+    if (!suppressLock && timeoutMs) {
       timerRef.current = setTimeout(() => {
         setLocked(true);
-      }, LOCK_TIMEOUT_MS);
+      }, timeoutMs);
     }
-  };
+  }, [suppressLock, timeoutMs, clearTimer]);
 
-  const unlock = () => {
+  const unlock = useCallback(() => {
     setLocked(false);
-    resetTimer();
-  };
+    startTimer();
+  }, [startTimer]);
 
-  // Handle app state changes
+  /** Reset the inactivity timer — call on any touch/interaction */
+  const resetActivity = useCallback(() => {
+    if (!suppressLock && !locked) {
+      startTimer();
+    }
+  }, [suppressLock, locked, startTimer]);
+
+  // Handle app state changes (background/foreground)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'background') {
         backgroundTimeRef.current = Date.now();
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-        }
+        clearTimer();
       } else if (nextAppState === 'active') {
         const backgroundTime = backgroundTimeRef.current;
-        if (backgroundTime && !suppressLock) {
+        if (backgroundTime && !suppressLock && timeoutMs) {
           const timeInBackground = Date.now() - backgroundTime;
-          if (timeInBackground >= LOCK_TIMEOUT_MS) {
+          if (timeInBackground >= timeoutMs) {
             setLocked(true);
           } else {
-            resetTimer();
+            startTimer();
           }
         }
         backgroundTimeRef.current = null;
@@ -61,25 +75,22 @@ export function useAutoLock(): AutoLockState {
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-    resetTimer();
+    startTimer();
 
     return () => {
       subscription.remove();
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+      clearTimer();
     };
-  }, [suppressLock]);
+  }, [suppressLock, timeoutMs, startTimer, clearTimer]);
 
-  // Reset timer when suppress conditions change
+  // React to changes in suppress conditions
   useEffect(() => {
-    if (suppressLock && timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    } else if (!suppressLock && !timerRef.current && !locked) {
-      resetTimer();
+    if (suppressLock) {
+      clearTimer();
+    } else if (!locked) {
+      startTimer();
     }
-  }, [suppressLock, locked]);
+  }, [suppressLock, locked, startTimer, clearTimer]);
 
-  return { locked, unlock };
+  return { locked, unlock, resetActivity };
 }

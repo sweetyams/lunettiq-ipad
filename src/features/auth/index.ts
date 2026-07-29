@@ -1,8 +1,12 @@
 export { useBiometric } from './useBiometric';
 export { useAutoLock } from './useAutoLock';
 export { LockScreen } from './LockScreen';
-export { AuthProvider, useAuthContext } from './AuthProvider';
+export { AuthProvider, useAuthContext, admitAfterClerkLogin } from './AuthProvider';
 export { useStaffProfile } from './useStaffProfile';
 export { useOperatorStore } from './useOperatorStore';
 export type { Operator } from './useOperatorStore';
 export { QuickSwitchLockScreen } from './QuickSwitchLockScreen';
+export { PinLockScreen } from './PinLockScreen';
+export { TouchActivityProvider } from './TouchActivityProvider';
+export { useDeviceSettings } from './useDeviceSettings';
+export type { LockTimeout } from './useDeviceSettings';
