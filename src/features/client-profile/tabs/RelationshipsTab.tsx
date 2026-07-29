@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Card, RowKV, Chip, Tag, Avatar, Button } from '@/src/ui';
+import { Card, CardHead, CardBody, CardFoot, RowKV, Chip, Tag, Avatar, Button } from '@/src/ui';
 import { useClientLinks, useClientSegments } from '@/src/api/useClients';
 import type { ClientLink, ClientSegment, RelationshipType } from '@/src/api/clients.types';
 
@@ -35,13 +35,13 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
       {/* Left Column - Linked Clients */}
       <View className="flex-1">
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-sm text-color-text-primary">Linked clients</Text>
             <Pressable>
               <Text className="text-color-brand text-body-sm">+ Link a client</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body noPadding>
+          </CardHead>
+          <CardBody noPadding>
             {isLoadingLinks ? (
               <View className="p-md">
                 <Text className="text-color-text-muted text-body-sm">Loading...</Text>
@@ -77,7 +77,7 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
                 </View>
               ))
             )}
-          </Card.Body>
+          </CardBody>
         </Card>
       </View>
 
@@ -85,13 +85,13 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
       <View className="flex-1 gap-lg">
         {/* Segments Card */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-sm text-color-text-primary">Segments</Text>
             <Pressable>
               <Text className="text-color-brand text-body-sm">Manage</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             {isLoadingSegments ? (
               <Text className="text-color-text-muted text-body-sm">Loading segments...</Text>
             ) : !segments || segments.length === 0 ? (
@@ -107,15 +107,15 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
                 ))}
               </View>
             )}
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Referrals Card */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-sm text-color-text-primary">Referrals</Text>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             <View className="gap-sm">
               <RowKV
                 label="Referred by"
@@ -136,7 +136,7 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
                 value={referralData.creditsEarned > 0 ? `$${referralData.creditsEarned}` : '—'}
               />
             </View>
-          </Card.Body>
+          </CardBody>
         </Card>
       </View>
     </View>

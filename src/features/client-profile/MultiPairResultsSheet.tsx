@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { Sheet, Card, Tag, Chip, Button } from '@/src/ui';
+import { Sheet, Card, CardHead, CardBody, Tag, Chip, Button } from '@/src/ui';
 import { useMultiPairRecommendations, useInsuranceProfile } from '@/src/api/useMultiPair';
 import { useClientPreferences } from '@/src/api/useClients';
 import type { MultiPairRecommendation } from '@/src/api/multi-pair.types';
@@ -88,15 +88,15 @@ export function MultiPairResultsSheet({ clientId, visible, onClose }: MultiPairR
             const product = rec.products[0];
             return (
               <Card key={rec.id} className="mb-md">
-                <Card.Head>
+                <CardHead>
                   <Text className="text-heading-xs font-medium text-text-primary">
                     Pair {idx + 2} — {categoryLabels[rec.category] ?? rec.category}
                   </Text>
                   <Text className="text-body-sm font-mono text-text-primary">
                     {product ? formatCurrency(250) : '—'}
                   </Text>
-                </Card.Head>
-                <Card.Body>
+                </CardHead>
+                <CardBody>
                   <View className="flex-row gap-md">
                     {/* Product thumbnail placeholder */}
                     <View className="w-[168px] h-[104px] bg-bg-muted rounded-sm items-center justify-center">
@@ -117,7 +117,7 @@ export function MultiPairResultsSheet({ clientId, visible, onClose }: MultiPairR
                       </View>
                     </View>
                   </View>
-                </Card.Body>
+                </CardBody>
               </Card>
             );
           })}
@@ -125,10 +125,10 @@ export function MultiPairResultsSheet({ clientId, visible, onClose }: MultiPairR
           {/* Excluded section */}
           {preferences?.stated?.avoid && preferences.stated.avoid.length > 0 && (
             <Card className="mt-md">
-              <Card.Head>
+              <CardHead>
                 <Text className="text-heading-xs font-medium text-text-primary">Excluded</Text>
-              </Card.Head>
-              <Card.Body>
+              </CardHead>
+              <CardBody>
                 <View className="flex-row gap-sm items-center flex-wrap">
                   {preferences.stated.avoid.map((item: string) => (
                     <Chip key={item} label={item} variant="neg" />
@@ -137,7 +137,7 @@ export function MultiPairResultsSheet({ clientId, visible, onClose }: MultiPairR
                     Filtered out by stated avoid list.
                   </Text>
                 </View>
-              </Card.Body>
+              </CardBody>
             </Card>
           )}
         </View>

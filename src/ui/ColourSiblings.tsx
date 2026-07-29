@@ -152,7 +152,8 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
 
   const handleSiblingPress = (sibling: ProductSibling) => {
     if (sibling.handle === currentHandle || sibling.shopifyId === productId) return;
-    router.push(`/products/${sibling.shopifyId}`);
+    // Replace (not push) so back button returns to product list, not previous sibling
+    router.replace(`/products/${sibling.shopifyId}`);
   };
 
   const handleTypeSwitch = (type: 'optical' | 'sun') => {
@@ -165,7 +166,8 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
       const group = colourGroups.get(currentColour);
       const target = type === 'sun' ? group?.sun : group?.optical;
       if (target && target.handle !== currentHandle && target.shopifyId !== productId) {
-        router.push(`/products/${target.shopifyId}`);
+        // Replace so back button returns to product list, not previous type variant
+        router.replace(`/products/${target.shopifyId}`);
       }
     }
   };

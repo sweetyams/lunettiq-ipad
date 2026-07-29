@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { Card, RowKV, Tag, Button } from '@/src/ui';
+import { Card, CardHead, CardBody, CardFoot, RowKV, Tag, Button } from '@/src/ui';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
 import { useClientEnrichment } from '@/src/api/useClients';
 import type { Prescription } from '@/src/api/prescriptions.types';
@@ -117,13 +117,13 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
           <View className="flex-1">
             {/* Prescriptions card */}
             <Card className="mb-lg">
-              <Card.Head>
+              <CardHead>
                 <Text className="text-heading-xs font-medium">Prescriptions</Text>
                 <Pressable onPress={onAddPrescription}>
                   <Text className="text-body-sm font-medium text-color-brand">+ Add prescription</Text>
                 </Pressable>
-              </Card.Head>
-              <Card.Body noPadding>
+              </CardHead>
+              <CardBody noPadding>
                 {prescriptionsLoading ? (
                   <View className="p-md">
                     <Text className="text-color-text-muted text-body-md">Loading prescriptions...</Text>
@@ -137,22 +137,22 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
                     <PrescriptionEntry key={prescription.id} prescription={prescription} />
                   ))
                 )}
-              </Card.Body>
+              </CardBody>
             </Card>
 
             {/* Clinical notes card */}
             <Card>
-              <Card.Head>
+              <CardHead>
                 <Text className="text-heading-xs font-medium">Clinical notes (staff only)</Text>
                 <Pressable onPress={() => {}}>
                   <Text className="text-body-sm font-medium text-color-brand">Add</Text>
                 </Pressable>
-              </Card.Head>
-              <Card.Body>
+              </CardHead>
+              <CardBody>
                 <Text className="text-color-text-muted text-body-md italic">
                   No clinical notes yet
                 </Text>
-              </Card.Body>
+              </CardBody>
             </Card>
           </View>
 
@@ -160,13 +160,13 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
           <View className="flex-1">
             {/* Fit profile card */}
             <Card className="mb-lg">
-              <Card.Head>
+              <CardHead>
                 <Text className="text-heading-xs font-medium">Fit profile</Text>
                 <Pressable onPress={() => {}}>
                   <Text className="text-body-sm font-medium text-color-brand">Edit</Text>
                 </Pressable>
-              </Card.Head>
-              <Card.Body>
+              </CardHead>
+              <CardBody>
                 {enrichmentLoading ? (
                   <Text className="text-color-text-muted text-body-md">Loading fit profile...</Text>
                 ) : enrichment ? (
@@ -187,20 +187,20 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
                 ) : (
                   <Text className="text-color-text-muted text-body-md">No measurements yet</Text>
                 )}
-              </Card.Body>
-              <Card.Foot>
+              </CardBody>
+              <CardFoot>
                 <Button variant="ghost" block onPress={() => {}}>
                   Capture with LiDAR
                 </Button>
-              </Card.Foot>
+              </CardFoot>
             </Card>
 
             {/* Sizing guidance card */}
             <Card>
-              <Card.Head>
+              <CardHead>
                 <Text className="text-heading-xs font-medium">Sizing guidance</Text>
-              </Card.Head>
-              <Card.Body>
+              </CardHead>
+              <CardBody>
                 {getSizingGuidance() ? (
                   <>
                     <Text className="text-display-sm font-mono text-color-text-primary text-center mb-md">
@@ -215,7 +215,7 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
                     Complete fit profile to see sizing guidance
                   </Text>
                 )}
-              </Card.Body>
+              </CardBody>
             </Card>
           </View>
         </View>

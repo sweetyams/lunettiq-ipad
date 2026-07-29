@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Card, RowKV, Chip, Tag, Button } from '@/src/ui';
+import { Card, CardHead, CardBody, CardFoot, RowKV, Chip, Tag, Button } from '@/src/ui';
 import { useClientEnrichment, useClientPreferences, useClientWishlist, useClientSegments } from '@/src/api/useClients';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import type { ClientProfile, StatedPreferences, WishlistItem, ClientSegment } from '@/src/api/clients.types';
@@ -166,59 +166,59 @@ export function OverviewTab({ clientId, client, onOpenSheet, onEditSection }: Ov
       <View className="flex-1 gap-lg">
         {/* Contact */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Contact</Text>
             <Pressable onPress={() => onEditSection('contact')} hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Edit</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             <RowKV label="First name" value={client.firstName} />
             <RowKV label="Last name" value={client.lastName} />
             <RowKV label="Email" value={client.email} />
             <RowKV label="Phone" value={client.phone} isLast />
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Preferences */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Preferences</Text>
             <Pressable onPress={() => onOpenSheet('preferences')} hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Edit</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             {renderPreferences()}
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Wishlist */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">
               Wishlist · {wishlist?.length || 0}
             </Text>
             <Pressable hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">See all</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             {renderWishlist()}
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Tags and segments */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Tags and segments</Text>
             <Pressable hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Manage</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             {renderTagsAndSegments()}
-          </Card.Body>
+          </CardBody>
         </Card>
       </View>
 
@@ -226,65 +226,65 @@ export function OverviewTab({ clientId, client, onOpenSheet, onEditSection }: Ov
       <View className="flex-1 gap-lg">
         {/* Insurance */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Insurance</Text>
             <Pressable onPress={() => onOpenSheet('insurance')} hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Add</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             <EmptyState>No insurance information on file</EmptyState>
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Lifestyle */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Lifestyle</Text>
             <Pressable onPress={() => onOpenSheet('lifestyle')} hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Fill — 2 min</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             <EmptyState>Complete lifestyle questionnaire for better recommendations</EmptyState>
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Multi-pair suggestions */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Multi-pair suggestions</Text>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             {renderMultiPairSuggestions()}
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Upcoming */}
         <Card>
-          <Card.Head>
+          <CardHead>
             <Text className="text-heading-xs font-medium text-color-text-primary">Upcoming</Text>
             <Pressable hitSlop={8}>
               <Text className="text-body-sm font-medium text-color-brand">Book</Text>
             </Pressable>
-          </Card.Head>
-          <Card.Body>
+          </CardHead>
+          <CardBody>
             <EmptyState>No upcoming appointments</EmptyState>
-          </Card.Body>
+          </CardBody>
         </Card>
 
         {/* Internal notes - staff only */}
         {privacyMode === 'staff' && (
           <Card>
-            <Card.Head>
+            <CardHead>
               <Text className="text-heading-xs font-medium text-color-text-primary">Internal notes</Text>
               <Pressable onPress={() => onEditSection('notes')} hitSlop={8}>
                 <Text className="text-body-sm font-medium text-color-brand">Add</Text>
               </Pressable>
-            </Card.Head>
-            <Card.Body>
+            </CardHead>
+            <CardBody>
               <EmptyState>No internal notes</EmptyState>
-            </Card.Body>
+            </CardBody>
           </Card>
         )}
       </View>

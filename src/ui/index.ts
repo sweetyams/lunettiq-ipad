@@ -14,7 +14,7 @@ export { Sheet } from './Sheet';
 export { ActiveHoldsCard } from './ActiveHoldsCard';
 export { AppointmentCard } from './AppointmentCard';
 export { Button } from './Button';
-export { Card } from './Card';
+export { Card, CardHead, CardBody, CardFoot } from './Card';
 export { ClientCard } from './ClientCard';
 export { ClientRow } from './ClientRow';
 export { ConsentModal } from './ConsentModal';

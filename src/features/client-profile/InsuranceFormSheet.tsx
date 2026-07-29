@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button, Card, RowKV } from '@/src/ui';
+import { Sheet, FieldLabel, Chip, Button, Card, CardBody, RowKV } from '@/src/ui';
 import { useInsuranceProfile, useSaveInsurance } from '@/src/api/useMultiPair';
 import type { SaveInsurancePayload } from '@/src/api/multi-pair.types';
 
@@ -211,7 +211,7 @@ export function InsuranceFormSheet({ clientId, visible, onClose }: InsuranceForm
           {/* Live coverage summary card */}
           {(pairsAllowedNum > 0 || coverageAmountNum > 0) && (
             <Card className="bg-color-bg-muted rounded-sm border-0">
-              <Card.Body>
+              <CardBody>
                 <Text className="text-heading-sm text-color-text-primary mb-md">
                   Coverage Summary
                 </Text>
@@ -233,7 +233,7 @@ export function InsuranceFormSheet({ clientId, visible, onClose }: InsuranceForm
                     />
                   )}
                 </View>
-              </Card.Body>
+              </CardBody>
             </Card>
           )}
         </View>
