@@ -201,7 +201,7 @@ export function HistoryTab({ clientId }: HistoryTabProps) {
   }
 
   return (
-    <View className="flex-1 p-lg">
+    <View className="flex-1">
       {/* Filter row */}
       <View className="flex-row justify-between items-center mb-lg">
         <View className="flex-row gap-sm">

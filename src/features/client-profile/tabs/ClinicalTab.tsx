@@ -110,13 +110,11 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
   );
 
   return (
-    <ScrollView className="flex-1">
-      <View className="p-lg">
-        <View className="flex-row gap-lg">
-          {/* Left column */}
-          <View className="flex-1">
-            {/* Prescriptions card */}
-            <Card className="mb-lg">
+    <View className="flex-row gap-lg">
+      {/* Left column */}
+      <View className="flex-1">
+        {/* Prescriptions card */}
+        <Card className="mb-lg">
               <CardHead>
                 <Text className="text-heading-xs font-medium">Prescriptions</Text>
                 <Pressable onPress={onAddPrescription}>
@@ -219,7 +217,5 @@ export function ClinicalTab({ clientId, onAddPrescription }: ClinicalTabProps) {
             </Card>
           </View>
         </View>
-      </View>
-    </ScrollView>
   );
 }

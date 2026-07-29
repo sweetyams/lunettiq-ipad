@@ -14,8 +14,15 @@ export interface OverviewTabProps {
 export function OverviewTab({ clientId, client, onOpenSheet, onEditSection }: OverviewTabProps) {
   const privacyMode = usePrivacyStore((s) => s.mode);
   const { data: preferences } = useClientPreferences(clientId);
-  const { data: wishlist } = useClientWishlist(clientId);
+  const { data: wishlistRaw } = useClientWishlist(clientId);
   const { data: segments } = useClientSegments(clientId);
+
+  // Normalize wishlist: API may return an array or an object with `items` property
+  const wishlist: WishlistItem[] = Array.isArray(wishlistRaw)
+    ? wishlistRaw
+    : Array.isArray((wishlistRaw as any)?.items)
+      ? (wishlistRaw as any).items
+      : [];
   
   const EmptyState = ({ children }: { children: React.ReactNode }) => (
     <View className="bg-color-bg-muted rounded-sm p-md">

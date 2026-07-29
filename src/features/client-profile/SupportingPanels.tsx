@@ -231,14 +231,21 @@ interface WishlistPanelProps {
 }
 
 export function WishlistPanel({ clientId }: WishlistPanelProps) {
-  const { data: wishlist, isLoading } = useClientWishlist(clientId);
+  const { data: wishlistRaw, isLoading } = useClientWishlist(clientId);
+
+  // Normalize: API may return an array or an object with `items` property
+  const wishlist: WishlistItem[] = Array.isArray(wishlistRaw)
+    ? wishlistRaw
+    : Array.isArray((wishlistRaw as any)?.items)
+      ? (wishlistRaw as any).items
+      : [];
 
   return (
     <View>
       <View className="flex-row items-center mb-md">
         <Star color="#6B6B6B" size={20} />
         <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Wishlist</Text>
-        {wishlist && (
+        {wishlistRaw && (
           <Text className="text-caption-md text-text-muted ml-sm">{wishlist.length} items</Text>
         )}
       </View>

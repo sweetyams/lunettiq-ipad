@@ -31,7 +31,7 @@ export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
   };
 
   return (
-    <View className="flex-row gap-lg p-lg">
+    <View className="flex-row gap-lg">
       {/* Left Column - Linked Clients */}
       <View className="flex-1">
         <Card>
