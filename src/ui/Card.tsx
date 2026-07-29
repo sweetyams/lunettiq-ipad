@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 
 interface CardProps {
   children: React.ReactNode;
@@ -22,9 +22,7 @@ interface CardFootProps {
 }
 
 function CardRoot({ children, editing = false, className = '' }: CardProps) {
-  const editClasses = editing
-    ? 'border-focus-ring'
-    : 'border-border';
+  const editClasses = editing ? 'border-focus-ring' : 'border-border';
 
   return (
     <View className={`border rounded-md bg-bg-surface overflow-hidden ${editClasses} ${className}`}>
@@ -57,8 +55,13 @@ function CardFoot({ children }: CardFootProps) {
   );
 }
 
-export const Card = Object.assign(CardRoot, {
-  Head: CardHead,
-  Body: CardBody,
-  Foot: CardFoot,
-});
+// Export as a namespace object with explicit properties
+// This avoids Object.assign issues with Metro/Hermes bundler
+export const Card = CardRoot as typeof CardRoot & {
+  Head: typeof CardHead;
+  Body: typeof CardBody;
+  Foot: typeof CardFoot;
+};
+Card.Head = CardHead;
+Card.Body = CardBody;
+Card.Foot = CardFoot;
