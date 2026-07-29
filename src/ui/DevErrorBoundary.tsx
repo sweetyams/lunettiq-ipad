@@ -47,7 +47,7 @@ export class DevErrorBoundary extends Component<Props, State> {
     if (!__DEV__) {
       return (
         <View className="flex-1 bg-bg-page items-center justify-center p-xl">
-          <Text className="text-text-primary text-headline font-semibold mb-md">
+          <Text className="text-text-primary text-heading-xl font-semibold mb-md">
             Something went wrong
           </Text>
           <Pressable 
@@ -56,7 +56,7 @@ export class DevErrorBoundary extends Component<Props, State> {
             accessibilityLabel="Try again"
             className="bg-brand rounded-md px-lg py-sm min-h-[44px] justify-center"
           >
-            <Text className="text-text-inverse text-body font-medium">Try Again</Text>
+            <Text className="text-text-inverse text-body-md font-medium">Try Again</Text>
           </Pressable>
         </View>
       );
@@ -112,7 +112,7 @@ export class DevErrorBoundary extends Component<Props, State> {
             accessibilityLabel="Retry after error"
             className="bg-accent rounded-md py-md items-center min-h-[44px] justify-center"
           >
-            <Text className="text-text-inverse text-body font-semibold">Retry</Text>
+            <Text className="text-text-inverse text-body-md font-semibold">Retry</Text>
           </Pressable>
         </View>
       </View>

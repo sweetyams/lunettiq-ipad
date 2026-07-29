@@ -17,11 +17,11 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
           <Text className="text-text-inverse text-2xl">⚠</Text>
         </View>
         
-        <Text className="text-text-primary text-headline font-semibold text-center mb-md">
+        <Text className="text-text-primary text-heading-xl font-semibold text-center mb-md">
           Something went wrong
         </Text>
         
-        <Text className="text-text-muted text-body text-center mb-xl">
+        <Text className="text-text-muted text-body-md text-center mb-xl">
           {errorMessage}
         </Text>
         

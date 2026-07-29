@@ -43,12 +43,12 @@ function MenuRow({
         {icon}
       </View>
       <View className="flex-1">
-        <Text className="text-body text-text-primary">{label}</Text>
-        <Text className="text-caption text-text-muted">{description}</Text>
+        <Text className="text-body-md text-text-primary">{label}</Text>
+        <Text className="text-caption-md text-text-muted">{description}</Text>
       </View>
       {badge != null && badge > 0 && (
         <View className="bg-brand rounded-full min-w-[24px] h-6 items-center justify-center px-xs mr-sm">
-          <Text className="text-caption text-brand-text font-medium">{badge}</Text>
+          <Text className="text-caption-md text-brand-text font-medium">{badge}</Text>
         </View>
       )}
       <ChevronRight size={16} color="#A3A3A3" />
@@ -58,7 +58,7 @@ function MenuRow({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <Text className="text-captionStrong text-text-muted uppercase tracking-wider px-lg pt-xl pb-sm">
+    <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider px-lg pt-xl pb-sm">
       {title}
     </Text>
   );
@@ -79,8 +79,8 @@ export default function MoreScreen() {
     <ScrollView className="flex-1 bg-bg-page">
       {/* Header */}
       <View className="px-xl pt-2xl pb-md">
-        <Text className="text-displayLg text-text-primary">More</Text>
-        <Text className="text-body text-text-muted mt-xs">
+        <Text className="text-display-lg text-text-primary">More</Text>
+        <Text className="text-body-md text-text-muted mt-xs">
           Workflows, tools, and settings
         </Text>
       </View>
@@ -174,7 +174,7 @@ export default function MoreScreen() {
           accessibilityLabel="Sign out"
         >
           <LogOut color="#DC2626" size={18} />
-          <Text className="text-body text-destructive ml-md">Sign Out</Text>
+          <Text className="text-body-md text-destructive ml-md">Sign Out</Text>
         </Pressable>
       </View>
     </ScrollView>

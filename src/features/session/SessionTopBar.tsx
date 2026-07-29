@@ -36,7 +36,7 @@ export function SessionTopBar({ onBack, onStartFitting, onEndSession }: SessionT
   const isFitting = mode === 'fitting';
 
   return (
-    <View className="flex-row h-[60px] items-center px-lg bg-bg-elevated border-b border-border">
+    <View className="flex-row h-[60px] items-center px-lg bg-bg-surface border-b border-border">
       {/* Left: Back + Session chip */}
       <View className="flex-row items-center flex-1">
         <Pressable
@@ -52,7 +52,7 @@ export function SessionTopBar({ onBack, onStartFitting, onEndSession }: SessionT
         <View className="flex-row items-center px-md py-sm rounded-full bg-brand">
           <View className="w-2 h-2 rounded-full bg-accent mr-sm" />
           <Clock color="#FFFFFF" size={14} />
-          <Text className="text-text-inverse text-body font-medium ml-xs" numberOfLines={1}>
+          <Text className="text-text-inverse text-body-md font-medium ml-xs" numberOfLines={1}>
             Session · {activeClientName ?? 'Client'} · {duration}
           </Text>
         </View>
@@ -70,7 +70,7 @@ export function SessionTopBar({ onBack, onStartFitting, onEndSession }: SessionT
           accessibilityLabel="End session"
           className="min-h-[44px] px-lg py-sm border border-border rounded-md items-center justify-center"
         >
-          <Text className="text-text-primary text-bodyStrong">End session</Text>
+          <Text className="text-text-primary text-body-md font-medium">End session</Text>
         </Pressable>
 
         {/* Start fitting — primary action (green, one per screen) */}
@@ -83,7 +83,7 @@ export function SessionTopBar({ onBack, onStartFitting, onEndSession }: SessionT
             style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
           >
             <Play color="#FFFFFF" size={16} />
-            <Text className="text-text-inverse text-bodyStrong ml-xs">Start fitting</Text>
+            <Text className="text-text-inverse text-body-md font-medium ml-xs">Start fitting</Text>
           </Pressable>
         )}
       </View>

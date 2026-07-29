@@ -36,8 +36,8 @@ export function SessionBanner() {
       <View className="flex-row items-center flex-1">
         <View className="w-2 h-2 bg-accent rounded-full mr-sm" />
         <View className="flex-1">
-          <Text className="text-text-inverse text-bodyStrong">Session active</Text>
-          <Text className="text-text-inverse text-caption opacity-80">{duration}</Text>
+          <Text className="text-text-inverse text-body-md font-medium">Session active</Text>
+          <Text className="text-text-inverse text-caption-md opacity-80">{duration}</Text>
         </View>
       </View>
       
@@ -45,9 +45,9 @@ export function SessionBanner() {
         onPress={reset}
         accessibilityRole="button"
         accessibilityLabel="End current session"
-        className="bg-bg-elevated bg-opacity-20 rounded-md px-md py-sm min-h-[44px] items-center justify-center"
+        className="bg-bg-surface bg-opacity-20 rounded-md px-md py-sm min-h-[44px] items-center justify-center"
       >
-        <Text className="text-text-inverse text-bodyStrong">End session</Text>
+        <Text className="text-text-inverse text-body-md font-medium">End session</Text>
       </Pressable>
     </View>
   );

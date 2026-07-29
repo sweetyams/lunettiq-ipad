@@ -55,8 +55,8 @@ export function AppointmentCard({
 
   const getTimeStyles = () => {
     return appointment.status === 'no_show' 
-      ? 'text-bodyStrong text-text-muted line-through' 
-      : 'text-bodyStrong text-text-primary';
+      ? 'text-body-md font-medium text-text-muted line-through' 
+      : 'text-body-md font-medium text-text-primary';
   };
 
   const formatAppointmentType = (type: string) => {
@@ -86,7 +86,7 @@ export function AppointmentCard({
     
     return (
       <View className={`px-2 py-1 rounded-sm ${badge.style}`}>
-        <Text className="text-captionStrong">{badge.text}</Text>
+        <Text className="text-caption-md font-medium">{badge.text}</Text>
       </View>
     );
   };
@@ -109,7 +109,7 @@ export function AppointmentCard({
       onLongPress={onLongPress}
       accessibilityRole="button"
       accessibilityLabel={`${formatTime(appointment.startsAt)} appointment with ${appointment.clientName}, ${formatAppointmentType(appointment.type)}, status: ${appointment.status}`}
-      className={`bg-bg-elevated rounded-lg border ${getStatusStyles()} p-md mb-sm`}
+      className={`bg-bg-surface rounded-lg border ${getStatusStyles()} p-md mb-sm`}
     >
       <View className="flex-row items-center justify-between mb-sm">
         <Text className={`${getTimeStyles()} font-mono`}>
@@ -119,12 +119,12 @@ export function AppointmentCard({
       </View>
       
       {clientDisplay && (
-        <Text className="text-headline text-text-primary mb-xs">
+        <Text className="text-heading-xl text-text-primary mb-xs">
           {clientDisplay}
         </Text>
       )}
       
-      <Text className="text-caption text-text-muted mb-sm">
+      <Text className="text-caption-md text-text-muted mb-sm">
         {formatAppointmentType(appointment.type)} • {appointment.duration} min
       </Text>
       
@@ -137,7 +137,7 @@ export function AppointmentCard({
               accessibilityLabel={`Mark ${appointment.clientName} as arrived`}
               className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-text-inverse">Arrived</Text>
+              <Text className="text-body-md font-medium text-text-inverse">Arrived</Text>
             </Pressable>
           )}
 
@@ -148,7 +148,7 @@ export function AppointmentCard({
               accessibilityLabel={`Start appointment with ${appointment.clientName}`}
               className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-text-inverse">Start</Text>
+              <Text className="text-body-md font-medium text-text-inverse">Start</Text>
             </Pressable>
           )}
           
@@ -159,7 +159,7 @@ export function AppointmentCard({
               accessibilityLabel={`Start session with ${appointment.clientName}`}
               className="bg-accent px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-bodyStrong text-text-inverse">Start Session</Text>
+              <Text className="text-body-md font-medium text-text-inverse">Start Session</Text>
             </Pressable>
           )}
         </View>

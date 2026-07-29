@@ -64,7 +64,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress }: ShelfThumbnailPro
 
       {/* Product name caption */}
       <Text
-        className="text-caption text-text-muted mt-1"
+        className="text-caption-md text-text-muted mt-1"
         numberOfLines={1}
         ellipsizeMode="tail"
       >

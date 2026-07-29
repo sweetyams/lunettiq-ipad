@@ -36,9 +36,8 @@ export default function ProductsScreen() {
   // Fetch filter taxonomy from API
   const { data: filterData } = useFilters();
 
-  // Search state
+  // Search state (SearchBar already debounces internally before calling onChangeText)
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Filter state
   const [selectedStock, setSelectedStock] = useState<string[]>([]);
@@ -47,22 +46,18 @@ export default function ProductsScreen() {
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [offset, setOffset] = useState(0);
 
-  // Debounce search
+  // Reset pagination when search changes
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-      setOffset(0);
-    }, 300);
-    return () => clearTimeout(t);
+    setOffset(0);
   }, [searchQuery]);
 
   // Build query params
   const queryParams: ProductListParams = useMemo(() => ({
-    q: debouncedQuery || undefined,
+    q: searchQuery || undefined,
     stock: selectedStock.length === 1 ? selectedStock[0] as 'in' | 'low' | 'out' : undefined,
     limit: 50,
     offset,
-  }), [debouncedQuery, selectedStock, offset]);
+  }), [searchQuery, selectedStock, offset]);
 
   // Fetch products
   const {
@@ -237,14 +232,14 @@ export default function ProductsScreen() {
       {/* Header */}
       <View className="px-xl pt-2xl pb-md border-b border-border">
         {activeClientId && activeClient ? (
-          <Text className="text-displayLg text-text-primary">
+          <Text className="text-display-lg text-text-primary">
             Browsing for {activeClient.firstName ?? 'client'}
           </Text>
         ) : (
-          <Text className="text-displayLg text-text-primary">Products</Text>
+          <Text className="text-display-lg text-text-primary">Products</Text>
         )}
         {productsResponse?.meta && (
-          <Text className="text-caption text-text-muted mt-xs">
+          <Text className="text-caption-md text-text-muted mt-xs">
             {productsResponse.meta.total} products
             {staleLabel && ` · ${staleLabel}`}
           </Text>
@@ -263,7 +258,7 @@ export default function ProductsScreen() {
         {/* Scan button */}
         <Pressable
           onPress={() => router.push('/products/scanner')}
-          className="w-[44px] h-[44px] items-center justify-center border border-border rounded-md bg-bg-elevated"
+          className="w-[44px] h-[44px] items-center justify-center border border-border rounded-md bg-bg-surface"
           accessibilityRole="button"
           accessibilityLabel="Scan barcode"
         >
@@ -273,13 +268,13 @@ export default function ProductsScreen() {
         <Pressable
           onPress={() => setShowFilterSheet(true)}
           className={`min-h-[44px] px-md rounded-md flex-row items-center gap-xs border ${
-            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-elevated'
+            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-surface'
           }`}
           accessibilityRole="button"
           accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
         >
           <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#FFFFFF' : '#2B2B2B'} />
-          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-white' : 'text-text-primary'}`}>
+          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-text-inverse' : 'text-text-primary'}`}>
             {activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filter'}
           </Text>
         </Pressable>

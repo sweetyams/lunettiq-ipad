@@ -53,7 +53,7 @@ export function QuickActionsGrid() {
 
   return (
     <View className="bg-bg-surface border border-border rounded-lg p-md">
-      <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+      <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
         Quick Actions
       </Text>
 
@@ -68,7 +68,7 @@ export function QuickActionsGrid() {
             accessibilityLabel={action.accessibilityLabel}
           >
             {action.icon}
-            <Text className="text-caption text-text-primary font-medium mt-sm text-center">
+            <Text className="text-caption-md text-text-primary font-medium mt-sm text-center">
               {action.label}
             </Text>
           </Pressable>

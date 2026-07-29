@@ -104,8 +104,8 @@ export function OrderSummarySheet({
         {/* Header */}
         <View className="flex-row items-center px-xl pt-xl pb-md border-b border-border">
           <View className="flex-1">
-            <Text className="text-caption text-text-muted">Order summary</Text>
-            <Text className="text-headline text-text-primary" numberOfLines={1}>
+            <Text className="text-caption-md text-text-muted">Order summary</Text>
+            <Text className="text-heading-xl text-text-primary" numberOfLines={1}>
               {productName}
             </Text>
           </View>
@@ -122,7 +122,7 @@ export function OrderSummarySheet({
         <ScrollView className="flex-1 px-xl pt-lg" showsVerticalScrollIndicator={false}>
           {/* Lens configuration */}
           <View className="bg-bg-surface rounded-lg border border-border p-lg mb-lg">
-            <Text className="text-headline text-text-primary mb-md">Lens configuration</Text>
+            <Text className="text-heading-xl text-text-primary mb-md">Lens configuration</Text>
             {displayAttrs.length > 0 ? (
               displayAttrs.map((attr) => {
                 const label = CONFIG_LABELS[attr.key] ?? attr.key.replace(/^_/, '');
@@ -130,23 +130,23 @@ export function OrderSummarySheet({
                 if (!value) return null;
                 return (
                   <View key={attr.key} className="flex-row justify-between py-xs">
-                    <Text className="text-body text-text-muted">{label}</Text>
-                    <Text className="text-body text-text-primary capitalize">{value}</Text>
+                    <Text className="text-body-md text-text-muted">{label}</Text>
+                    <Text className="text-body-md text-text-primary capitalize">{value}</Text>
                   </View>
                 );
               })
             ) : (
-              <Text className="text-body text-text-muted">Standard configuration</Text>
+              <Text className="text-body-md text-text-muted">Standard configuration</Text>
             )}
 
             {/* Addon lines */}
             {cartResult.addonLines.length > 0 && (
               <View className="mt-md pt-md border-t border-border">
-                <Text className="text-caption text-text-muted mb-xs">Add-ons</Text>
+                <Text className="text-caption-md text-text-muted mb-xs">Add-ons</Text>
                 {cartResult.addonLines.map((addon, i) => {
                   const label = addon.attributes.find((a) => a.key === '_addonLabel')?.value;
                   return (
-                    <Text key={i} className="text-body text-text-primary">
+                    <Text key={i} className="text-body-md text-text-primary">
                       {label ?? 'Add-on'}
                     </Text>
                   );
@@ -165,7 +165,7 @@ export function OrderSummarySheet({
                 accessibilityLabel={`${showPrescriptions ? 'Hide' : 'Show'} prescription options`}
               >
                 <FileText size={18} color="#2B2B2B" />
-                <Text className="text-headline text-text-primary ml-sm flex-1">
+                <Text className="text-heading-xl text-text-primary ml-sm flex-1">
                   {selectedPrescriptionId
                     ? `Rx linked`
                     : 'Link prescription (optional)'}
@@ -182,13 +182,13 @@ export function OrderSummarySheet({
                   <Pressable
                     onPress={() => setSelectedPrescriptionId(null)}
                     className={`py-sm px-md rounded-md mb-sm min-h-[44px] justify-center ${
-                      !selectedPrescriptionId ? 'bg-green/10 border border-green' : 'bg-bg-elevated'
+                      !selectedPrescriptionId ? 'bg-green/10 border border-green' : 'bg-bg-surface'
                     }`}
                     accessibilityRole="radio"
                     accessibilityState={{ checked: !selectedPrescriptionId }}
                     accessibilityLabel="No prescription"
                   >
-                    <Text className="text-body text-text-primary">No prescription (sunglasses / plano)</Text>
+                    <Text className="text-body-md text-text-primary">No prescription (sunglasses / plano)</Text>
                   </Pressable>
                   {prescriptions.map((rx) => (
                     <Pressable
@@ -197,7 +197,7 @@ export function OrderSummarySheet({
                       className={`py-sm px-md rounded-md mb-sm min-h-[44px] justify-center ${
                         selectedPrescriptionId === rx.id
                           ? 'bg-green/10 border border-green'
-                          : 'bg-bg-elevated'
+                          : 'bg-bg-surface'
                       }`}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: selectedPrescriptionId === rx.id }}
@@ -205,13 +205,13 @@ export function OrderSummarySheet({
                         ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                         : 'unknown date'}${rx.prescribedBy ? ` by ${rx.prescribedBy}` : ''}`}
                     >
-                      <Text className="text-body text-text-primary">
+                      <Text className="text-body-md text-text-primary">
                         {rx.type.replace('_', ' ')} — {rx.prescribedAt
                           ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                           : 'No date'}
                       </Text>
                       {rx.prescribedBy && (
-                        <Text className="text-caption text-text-muted">{rx.prescribedBy}</Text>
+                        <Text className="text-caption-md text-text-muted">{rx.prescribedBy}</Text>
                       )}
                     </Pressable>
                   ))}
@@ -222,26 +222,26 @@ export function OrderSummarySheet({
 
           {/* Price breakdown */}
           <View className="bg-bg-surface rounded-lg border border-border p-lg mb-xl">
-            <Text className="text-headline text-text-primary mb-md">Price</Text>
+            <Text className="text-heading-xl text-text-primary mb-md">Price</Text>
             {priceSummary.basePrice > 0 && (
               <View className="flex-row justify-between py-xs">
-                <Text className="text-body text-text-muted">Frame</Text>
-                <Text className="text-body text-text-primary">
+                <Text className="text-body-md text-text-muted">Frame</Text>
+                <Text className="text-body-md text-text-primary">
                   ${(priceSummary.basePrice / 100).toFixed(2)}
                 </Text>
               </View>
             )}
             {priceSummary.pricingLines.map((line) => (
               <View key={line.code} className="flex-row justify-between py-xs">
-                <Text className="text-body text-text-muted">{line.label}</Text>
-                <Text className="text-body text-text-primary">
+                <Text className="text-body-md text-text-muted">{line.label}</Text>
+                <Text className="text-body-md text-text-primary">
                   +${(line.amount / 100).toFixed(2)}
                 </Text>
               </View>
             ))}
             <View className="flex-row justify-between pt-md border-t border-border mt-sm">
-              <Text className="text-headline text-text-primary">Total</Text>
-              <Text className="text-headline text-text-primary">
+              <Text className="text-heading-xl text-text-primary">Total</Text>
+              <Text className="text-heading-xl text-text-primary">
                 ${(priceSummary.total / 100).toFixed(2)}
               </Text>
             </View>
@@ -252,7 +252,7 @@ export function OrderSummarySheet({
         </ScrollView>
 
         {/* Action bar */}
-        <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-elevated">
+        <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-surface">
           <View className="flex-1">
             {clientId ? (
               <Button
@@ -264,7 +264,7 @@ export function OrderSummarySheet({
               </Button>
             ) : (
               <View className="items-center">
-                <Text className="text-body text-text-muted">Start a session to create an order</Text>
+                <Text className="text-body-md text-text-muted">Start a session to create an order</Text>
               </View>
             )}
           </View>

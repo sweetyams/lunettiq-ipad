@@ -18,7 +18,7 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
   if (isLoading) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Active Holds
         </Text>
         <View className="items-center py-md">
@@ -31,19 +31,19 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
   if (error) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Active Holds
         </Text>
         <View className="items-center py-md">
           <AlertCircle color="#DC2626" size={20} />
-          <Text className="text-caption text-text-muted mt-sm">Failed to load holds</Text>
+          <Text className="text-caption-md text-text-muted mt-sm">Failed to load holds</Text>
           <Pressable
             onPress={() => refetch()}
             className="mt-sm min-h-[44px] min-w-[44px] items-center justify-center"
             accessibilityRole="button"
             accessibilityLabel="Retry loading holds"
           >
-            <Text className="text-caption text-text-primary font-medium">Retry</Text>
+            <Text className="text-caption-md text-text-primary font-medium">Retry</Text>
           </Pressable>
         </View>
       </View>
@@ -53,12 +53,12 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
   if (!holds || holds.length === 0) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Active Holds
         </Text>
         <View className="items-center py-md">
           <Package color="#A3A3A3" size={20} />
-          <Text className="text-caption text-text-muted mt-sm">No active holds</Text>
+          <Text className="text-caption-md text-text-muted mt-sm">No active holds</Text>
         </View>
       </View>
     );
@@ -78,11 +78,11 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
   return (
     <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
       <View className="flex-row items-center justify-between mb-md">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider">
           Active Holds
         </Text>
         <View className="bg-brand rounded-full px-sm py-xs">
-          <Text className="text-captionStrong text-brand-text">{holds.length}</Text>
+          <Text className="text-caption-md font-medium text-brand-text">{holds.length}</Text>
         </View>
       </View>
 
@@ -96,16 +96,16 @@ export function ActiveHoldsCard({ onHoldPress }: ActiveHoldsCardProps) {
         >
           <Package color="#737373" size={16} />
           <View className="flex-1 ml-sm">
-            <Text className="text-body text-text-primary" numberOfLines={1}>
+            <Text className="text-body-md text-text-primary" numberOfLines={1}>
               {hold.productName}
             </Text>
             {hold.variantTitle && (
-              <Text className="text-caption text-text-muted" numberOfLines={1}>
+              <Text className="text-caption-md text-text-muted" numberOfLines={1}>
                 {hold.variantTitle}
               </Text>
             )}
           </View>
-          <Text className="text-caption text-warning ml-sm">
+          <Text className="text-caption-md text-warning ml-sm">
             {formatExpiry(hold.expiresAt)}
           </Text>
         </Pressable>

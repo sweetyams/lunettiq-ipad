@@ -16,7 +16,7 @@ export function EmptyState({ message, actionLabel, onAction }: EmptyStateProps) 
           <Text className="text-text-muted text-2xl">📭</Text>
         </View>
         
-        <Text className="text-text-primary text-headline font-semibold text-center mb-lg">
+        <Text className="text-text-primary text-heading-xl font-semibold text-center mb-lg">
           {message}
         </Text>
         

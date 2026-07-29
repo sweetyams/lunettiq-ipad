@@ -188,10 +188,10 @@ export default function FittingScreen() {
           // No-photo mode - show frame logging interface
           <View className="flex-1 items-center justify-center bg-black">
             <Camera size={48} color="#6B6B6B" />
-            <Text className="text-text-inverse text-headline mt-lg mb-md">
+            <Text className="text-text-inverse text-heading-xl mt-lg mb-md">
               No Photo Mode
             </Text>
-            <Text className="text-text-inverse text-body opacity-70 text-center px-xl">
+            <Text className="text-text-inverse text-body-md opacity-70 text-center px-xl">
               Use the barcode scanner or product search to log frames tried
             </Text>
           </View>
@@ -243,12 +243,12 @@ export default function FittingScreen() {
           {photos.length > 0 && (
             <View className="ml-lg">
               <Button
-                variant="secondary"
+                variant="dark"
                 onPress={handToClient}
               >
                 <View className="flex-row items-center gap-xs">
                   <Hand size={16} color="white" />
-                  <Text className="text-text-inverse text-bodyStrong">Hand to Client</Text>
+                  <Text className="text-text-inverse text-body-md font-medium">Hand to Client</Text>
                 </View>
               </Button>
             </View>
@@ -257,7 +257,7 @@ export default function FittingScreen() {
           {/* Empty State */}
           {photos.length === 0 && (
             <View className="flex-1 items-center justify-center">
-              <Text className="text-text-muted text-body">
+              <Text className="text-text-mutedtext-body-md">
                 {consentStatus === 'declined' 
                   ? 'No photo mode - use barcode to log frames'
                   : 'Photos will appear here after capture'

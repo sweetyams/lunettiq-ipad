@@ -46,19 +46,19 @@ export function ClientRow({ client, isSelected = false, onPress }: ClientRowProp
       <View className="flex-row items-center">
         {/* Avatar */}
         <View className="w-10 h-10 rounded-full bg-brand items-center justify-center mr-md">
-          <Text className="text-brand-text text-bodyStrong">{initials}</Text>
+          <Text className="text-brand-text text-body-md font-medium">{initials}</Text>
         </View>
 
         {/* Content */}
         <View className="flex-1">
-          <Text className="text-bodyStrong text-text-primary">{name}</Text>
-          <Text className="text-caption text-text-muted">
+          <Text className="text-body-md font-medium text-text-primary">{name}</Text>
+          <Text className="text-caption-md text-text-muted">
             {client.email || 'No email'}
           </Text>
         </View>
 
         {/* Last activity */}
-        <Text className="text-caption text-text-muted">{activityText}</Text>
+        <Text className="text-caption-md text-text-muted">{activityText}</Text>
       </View>
     </Pressable>
   );

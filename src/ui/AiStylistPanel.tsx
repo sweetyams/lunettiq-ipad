@@ -34,7 +34,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
     <View className="mb-lg">
       <View className="flex-row items-center mb-sm">
         <Sparkles size={16} color="#16A34A" />
-        <Text className="text-text-primary text-bodyStrong ml-xs">AI Stylist</Text>
+        <Text className="text-text-primary text-body-md font-medium ml-xs">AI Stylist</Text>
       </View>
 
       <View className="bg-bg-page rounded-lg p-md border border-border">
@@ -44,7 +44,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
           onChangeText={setContext}
           placeholder="What's the client looking for? (optional)"
           placeholderTextColor="#6B6B6B"
-          className="bg-bg-elevated border border-border rounded-lg px-md py-sm text-text-primary text-body mb-sm"
+          className="bg-bg-surface border border-border rounded-lg px-md py-sm text-text-primary text-body-md mb-sm"
           accessibilityLabel="Styling context"
           accessibilityHint="Describe what the client wants to help the AI give better suggestions"
         />
@@ -64,7 +64,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
           ) : (
             <>
               <Sparkles size={16} color="#FFFFFF" />
-              <Text className="text-white text-body font-medium ml-xs">
+              <Text className="text-text-inverse text-body-md font-medium ml-xs">
                 Suggest frames
               </Text>
             </>
@@ -73,7 +73,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
 
         {/* Error */}
         {aiStylist.isError && (
-          <Text className="text-color-error text-caption mt-sm">
+          <Text className="text-color-error text-caption-md mt-sm">
             {aiStylist.error?.message ?? 'Something went wrong'}
           </Text>
         )}
@@ -82,7 +82,7 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
         {lastResult && (
           <View className="mt-md">
             {/* Thought paragraph */}
-            <Text className="text-body text-text-primary leading-relaxed mb-md">
+            <Text className="text-body-md text-text-primary leading-relaxed mb-md">
               {lastResult.thought}
             </Text>
 
@@ -95,10 +95,10 @@ export function AiStylistPanel({ clientId, onChipPress }: AiStylistPanelProps) {
                     onPress={() => handleChipPress(chip)}
                     accessibilityRole="button"
                     accessibilityLabel={chip}
-                    className="min-h-[44px] bg-bg-elevated border border-border rounded-full px-md py-sm"
+                    className="min-h-[44px] bg-bg-surface border border-border rounded-full px-md py-sm"
                     style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                   >
-                    <Text className="text-caption font-medium text-text-primary">
+                    <Text className="text-caption-md font-medium text-text-primary">
                       {chip}
                     </Text>
                   </Pressable>

@@ -26,15 +26,15 @@ export function ClientCard({ client, onPress, isSelected = false }: ClientCardPr
     >
       {/* Avatar */}
       <View className="w-[44px] h-[44px] rounded-full bg-brand items-center justify-center mr-md">
-        <Text className="text-brand-text text-caption font-medium">{initials}</Text>
+        <Text className="text-brand-text text-caption-md font-medium">{initials}</Text>
       </View>
 
       {/* Name + meta */}
       <View className="flex-1 min-w-0">
-        <Text className="text-text-primary text-bodyStrong" numberOfLines={1}>
+        <Text className="text-text-primary text-body-md font-medium" numberOfLines={1}>
           {name}
         </Text>
-        <Text className="text-text-muted text-caption" numberOfLines={1}>
+        <Text className="text-text-mutedtext-caption-md" numberOfLines={1}>
           {client.email || 'No email'}
           {client.orderCount ? ` · ${client.orderCount} orders` : ''}
         </Text>
@@ -43,7 +43,7 @@ export function ClientCard({ client, onPress, isSelected = false }: ClientCardPr
       {/* Tier badge */}
       {tier && (
         <View className="bg-brand rounded-full px-md py-xs">
-          <Text className="text-brand-text text-captionStrong">{tier}</Text>
+          <Text className="text-brand-text text-caption-md font-medium">{tier}</Text>
         </View>
       )}
     </Pressable>

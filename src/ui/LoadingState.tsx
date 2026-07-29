@@ -22,7 +22,7 @@ export function LoadingState() {
         </View>
         
         {/* Card skeleton */}
-        <View className="bg-bg-elevated rounded-lg p-md border border-border mt-lg">
+        <View className="bg-bg-surface rounded-lg p-md border border-border mt-lg">
           <View className="bg-bg-surface h-6 w-2/3 rounded-md animate-pulse mb-sm" />
           <View className="bg-bg-surface h-4 w-full rounded-sm animate-pulse mb-xs" />
           <View className="bg-bg-surface h-4 w-4/5 rounded-sm animate-pulse" />

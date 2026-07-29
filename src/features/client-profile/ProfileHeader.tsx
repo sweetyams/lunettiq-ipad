@@ -32,11 +32,11 @@ export function ProfileHeader({ client, onStartSession }: ProfileHeaderProps) {
   };
 
   return (
-    <View className="bg-bg-elevated border-b border-border px-2xl py-lg">
+    <View className="bg-bg-surface border-b border-border px-2xl py-lg">
       <View className="flex-row items-center">
         {/* Avatar */}
         <View className="w-16 h-16 rounded-full bg-brand items-center justify-center mr-lg">
-          <Text className="text-text-inverse text-headline font-bold">{initials}</Text>
+          <Text className="text-text-inverse text-heading-xl font-bold">{initials}</Text>
         </View>
 
         {/* Name and tier */}
@@ -46,7 +46,7 @@ export function ProfileHeader({ client, onStartSession }: ProfileHeaderProps) {
             <TierBadge tier={tier} />
             {client.status !== 'active' && (
               <View className="bg-warning/20 px-md py-xs rounded-md">
-                <Text className="text-captionStrong text-warning">{client.status}</Text>
+                <Text className="text-caption-md font-medium text-warning">{client.status}</Text>
               </View>
             )}
           </View>
@@ -57,19 +57,19 @@ export function ProfileHeader({ client, onStartSession }: ProfileHeaderProps) {
           {client.email && (
             <View className="flex-row items-center mb-xs">
               <Mail color="#6B6B6B" size={16} />
-              <Text className="text-body text-text-muted ml-sm">{client.email}</Text>
+              <Text className="text-body-md text-text-muted ml-sm">{client.email}</Text>
             </View>
           )}
           {client.phone && (
             <View className="flex-row items-center mb-xs">
               <Phone color="#6B6B6B" size={16} />
-              <Text className="text-body text-text-muted ml-sm">{client.phone}</Text>
+              <Text className="text-body-md text-text-muted ml-sm">{client.phone}</Text>
             </View>
           )}
           {client.enrichment?.homeLocationId && (
             <View className="flex-row items-center">
               <MapPin color="#6B6B6B" size={16} />
-              <Text className="text-body text-text-muted ml-sm">
+              <Text className="text-body-md text-text-muted ml-sm">
                 {client.enrichment.homeLocationId}
               </Text>
             </View>
@@ -79,18 +79,18 @@ export function ProfileHeader({ client, onStartSession }: ProfileHeaderProps) {
         {/* LTV / Credits */}
         {privacyMode === 'staff' ? (
           <View className="items-center">
-            <Text className="text-captionStrong text-text-muted">LTV</Text>
-            <Text className="text-headline text-text-primary">
+            <Text className="text-caption-md font-medium text-text-muted">LTV</Text>
+            <Text className="text-heading-xl text-text-primary">
               {formatCurrency(client.totalSpent)}
             </Text>
-            <Text className="text-caption text-text-muted">
+            <Text className="text-caption-md text-text-muted">
               {client.orderCount ?? 0} orders
             </Text>
           </View>
         ) : (
           <View className="items-center">
             <CreditCard color="#005D23" size={24} />
-            <Text className="text-bodyStrong text-accent mt-xs">Credits available</Text>
+            <Text className="text-body-md font-medium text-accent mt-xs">Credits available</Text>
           </View>
         )}
       </View>
@@ -107,7 +107,7 @@ function TierBadge({ tier }: { tier: string }) {
 
   return (
     <View className={`px-md py-xs rounded-full ${colors[tier] || colors.ESSENTIAL}`}>
-      <Text className="text-captionStrong font-bold">{tier}</Text>
+      <Text className="text-caption-md font-medium font-bold">{tier}</Text>
     </View>
   );
 }

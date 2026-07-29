@@ -13,7 +13,7 @@ export function PrivacyToggle() {
       className={`
         w-[44px] h-[44px] items-center justify-center rounded-md
         ${isStaffMode 
-          ? 'bg-bg-elevated border border-border' 
+          ? 'bg-bg-surface border border-border' 
           : 'bg-accent'
         }
       `}

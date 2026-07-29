@@ -23,7 +23,7 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
   if (isLoading) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Recent Clients
         </Text>
         <View className="items-center py-md">
@@ -36,19 +36,19 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
   if (error) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Recent Clients
         </Text>
         <View className="items-center py-md">
           <AlertCircle color="#DC2626" size={20} />
-          <Text className="text-caption text-text-muted mt-sm">Failed to load clients</Text>
+          <Text className="text-caption-md text-text-muted mt-sm">Failed to load clients</Text>
           <Pressable
             onPress={() => refetch()}
             className="mt-sm min-h-[44px] min-w-[44px] items-center justify-center"
             accessibilityRole="button"
             accessibilityLabel="Retry loading recent clients"
           >
-            <Text className="text-caption text-text-primary font-medium">Retry</Text>
+            <Text className="text-caption-md text-text-primary font-medium">Retry</Text>
           </Pressable>
         </View>
       </View>
@@ -58,12 +58,12 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
   if (clients.length === 0) {
     return (
       <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-        <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+        <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
           Recent Clients
         </Text>
         <View className="items-center py-md">
           <Users color="#A3A3A3" size={20} />
-          <Text className="text-caption text-text-muted mt-sm">No recent clients</Text>
+          <Text className="text-caption-md text-text-muted mt-sm">No recent clients</Text>
         </View>
       </View>
     );
@@ -71,7 +71,7 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
 
   return (
     <View className="bg-bg-surface border border-border rounded-lg p-md mb-lg">
-      <Text className="text-captionStrong text-text-muted uppercase tracking-wider mb-md">
+      <Text className="text-caption-md font-medium text-text-muted uppercase tracking-wider mb-md">
         Recent Clients
       </Text>
 
@@ -91,16 +91,16 @@ export function RecentClientsCard({ onClientPress }: RecentClientsCardProps) {
             accessibilityLabel={`Open profile for ${client.firstName} ${client.lastName}`}
           >
             <View className="w-8 h-8 rounded-full bg-brand items-center justify-center">
-              <Text className="text-brand-text text-caption font-medium">
+              <Text className="text-brand-text text-caption-md font-medium">
                 {initials}
               </Text>
             </View>
             <View className="flex-1 ml-sm">
-              <Text className="text-body text-text-primary" numberOfLines={1}>
+              <Text className="text-body-md text-text-primary" numberOfLines={1}>
                 {name}
               </Text>
             </View>
-            <Text className="text-caption text-text-muted ml-sm">
+            <Text className="text-caption-md text-text-muted ml-sm">
               {relativeTime(client.updatedAt)}
             </Text>
           </Pressable>

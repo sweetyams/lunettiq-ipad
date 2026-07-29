@@ -114,7 +114,7 @@ export function CaptureView({
   if (!permission) {
     return (
       <View className="flex-1 bg-black justify-center items-center">
-        <Text className="text-text-inverse text-body mb-lg">Loading camera...</Text>
+        <Text className="text-text-inverse text-body-md mb-lg">Loading camera...</Text>
       </View>
     );
   }
@@ -123,10 +123,10 @@ export function CaptureView({
     return (
       <View className="flex-1 bg-black justify-center items-center px-xl">
         <CameraOff size={48} color="white" className="mb-lg" />
-        <Text className="text-text-inverse text-headline text-center mb-md">
+        <Text className="text-text-inverse text-heading-xl text-center mb-md">
           Camera Permission Required
         </Text>
-        <Text className="text-text-inverse text-body text-center mb-lg opacity-80">
+        <Text className="text-text-inverse text-body-md text-center mb-lg opacity-80">
           This app needs camera access to capture fitting photos
         </Text>
         <Pressable
@@ -135,7 +135,7 @@ export function CaptureView({
           accessibilityRole="button"
           accessibilityLabel="Grant camera permission"
         >
-          <Text className="text-text-inverse text-bodyStrong">Grant Permission</Text>
+          <Text className="text-text-inverse text-body-md font-medium">Grant Permission</Text>
         </Pressable>
       </View>
     );
@@ -174,13 +174,13 @@ export function CaptureView({
               accessibilityRole="button"
               accessibilityLabel="Close camera"
             >
-              <Text className="text-text-inverse text-headline">✕</Text>
+              <Text className="text-text-inverse text-heading-xl">✕</Text>
             </Pressable>
           )}
           
           {/* Photo count */}
           <View className="bg-black/50 rounded-full px-3 py-1">
-            <Text className="text-text-inverse text-caption">
+            <Text className="text-text-inverse text-caption-md">
               {currentCount}/{maxPhotos}
             </Text>
           </View>
@@ -213,7 +213,7 @@ export function CaptureView({
                   ? 'border-border bg-border/30'
                   : isCapturing
                   ? 'border-accent bg-accent/30'
-                  : 'border-white bg-bg-elevated/20'
+                  : 'border-white bg-bg-surface/20'
               }`}
               style={{ minWidth: 72, minHeight: 72 }} // Ensure 72pt touch target
               accessibilityRole="button"
@@ -230,7 +230,7 @@ export function CaptureView({
                   ? 'bg-border'
                   : isCapturing
                   ? 'bg-accent'
-                  : 'bg-bg-elevated'
+                  : 'bg-bg-surface'
               }`} />
             </Pressable>
           </Animated.View>
@@ -241,7 +241,7 @@ export function CaptureView({
       {isAtPhotoLimit && (
         <View className="absolute bottom-32 left-0 right-0 px-6">
           <View className="bg-warning/90 rounded-lg p-4">
-            <Text className="text-text-inverse text-bodyStrong text-center">
+            <Text className="text-text-inverse text-body-md font-medium text-center">
               Photo limit reached ({maxPhotos})
             </Text>
           </View>
@@ -251,8 +251,8 @@ export function CaptureView({
       {/* Capturing indicator */}
       {isCapturing && (
         <View className="absolute inset-0 justify-center items-center bg-black/20 pointer-events-none">
-          <View className="bg-bg-elevated/90 rounded-lg px-6 py-4">
-            <Text className="text-text-primary text-bodyStrong">Capturing...</Text>
+          <View className="bg-bg-surface/90 rounded-lg px-6 py-4">
+            <Text className="text-text-primary text-body-md font-medium">Capturing...</Text>
           </View>
         </View>
       )}

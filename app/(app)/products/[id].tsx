@@ -41,7 +41,7 @@ function VariantChip({ variant, isSelected, onPress }: VariantChipProps) {
         isSelected
           ? 'bg-brand border-brand'
           : variant.availableForSale
-            ? 'bg-bg-elevated border-border'
+            ? 'bg-bg-surface border-border'
             : 'bg-bg-surface border-border opacity-50'
       }`}
     >
@@ -72,12 +72,12 @@ function DimensionsTable({ metafields }: { metafields: Record<string, unknown> }
   if (dimensions.length === 0) return null;
 
   return (
-    <View className="p-lg bg-bg-elevated border-b border-border">
-      <Text className="text-bodyStrong text-text-primary mb-md">Dimensions</Text>
+    <View className="p-lg bg-bg-surface border-b border-border">
+      <Text className="text-body-md font-medium text-text-primary mb-md">Dimensions</Text>
       {dimensions.map((dim) => (
         <View key={dim.label} className="flex-row justify-between py-sm">
-          <Text className="text-body text-text-muted">{dim.label}</Text>
-          <Text className="text-body text-text-primary font-mono">{String(dim.value)} mm</Text>
+          <Text className="text-body-md text-text-muted">{dim.label}</Text>
+          <Text className="text-body-md text-text-primary font-mono">{String(dim.value)} mm</Text>
         </View>
       ))}
     </View>
@@ -241,7 +241,7 @@ export default function ProductDetailScreen() {
         {/* Back button overlay */}
         <Pressable
           onPress={() => router.back()}
-          className="absolute top-lg left-lg z-10 w-[44px] h-[44px] bg-bg-elevated/80 rounded-full items-center justify-center"
+          className="absolute top-lg left-lg z-10 w-[44px] h-[44px] bg-bg-surface/80 rounded-full items-center justify-center"
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
@@ -249,7 +249,7 @@ export default function ProductDetailScreen() {
         </Pressable>
 
         {/* Hero Image Carousel */}
-        <View style={{ height: 400 }} className="bg-bg-elevated">
+        <View style={{ height: 400 }} className="bg-bg-surface">
           {product.images.length > 0 ? (
             <ScrollView
               horizontal
@@ -270,19 +270,19 @@ export default function ProductDetailScreen() {
             </ScrollView>
           ) : (
             <View className="flex-1 items-center justify-center">
-              <Text className="text-text-muted text-body">No images available</Text>
+              <Text className="text-text-mutedtext-body-md">No images available</Text>
             </View>
           )}
         </View>
 
         {/* Identity Block */}
-        <View className="p-lg bg-bg-elevated border-b border-border">
+        <View className="p-lg bg-bg-surface border-b border-border">
           <Text className="text-displayMd font-bold text-text-primary mb-xs">
             {title}
           </Text>
 
           {product.vendor && (
-            <Text className="text-caption text-text-muted mb-sm">{product.vendor}</Text>
+            <Text className="text-caption-md text-text-muted mb-sm">{product.vendor}</Text>
           )}
         </View>
 
@@ -295,14 +295,14 @@ export default function ProductDetailScreen() {
         )}
 
         {/* Price */}
-        <View className="px-lg py-md bg-bg-elevated border-b border-border">
+        <View className="px-lg py-md bg-bg-surface border-b border-border">
           {privacyMode === 'staff' && selectedVariant && (
             <View className="flex-row items-baseline gap-sm">
-              <Text className="text-headline font-semibold text-text-primary">
+              <Text className="text-heading-xl font-semibold text-text-primary">
                 ${selectedVariant.price}
               </Text>
               {selectedVariant.compareAtPrice && (
-                <Text className="text-body text-text-muted line-through">
+                <Text className="text-body-md text-text-muted line-through">
                   ${selectedVariant.compareAtPrice}
                 </Text>
               )}
@@ -316,12 +316,12 @@ export default function ProductDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Tap to reveal price"
             >
-              <Text className="text-body text-text-muted underline">Tap to view price</Text>
+              <Text className="text-body-md text-text-muted underline">Tap to view price</Text>
             </Pressable>
           )}
 
           {privacyMode === 'client' && showPrice && selectedVariant && (
-            <Text className="text-headline font-semibold text-text-primary">
+            <Text className="text-heading-xl font-semibold text-text-primary">
               ${selectedVariant.price}
             </Text>
           )}
@@ -329,10 +329,10 @@ export default function ProductDetailScreen() {
 
         {/* Fit Check Band — only when session active and score available */}
         {hasActiveSession && fitData && fitData.score >= 3 && (
-          <View className="p-lg bg-bg-elevated border-b border-border flex-row items-center gap-md">
+          <View className="p-lg bg-bg-surface border-b border-border flex-row items-center gap-md">
             <FitBadge score={fitData.score} reasons={fitData.matchReasons} />
             {fitData.matchReasons.length > 0 && (
-              <Text className="text-caption text-text-muted flex-1" numberOfLines={1}>
+              <Text className="text-caption-md text-text-muted flex-1" numberOfLines={1}>
                 {fitData.matchReasons.join(' · ')}
               </Text>
             )}
@@ -341,8 +341,8 @@ export default function ProductDetailScreen() {
 
         {/* Variant Selector */}
         {colorVariants.length > 1 && (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Available colours</Text>
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Available colours</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View className="flex-row" style={{ gap: 0 }}>
                 {colorVariants.map((variant) => (
@@ -368,17 +368,17 @@ export default function ProductDetailScreen() {
 
         {/* Description */}
         {description ? (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Description</Text>
-            <Text className="text-body text-text-primary leading-relaxed">{description}</Text>
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Description</Text>
+            <Text className="text-body-md text-text-primary leading-relaxed">{description}</Text>
           </View>
         ) : null}
 
         {/* Product Enhancements — Fitting Guidance */}
         {enhancement?.fittingGuidance?.en && (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Fitting Guidance</Text>
-            <Text className="text-body text-text-primary leading-relaxed">
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Fitting Guidance</Text>
+            <Text className="text-body-md text-text-primary leading-relaxed">
               {enhancement.fittingGuidance.en}
             </Text>
           </View>
@@ -386,9 +386,9 @@ export default function ProductDetailScreen() {
 
         {/* Product Enhancements — Brand Story */}
         {enhancement?.story?.en && (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Story</Text>
-            <Text className="text-body text-text-primary leading-relaxed">
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Story</Text>
+            <Text className="text-body-md text-text-primary leading-relaxed">
               {enhancement.story.en}
             </Text>
           </View>
@@ -396,9 +396,9 @@ export default function ProductDetailScreen() {
 
         {/* Product Enhancements — Long Description (if different from standard) */}
         {enhancement?.longDescription?.en && enhancement.longDescription.en !== description && (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Details</Text>
-            <Text className="text-body text-text-primary leading-relaxed">
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Details</Text>
+            <Text className="text-body-md text-text-primary leading-relaxed">
               {enhancement.longDescription.en}
             </Text>
           </View>
@@ -406,10 +406,10 @@ export default function ProductDetailScreen() {
 
         {/* Inventory — Staff Only */}
         {privacyMode === 'staff' && selectedVariant && (
-          <View className="p-lg bg-bg-elevated border-b border-border">
-            <Text className="text-bodyStrong text-text-primary mb-md">Inventory</Text>
+          <View className="p-lg bg-bg-surface border-b border-border">
+            <Text className="text-body-md font-medium text-text-primary mb-md">Inventory</Text>
             <View className="flex-row items-center justify-between">
-              <Text className="text-body text-text-primary">
+              <Text className="text-body-md text-text-primary">
                 SKU: {selectedVariant.sku ?? 'N/A'}
               </Text>
               <StockDot
@@ -424,7 +424,7 @@ export default function ProductDetailScreen() {
               />
             </View>
             {selectedVariant.inventoryQuantity !== undefined && (
-              <Text className="text-caption text-text-muted mt-xs">
+              <Text className="text-caption-md text-text-muted mt-xs">
                 {selectedVariant.inventoryQuantity} units available
               </Text>
             )}
@@ -436,14 +436,14 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       {/* ActionBar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-bg-elevated/95 border-t border-border px-lg py-md">
+      <View className="absolute bottom-0 left-0 right-0 bg-bg-surface/95 border-t border-border px-lg py-md">
         {hasActiveSession ? (
           <View className="flex-row gap-md">
             <View className="flex-1">
               <Button variant="primary" onPress={() => setShowConfigurator(true)}>
                 <View className="flex-row items-center gap-xs justify-center">
                   <Settings2 size={18} color="white" />
-                  <Text className="text-text-inverse text-bodyStrong">Configure lenses</Text>
+                  <Text className="text-text-inverse text-body-md font-medium">Configure lenses</Text>
                 </View>
               </Button>
             </View>
@@ -453,7 +453,7 @@ export default function ProductDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Try in fitting"
             >
-              <Text className="text-bodyStrong text-text-primary">Try</Text>
+              <Text className="text-body-md font-medium text-text-primary">Try</Text>
             </Pressable>
             <Pressable
               onPress={handleWishlist}
@@ -482,7 +482,7 @@ export default function ProductDetailScreen() {
           </View>
         ) : (
           <View className="items-center py-sm">
-            <Text className="text-body text-text-muted">Start a session to configure lenses</Text>
+            <Text className="text-body-md text-text-muted">Start a session to configure lenses</Text>
           </View>
         )}
       </View>

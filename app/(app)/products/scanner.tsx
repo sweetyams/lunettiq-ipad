@@ -60,7 +60,7 @@ export default function ScannerScreen() {
         >
           <ChevronLeft size={24} color="#FFFFFF" />
         </Pressable>
-        <Text className="text-headline font-semibold text-text-inverse text-center flex-1">
+        <Text className="text-heading-xl font-semibold text-text-inverse text-center flex-1">
           Scan Barcode
         </Text>
         <View className="w-[44px]" />
@@ -75,18 +75,18 @@ export default function ScannerScreen() {
 
       {/* Manual entry */}
       <View className="absolute bottom-0 left-0 right-0 bg-black/80 px-xl py-lg" style={{ paddingBottom: 60 }}>
-        <Text className="text-bodyStrong font-medium text-text-inverse mb-sm text-center">
+        <Text className="text-body-md font-medium font-medium text-text-inverse mb-sm text-center">
           Or enter manually
         </Text>
         <View className="flex-row items-center space-x-sm">
-          <View className="flex-1 flex-row items-center bg-bg-elevated rounded-md px-md border border-border">
+          <View className="flex-1 flex-row items-center bg-bg-surface rounded-md px-md border border-border">
             <Search size={18} color="#6B6B6B" />
             <TextInput
               value={manualBarcode}
               onChangeText={setManualBarcode}
               placeholder="Enter barcode or SKU"
               placeholderTextColor="#6B6B6B"
-              className="flex-1 ml-sm text-body text-text-primary py-sm min-h-[44px]"
+              className="flex-1 ml-sm text-body-md text-text-primary py-sm min-h-[44px]"
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"

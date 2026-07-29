@@ -33,7 +33,7 @@ export function QuickStats({ client }: QuickStatsProps) {
 
   return (
     <View className="mb-lg">
-      <Text className="text-bodyStrong text-text-primary mb-sm">Quick Stats</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Quick Stats</Text>
       <Card className="p-md">
         <StatRow label="Orders" value={String(orders)} />
         <StatRow label="Total Spent" value={formatCurrency(totalSpent)} />
@@ -75,11 +75,11 @@ export function ClientPL({ client }: ClientPLProps) {
 
   return (
     <View className="mb-lg">
-      <Text className="text-bodyStrong text-text-primary mb-sm">Client P&L</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Client P&L</Text>
       <Card className="p-md">
         <View className="flex-row items-center mb-md">
           <TrendingUp size={16} color="#6B6B6B" />
-          <Text className={`text-bodyStrong ml-sm ${labelColor}`}>{label}</Text>
+          <Text className={`text-body-md font-medium ml-sm ${labelColor}`}>{label}</Text>
         </View>
         <StatRow label="Revenue" value={formatCurrency(revenue)} />
         <StatRow label="Net profit" value={formatCurrency(grossProfit)} />
@@ -105,7 +105,7 @@ export function IdentityFields({ client }: IdentityFieldsProps) {
 
   return (
     <View className="mb-lg">
-      <Text className="text-bodyStrong text-text-primary mb-sm">Identity</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Identity</Text>
       <Card className="p-md">
         <StatRow label="First Name" value={client.firstName ?? '—'} />
         <StatRow label="Last Name" value={client.lastName ?? '—'} />
@@ -170,15 +170,15 @@ export function TagManagement({ client }: TagManagementProps) {
   return (
     <View className="mb-lg">
       <View className="flex-row items-center justify-between mb-sm">
-        <Text className="text-bodyStrong text-text-primary">Tags</Text>
-        <Text className="text-caption text-text-muted">{(client.tags ?? []).length}</Text>
+        <Text className="text-body-md font-medium text-text-primary">Tags</Text>
+        <Text className="text-caption-md text-text-muted">{(client.tags ?? []).length}</Text>
       </View>
       <Card className="p-md">
         {(client.tags ?? []).length > 0 ? (
           <View className="flex-row flex-wrap gap-sm mb-sm">
             {(client.tags ?? []).map((tag) => (
               <View key={tag} className="flex-row items-center bg-bg-muted rounded-md px-sm py-xs">
-                <Text className="text-caption text-text-primary mr-xs">{tag}</Text>
+                <Text className="text-caption-md text-text-primary mr-xs">{tag}</Text>
                 <Pressable
                   onPress={() => handleRemoveTag(tag)}
                   hitSlop={8}
@@ -192,7 +192,7 @@ export function TagManagement({ client }: TagManagementProps) {
             ))}
           </View>
         ) : (
-          <Text className="text-body text-text-muted italic mb-sm">No tags</Text>
+          <Text className="text-body-md text-text-muted italic mb-sm">No tags</Text>
         )}
 
         {isAdding ? (
@@ -204,7 +204,7 @@ export function TagManagement({ client }: TagManagementProps) {
               autoFocus
               onSubmitEditing={handleAddTag}
               returnKeyType="done"
-              className="flex-1 border border-border rounded-md px-sm py-xs text-body text-text-primary min-h-[36px]"
+              className="flex-1 border border-border rounded-md px-sm py-xs text-body-md text-text-primary min-h-[36px]"
             />
             <Pressable
               onPress={handleAddTag}
@@ -231,7 +231,7 @@ export function TagManagement({ client }: TagManagementProps) {
             accessibilityLabel="Add tag"
           >
             <Plus size={14} color="#737373" />
-            <Text className="text-body text-text-muted ml-xs">Add tag…</Text>
+            <Text className="text-body-md text-text-muted ml-xs">Add tag…</Text>
           </Pressable>
         )}
       </Card>
@@ -280,7 +280,7 @@ export function RxStatus({ clientId }: RxStatusProps) {
 
   return (
     <View className="flex-row justify-between items-center py-xs">
-      <Text className="text-body text-text-muted">Rx Status</Text>
+      <Text className="text-body-md text-text-muted">Rx Status</Text>
       <Text className={`text-body font-medium ${statusColor}`}>{statusText}</Text>
     </View>
   );
@@ -319,8 +319,8 @@ export function NextAppointment({ clientId }: NextAppointmentProps) {
 
   return (
     <View className="flex-row justify-between items-center py-xs">
-      <Text className="text-body text-text-muted">Next Appointment</Text>
-      <Text className="text-body text-text-primary font-medium">{displayText}</Text>
+      <Text className="text-body-md text-text-muted">Next Appointment</Text>
+      <Text className="text-body-md text-text-primary font-medium">{displayText}</Text>
     </View>
   );
 }
@@ -374,9 +374,9 @@ export function InsuranceSummary({ clientId, onEdit }: InsuranceSummaryProps) {
   if (!insurance) {
     return (
       <View className="mb-lg">
-        <Text className="text-bodyStrong text-text-primary mb-sm">Insurance</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-sm">Insurance</Text>
         <Card className="p-md">
-          <Text className="text-body text-text-muted italic mb-md">No insurance profile on file.</Text>
+          <Text className="text-body-md text-text-muted italic mb-md">No insurance profile on file.</Text>
           {onEdit && (
             <Pressable
               onPress={onEdit}
@@ -385,7 +385,7 @@ export function InsuranceSummary({ clientId, onEdit }: InsuranceSummaryProps) {
               accessibilityLabel="Add insurance profile"
             >
               <Plus size={14} color="#023891" />
-              <Text className="text-body text-accent ml-xs">Add insurance</Text>
+              <Text className="text-body-md text-accent ml-xs">Add insurance</Text>
             </Pressable>
           )}
         </Card>
@@ -396,7 +396,7 @@ export function InsuranceSummary({ clientId, onEdit }: InsuranceSummaryProps) {
   return (
     <View className="mb-lg">
       <View className="flex-row items-center justify-between mb-sm">
-        <Text className="text-bodyStrong text-text-primary">Insurance</Text>
+        <Text className="text-body-md font-medium text-text-primary">Insurance</Text>
         {onEdit && (
           <Pressable
             onPress={onEdit}
@@ -405,7 +405,7 @@ export function InsuranceSummary({ clientId, onEdit }: InsuranceSummaryProps) {
             accessibilityLabel="Edit insurance profile"
             className="min-w-[44px] min-h-[28px] items-center justify-center"
           >
-            <Text className="text-caption text-accent">Edit</Text>
+            <Text className="text-caption-md text-accent">Edit</Text>
           </Pressable>
         )}
       </View>
@@ -438,9 +438,9 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
   if (!questionnaire || !questionnaire.completedAt) {
     return (
       <View className="mb-lg">
-        <Text className="text-bodyStrong text-text-primary mb-sm">Lifestyle</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-sm">Lifestyle</Text>
         <Card className="p-md">
-          <Text className="text-body text-text-muted italic mb-md">
+          <Text className="text-body-md text-text-muted italic mb-md">
             No lifestyle questionnaire filled yet. Fill it to unlock better multi-pair recommendations.
           </Text>
           {onFill && (
@@ -451,7 +451,7 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
               accessibilityLabel="Fill lifestyle questionnaire"
             >
               <Plus size={14} color="#023891" />
-              <Text className="text-body text-accent ml-xs">Fill questionnaire</Text>
+              <Text className="text-body-md text-accent ml-xs">Fill questionnaire</Text>
             </Pressable>
           )}
         </Card>
@@ -466,7 +466,7 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
   return (
     <View className="mb-lg">
       <View className="flex-row items-center justify-between mb-sm">
-        <Text className="text-bodyStrong text-text-primary">Lifestyle</Text>
+        <Text className="text-body-md font-medium text-text-primary">Lifestyle</Text>
         {onFill && (
           <Pressable
             onPress={onFill}
@@ -475,7 +475,7 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
             accessibilityLabel="Edit lifestyle questionnaire"
             className="min-w-[44px] min-h-[28px] items-center justify-center"
           >
-            <Text className="text-caption text-accent">Edit</Text>
+            <Text className="text-caption-md text-accent">Edit</Text>
           </Pressable>
         )}
       </View>
@@ -488,7 +488,7 @@ export function LifestyleSummary({ clientId, onFill }: LifestyleSummaryProps) {
           />
         ))}
         {responseEntries.length > 5 && (
-          <Text className="text-caption text-text-muted mt-sm">
+          <Text className="text-caption-md text-text-muted mt-sm">
             +{responseEntries.length - 5} more answers
           </Text>
         )}
@@ -507,9 +507,9 @@ interface MultiPairCTAProps {
 export function MultiPairCTA({ clientId, onGenerate }: MultiPairCTAProps) {
   return (
     <View className="mb-lg">
-      <Text className="text-bodyStrong text-text-primary mb-sm">Multi-Pair Suggestions</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Multi-Pair Suggestions</Text>
       <Card className="p-md">
-        <Text className="text-body text-text-muted mb-md">
+        <Text className="text-body-md text-text-muted mb-md">
           Generate personalized second/third pair recommendations based on this client's lifestyle, Rx, and insurance.
         </Text>
         <Pressable
@@ -518,7 +518,7 @@ export function MultiPairCTA({ clientId, onGenerate }: MultiPairCTAProps) {
           accessibilityRole="button"
           accessibilityLabel="Generate multi-pair recommendations"
         >
-          <Text className="text-accent-text text-bodyStrong">Generate Recommendations</Text>
+          <Text className="text-accent-text text-body-md font-medium">Generate Recommendations</Text>
         </Pressable>
       </Card>
     </View>
@@ -530,8 +530,8 @@ export function MultiPairCTA({ clientId, onGenerate }: MultiPairCTAProps) {
 function StatRow({ label, value, isLast = false }: { label: string; value: string; isLast?: boolean }) {
   return (
     <View className={`flex-row justify-between items-center py-xs ${isLast ? '' : 'border-b border-border'}`}>
-      <Text className="text-body text-text-muted">{label}</Text>
-      <Text className="text-body text-text-primary font-medium">{value}</Text>
+      <Text className="text-body-md text-text-muted">{label}</Text>
+      <Text className="text-body-md text-text-primary font-medium">{value}</Text>
     </View>
   );
 }

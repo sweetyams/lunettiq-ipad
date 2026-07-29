@@ -50,7 +50,7 @@ export function TimelineEntry({ interaction, isLast = false }: TimelineEntryProp
   const IconComponent = getInteractionIcon(interaction.type);
 
   return (
-    <View className={`flex-row items-start p-md bg-bg-elevated ${isLast ? '' : 'border-b border-border'}`}>
+    <View className={`flex-row items-start p-md bg-bg-surface ${isLast ? '' : 'border-b border-border'}`}>
       {/* Icon */}
       <View className="mr-sm mt-xs">
         <IconComponent size={20} color="#6B6B6B" />

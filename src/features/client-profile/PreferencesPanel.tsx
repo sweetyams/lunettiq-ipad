@@ -53,7 +53,7 @@ export function PreferencesPanel({ clientId }: PreferencesPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Heart color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Preferences</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Preferences</Text>
         {!editing && (
           <Pressable
             onPress={handleStartEdit}
@@ -78,7 +78,7 @@ export function PreferencesPanel({ clientId }: PreferencesPanelProps) {
         ) : (
           <View>
             {/* Stated preferences */}
-            <Text className="text-bodyStrong text-text-primary mb-sm">Stated</Text>
+            <Text className="text-body-md font-medium text-text-primary mb-sm">Stated</Text>
             <PreferenceRow label="Shapes" items={stated.shapes} />
             <PreferenceRow label="Materials" items={stated.materials} />
             <PreferenceRow label="Colours" items={stated.colours} />
@@ -86,8 +86,8 @@ export function PreferencesPanel({ clientId }: PreferencesPanelProps) {
             <PreferenceRow label="Brands" items={stated.brandsAdmired} />
             {stated.notes ? (
               <View className="mt-sm">
-                <Text className="text-caption text-text-muted">Notes</Text>
-                <Text className="text-body text-text-primary mt-xs">{stated.notes}</Text>
+                <Text className="text-caption-md text-text-muted">Notes</Text>
+                <Text className="text-body-md text-text-primary mt-xs">{stated.notes}</Text>
               </View>
             ) : null}
 
@@ -101,7 +101,7 @@ export function PreferencesPanel({ clientId }: PreferencesPanelProps) {
               stated.materials.length === 0 &&
               stated.colours.length === 0 &&
               !derived && (
-                <Text className="text-body text-text-muted italic text-center py-md">
+                <Text className="text-body-md text-text-muted italic text-center py-md">
                   No preferences recorded yet
                 </Text>
               )}
@@ -116,11 +116,11 @@ function PreferenceRow({ label, items }: { label: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
     <View className="flex-row items-start mt-sm">
-      <Text className="text-body text-text-muted w-24">{label}</Text>
+      <Text className="text-body-md text-text-muted w-24">{label}</Text>
       <View className="flex-1 flex-row flex-wrap gap-xs">
         {items.map((item) => (
           <View key={item} className="bg-bg-page px-sm py-xs rounded-md">
-            <Text className="text-caption text-text-primary">{item}</Text>
+            <Text className="text-caption-md text-text-primary">{item}</Text>
           </View>
         ))}
       </View>
@@ -173,11 +173,11 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
     <View>
       {fields.map(({ key, label }) => (
         <View key={key} className="mb-md">
-          <Text className="text-bodyStrong text-text-primary mb-xs">{label}</Text>
+          <Text className="text-body-md font-medium text-text-primary mb-xs">{label}</Text>
           <View className="flex-row flex-wrap gap-xs">
             {draft[key].map((item, index) => (
               <View key={`${item}-${index}`} className="flex-row items-center bg-bg-page px-sm py-xs rounded-md">
-                <Text className="text-caption text-text-primary mr-xs">{item}</Text>
+                <Text className="text-caption-md text-text-primary mr-xs">{item}</Text>
                 <Pressable
                   onPress={() => removeItem(key, index)}
                   className="min-w-[24px] min-h-[24px] items-center justify-center"
@@ -196,7 +196,7 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
                   onSubmitEditing={() => addItem(key)}
                   autoFocus
                   placeholder={`Add ${label.toLowerCase()}`}
-                  className="text-caption border border-border rounded-md px-sm py-xs w-32"
+                  className="text-caption-md border border-border rounded-md px-sm py-xs w-32"
                   placeholderTextColor="#6B6B6B"
                 />
                 <Pressable
@@ -216,7 +216,7 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
                 accessibilityLabel={`Add ${label}`}
               >
                 <Plus color="#6B6B6B" size={14} />
-                <Text className="text-caption text-text-muted ml-xs">Add</Text>
+                <Text className="text-caption-md text-text-muted ml-xs">Add</Text>
               </Pressable>
             )}
           </View>
@@ -225,13 +225,13 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
 
       {/* Notes */}
       <View className="mb-md">
-        <Text className="text-bodyStrong text-text-primary mb-xs">Notes</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-xs">Notes</Text>
         <TextInput
           value={draft.notes}
           onChangeText={(text) => onChange({ ...draft, notes: text })}
           multiline
           numberOfLines={3}
-          className="text-body text-text-primary border border-border rounded-md px-md py-sm min-h-[66px]"
+          className="text-body-md text-text-primary border border-border rounded-md px-md py-sm min-h-[66px]"
           placeholder="Preference notes..."
           placeholderTextColor="#6B6B6B"
           textAlignVertical="top"
@@ -246,7 +246,7 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
           accessibilityRole="button"
           accessibilityLabel="Cancel editing preferences"
         >
-          <Text className="text-bodyStrong text-text-primary">Cancel</Text>
+          <Text className="text-body-md font-medium text-text-primary">Cancel</Text>
         </Pressable>
         <Pressable
           onPress={onSave}
@@ -255,7 +255,7 @@ function PreferencesEditForm({ draft, onChange, onSave, onCancel, saving }: Pref
           accessibilityRole="button"
           accessibilityLabel="Save preferences"
         >
-          <Text className="text-bodyStrong text-text-inverse">
+          <Text className="text-body-md font-medium text-text-inverse">
             {saving ? 'Saving...' : 'Save Preferences'}
           </Text>
         </Pressable>

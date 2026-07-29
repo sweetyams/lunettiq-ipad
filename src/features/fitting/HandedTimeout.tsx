@@ -10,7 +10,7 @@ export function HandedTimeout({ onReclaim }: HandedTimeoutProps) {
     <View className="flex-1 bg-bg-page items-center justify-center px-xl">
       {/* Lunettiq Logo Placeholder */}
       <View className="w-32 h-16 bg-brand rounded-lg items-center justify-center mb-xl">
-        <Text className="text-text-inverse text-headline font-bold">LUNETTIQ</Text>
+        <Text className="text-text-inverse text-heading-xl font-bold">LUNETTIQ</Text>
       </View>
       
       {/* Main Message */}
@@ -21,7 +21,7 @@ export function HandedTimeout({ onReclaim }: HandedTimeoutProps) {
           Pass back to staff
         </Text>
         
-        <Text className="text-body text-text-muted text-center leading-relaxed">
+        <Text className="text-body-md text-text-muted text-center leading-relaxed">
           The iPad has been in client mode for 10 minutes. Please return it to a staff member to continue.
         </Text>
       </View>
@@ -34,13 +34,13 @@ export function HandedTimeout({ onReclaim }: HandedTimeoutProps) {
         accessibilityLabel="Staff authentication required"
         accessibilityHint="Double-tap to authenticate as staff member"
       >
-        <Text className="text-text-inverse text-bodyStrong">
+        <Text className="text-text-inverse text-body-md font-medium">
           Staff Authentication
         </Text>
       </Pressable>
       
       {/* Helper Text */}
-      <Text className="text-caption text-text-muted text-center mt-lg max-w-sm">
+      <Text className="text-caption-md text-text-muted text-center mt-lg max-w-sm">
         Staff members can also double-tap the top edge of the screen to authenticate.
       </Text>
     </View>

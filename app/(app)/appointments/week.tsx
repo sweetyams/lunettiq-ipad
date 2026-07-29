@@ -223,7 +223,7 @@ export default function WeekViewScreen() {
                   {dayName}
                 </Text>
                 <Text
-                  className={`text-headline mt-xs ${
+                  className={`text-heading-xl mt-xs ${
                     isSelected ? 'text-brand-text' : 'text-text-primary'
                   }`}
                 >

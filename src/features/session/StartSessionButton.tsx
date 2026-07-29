@@ -38,7 +38,7 @@ export function StartSessionButton({ clientId, clientName }: StartSessionButtonP
         rounded-md min-h-[44px] px-lg py-sm items-center justify-center
       `}
     >
-      <Text className="text-text-inverse text-bodyStrong">
+      <Text className="text-text-inverse text-body-md font-medium">
         {getButtonText()}
       </Text>
     </Pressable>

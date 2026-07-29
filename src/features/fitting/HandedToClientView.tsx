@@ -55,18 +55,18 @@ export function HandedToClientView() {
         accessibilityLabel="Double-tap to exit client mode"
         accessibilityHint="Quickly tap twice to authenticate and exit client view"
       >
-        <Text className="text-white text-caption-sm font-bold tracking-wider">
+        <Text className="text-text-inverse text-caption-sm font-bold tracking-wider">
           DOUBLE-TAP TO EXIT
         </Text>
       </Pressable>
 
       {/* Header */}
-      <View className="px-xl pt-lg pb-md bg-bg-elevated border-b border-border">
+      <View className="px-xl pt-lg pb-md bg-bg-surface border-b border-border">
         <Text className="text-displayMd text-text-primary font-bold mb-xs">
           Your Fitting Session
         </Text>
         {activeClientName && (
-          <Text className="text-body text-text-muted">
+          <Text className="text-body-md text-text-muted">
             Hi {activeClientName}, review your photos and let us know what you think!
           </Text>
         )}
@@ -77,10 +77,10 @@ export function HandedToClientView() {
         {clientVisiblePhotos.length === 0 ? (
           /* Empty State */
           <View className="flex-1 items-center justify-center py-2xl">
-            <Text className="text-headline text-text-muted text-center mb-md">
+            <Text className="text-heading-xl text-text-muted text-center mb-md">
               No photos yet
             </Text>
-            <Text className="text-body text-text-muted text-center max-w-sm">
+            <Text className="text-body-md text-text-muted text-center max-w-sm">
               Photos from your fitting session will appear here for you to review.
             </Text>
           </View>
@@ -92,7 +92,7 @@ export function HandedToClientView() {
                 key={photo.id}
                 onPress={() => handlePhotoTap(photo)}
                 className={`
-                  w-[48%] aspect-square rounded-lg mb-lg bg-bg-elevated border border-border overflow-hidden
+                  w-[48%] aspect-square rounded-lg mb-lg bg-bg-surface border border-border overflow-hidden
                   ${selectedPhoto?.id === photo.id ? 'border-accent border-2' : ''}
                 `}
                 accessibilityRole="button"
@@ -101,13 +101,13 @@ export function HandedToClientView() {
               >
                 {/* Mock photo - replace with actual Image component */}
                 <View className="flex-1 bg-border items-center justify-center">
-                  <Text className="text-text-muted text-caption">Photo {index + 1}</Text>
+                  <Text className="text-text-mutedtext-caption-md">Photo {index + 1}</Text>
                 </View>
                 
                 {/* Product name if available */}
                 {photo.productName && (
                   <View className="absolute bottom-0 left-0 right-0 bg-black/50 p-sm">
-                    <Text className="text-text-inverse text-captionStrong" numberOfLines={1}>
+                    <Text className="text-text-inverse text-caption-md font-medium" numberOfLines={1}>
                       {photo.productName}
                     </Text>
                   </View>
@@ -116,7 +116,7 @@ export function HandedToClientView() {
                 {/* Verdict indicator */}
                 {photo.verdict && (
                   <View className="absolute top-sm right-sm">
-                    <View className="bg-bg-elevated rounded-full p-xs border border-border">
+                    <View className="bg-bg-surface rounded-full p-xs border border-border">
                       <Text className="text-xs">
                         {photo.verdict === 'loved' ? '❤️' : 
                          photo.verdict === 'liked' ? '👍' :
@@ -132,9 +132,9 @@ export function HandedToClientView() {
 
         {/* Selected Photo Details */}
         {selectedPhoto && (
-          <View className="bg-bg-elevated rounded-lg border border-border p-lg mb-xl">
+          <View className="bg-bg-surface rounded-lg border border-border p-lg mb-xl">
             <View className="flex-row items-center justify-between mb-lg">
-              <Text className="text-headline text-text-primary font-bold flex-1">
+              <Text className="text-heading-xl text-text-primary font-bold flex-1">
                 {selectedPhoto.productName || 'Frame Details'}
               </Text>
               <Pressable
@@ -143,13 +143,13 @@ export function HandedToClientView() {
                 accessibilityRole="button"
                 accessibilityLabel="View larger photo"
               >
-                <Text className="text-bodyStrong text-text-primary">View Large</Text>
+                <Text className="text-body-md font-medium text-text-primary">View Large</Text>
               </Pressable>
             </View>
 
             {/* Verdict Control - Client Voice Mode */}
             <View className="mb-lg">
-              <Text className="text-bodyStrong text-text-primary mb-sm">How do you feel about this one?</Text>
+              <Text className="text-body-md font-medium text-text-primary mb-sm">How do you feel about this one?</Text>
               <VerdictControl
                 value={selectedPhoto.verdict}
                 onChange={(verdict) => handleVerdictChange(selectedPhoto.id, verdict)}
@@ -171,7 +171,7 @@ export function HandedToClientView() {
                 >
                   <View className="flex-row items-center justify-center gap-xs">
                     <Star size={16} color="white" />
-                    <Text className="text-text-inverse text-bodyStrong">This One!</Text>
+                    <Text className="text-text-inverse text-body-md font-medium">This One!</Text>
                   </View>
                 </Button>
               </View>
@@ -181,8 +181,8 @@ export function HandedToClientView() {
 
         {/* Instructions */}
         <View className="bg-accent/10 rounded-lg p-lg mb-2xl">
-          <Text className="text-bodyStrong text-accent mb-sm">How to use:</Text>
-          <Text className="text-body text-text-primary leading-relaxed">
+          <Text className="text-body-md font-medium text-accent mb-sm">How to use:</Text>
+          <Text className="text-body-md text-text-primary leading-relaxed">
             • Tap any photo to select and rate it{'\n'}
             • Use the rating buttons to share your thoughts{'\n'}
             • Tap "This One!" to add favorites to your shortlist{'\n'}
@@ -199,7 +199,7 @@ export function HandedToClientView() {
         onRequestClose={() => setEnlargedPhoto(null)}
       >
         <View className="flex-1 bg-black/80 items-center justify-center p-xl">
-          <View className="relative bg-bg-elevated rounded-lg overflow-hidden" style={{ maxWidth: screenWidth * 0.8, maxHeight: screenHeight * 0.8 }}>
+          <View className="relative bg-bg-surface rounded-lg overflow-hidden" style={{ maxWidth: screenWidth * 0.8, maxHeight: screenHeight * 0.8 }}>
             {/* Close button */}
             <Pressable
               onPress={() => setEnlargedPhoto(null)}
@@ -213,13 +213,13 @@ export function HandedToClientView() {
 
             {/* Large photo placeholder */}
             <View className="w-full aspect-square bg-border items-center justify-center">
-              <Text className="text-text-muted text-body">Large Photo View</Text>
+              <Text className="text-text-mutedtext-body-md">Large Photo View</Text>
             </View>
 
             {/* Photo info */}
             {enlargedPhoto?.productName && (
               <View className="p-lg">
-                <Text className="text-headline text-text-primary font-bold">
+                <Text className="text-heading-xl text-text-primary font-bold">
                   {enlargedPhoto.productName}
                 </Text>
               </View>

@@ -67,8 +67,8 @@ export function InteractionsTimeline({ clientId }: InteractionsTimelineProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <MessageCircle color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Timeline</Text>
-        <Text className="text-caption text-text-muted ml-sm">
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Timeline</Text>
+        <Text className="text-caption-md text-text-muted ml-sm">
           {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'}
         </Text>
         {privacyMode === 'staff' && (
@@ -79,7 +79,7 @@ export function InteractionsTimeline({ clientId }: InteractionsTimelineProps) {
             accessibilityLabel="Add interaction"
           >
             <Plus color="#005D23" size={18} />
-            <Text className="text-bodyStrong text-accent ml-xs">Add</Text>
+            <Text className="text-body-md font-medium text-accent ml-xs">Add</Text>
           </Pressable>
         )}
       </View>
@@ -111,7 +111,7 @@ export function InteractionsTimeline({ clientId }: InteractionsTimelineProps) {
               >
                 <View className="flex-row items-center">
                   <ChevronDown color="#005D23" size={16} />
-                  <Text className="text-bodyStrong text-accent ml-xs">
+                  <Text className="text-body-md font-medium text-accent ml-xs">
                     Show all {filtered.length} entries
                   </Text>
                 </View>
@@ -120,7 +120,7 @@ export function InteractionsTimeline({ clientId }: InteractionsTimelineProps) {
           </>
         ) : (
           <View className="p-lg">
-            <Text className="text-body text-text-muted italic text-center">
+            <Text className="text-body-md text-text-muted italic text-center">
               No interactions yet
             </Text>
           </View>
@@ -168,20 +168,20 @@ function InteractionRow({
       </View>
       <View className="flex-1">
         <View className="flex-row items-center mb-xs">
-          <Text className="text-captionStrong text-text-primary">
+          <Text className="text-caption-md font-medium text-text-primary">
             {INTERACTION_TYPE_LABELS[interaction.type] ?? interaction.type}
           </Text>
           {interaction.direction !== 'internal' && (
             <View className="ml-sm bg-bg-page px-sm py-xs rounded-md">
-              <Text className="text-caption text-text-muted">{interaction.direction}</Text>
+              <Text className="text-caption-md text-text-muted">{interaction.direction}</Text>
             </View>
           )}
-          <Text className="text-caption text-text-muted ml-auto">
+          <Text className="text-caption-md text-text-muted ml-auto">
             {formatRelativeDate(interaction.occurredAt)}
           </Text>
         </View>
         {interaction.subject && (
-          <Text className="text-bodyStrong text-text-primary mb-xs">{interaction.subject}</Text>
+          <Text className="text-body-md font-medium text-text-primary mb-xs">{interaction.subject}</Text>
         )}
         {editing ? (
           <View>
@@ -189,7 +189,7 @@ function InteractionRow({
               value={editBody}
               onChangeText={setEditBody}
               multiline
-              className="text-body text-text-primary border border-border rounded-md px-md py-sm min-h-[44px] mb-sm"
+              className="text-body-md text-text-primary border border-border rounded-md px-md py-sm min-h-[44px] mb-sm"
               textAlignVertical="top"
             />
             <View className="flex-row gap-sm">
@@ -199,7 +199,7 @@ function InteractionRow({
                 accessibilityRole="button"
                 accessibilityLabel="Save edit"
               >
-                <Text className="text-caption text-text-inverse font-medium">Save</Text>
+                <Text className="text-caption-md text-text-inverse font-medium">Save</Text>
               </Pressable>
               <Pressable
                 onPress={() => { setEditing(false); setEditBody(interaction.body ?? ''); }}
@@ -207,7 +207,7 @@ function InteractionRow({
                 accessibilityRole="button"
                 accessibilityLabel="Cancel edit"
               >
-                <Text className="text-caption text-text-muted">Cancel</Text>
+                <Text className="text-caption-md text-text-muted">Cancel</Text>
               </Pressable>
             </View>
           </View>
@@ -217,7 +217,7 @@ function InteractionRow({
             accessibilityRole={privacyMode === 'staff' ? 'button' : 'text'}
             accessibilityLabel={privacyMode === 'staff' ? 'Tap to edit' : undefined}
           >
-            <Text className="text-body text-text-primary">
+            <Text className="text-body-md text-text-primary">
               {interaction.body || interaction.subject || 'No details'}
             </Text>
           </Pressable>
@@ -270,7 +270,7 @@ function CreateInteractionForm({
 
   return (
     <Card className="mb-md">
-      <Text className="text-bodyStrong text-text-primary mb-md">Log Interaction</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-md">Log Interaction</Text>
 
       {/* Type selector */}
       <View className="flex-row flex-wrap gap-xs mb-md">
@@ -297,7 +297,7 @@ function CreateInteractionForm({
         value={subject}
         onChangeText={setSubject}
         placeholder="Subject (optional)"
-        className="text-body text-text-primary border border-border rounded-md px-md py-sm mb-sm"
+        className="text-body-md text-text-primary border border-border rounded-md px-md py-sm mb-sm"
         placeholderTextColor="#6B6B6B"
       />
 
@@ -308,7 +308,7 @@ function CreateInteractionForm({
         placeholder="What happened?"
         multiline
         numberOfLines={3}
-        className="text-body text-text-primary border border-border rounded-md px-md py-sm mb-md min-h-[66px]"
+        className="text-body-md text-text-primary border border-border rounded-md px-md py-sm mb-md min-h-[66px]"
         placeholderTextColor="#6B6B6B"
         textAlignVertical="top"
       />
@@ -321,7 +321,7 @@ function CreateInteractionForm({
           accessibilityRole="button"
           accessibilityLabel="Cancel"
         >
-          <Text className="text-bodyStrong text-text-primary">Cancel</Text>
+          <Text className="text-body-md font-medium text-text-primary">Cancel</Text>
         </Pressable>
         <Pressable
           onPress={handleSubmit}
@@ -332,7 +332,7 @@ function CreateInteractionForm({
           accessibilityRole="button"
           accessibilityLabel="Log interaction"
         >
-          <Text className="text-bodyStrong text-text-inverse">
+          <Text className="text-body-md font-medium text-text-inverse">
             {createInteraction.isPending ? 'Logging...' : 'Log'}
           </Text>
         </Pressable>

@@ -46,14 +46,14 @@ function CaptureView({ isVisible, onCapture, onClose }: CaptureViewProps) {
   if (!permission?.granted) {
     return (
       <View className="flex-1 bg-bg-inverse justify-center items-center">
-        <Text className="text-text-inverse text-body mb-lg">Camera access needed for Second Sight</Text>
+        <Text className="text-text-inverse text-body-md mb-lg">Camera access needed for Second Sight</Text>
         <Pressable 
           onPress={requestPermission}
           accessibilityRole="button"
           accessibilityLabel="Allow camera access for Second Sight"
           className="bg-accent rounded-md px-lg py-sm"
         >
-          <Text className="text-text-inverse text-bodyStrong">Allow Camera</Text>
+          <Text className="text-text-inverse text-body-md font-medium">Allow Camera</Text>
         </Pressable>
       </View>
     );
@@ -98,7 +98,7 @@ function CaptureView({ isVisible, onCapture, onClose }: CaptureViewProps) {
           onPress={takePicture}
           accessibilityRole="button"
           accessibilityLabel="Take picture"
-          className="w-18 h-18 bg-bg-elevated rounded-full border-4 border-border justify-center items-center"
+          className="w-18 h-18 bg-bg-surface rounded-full border-4 border-border justify-center items-center"
         >
           <CameraIcon size={32} color="#0A153D" />
         </Pressable>
@@ -272,16 +272,16 @@ export function SecondSightFlow({
       </Text>
       
       <View className="mb-lg">
-        <Text className="text-bodyStrong text-text-primary mb-sm">Brand & Model</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-sm">Brand & Model</Text>
         <View className="flex-row gap-sm">
           <TextInput
-            className="flex-1 bg-bg-elevated border border-border rounded-md px-md py-sm text-body"
+            className="flex-1 bg-bg-surface border border-border rounded-md px-md py-smtext-body-md"
             placeholder="Brand"
             value={intake.brand || ''}
             onChangeText={setBrand}
           />
           <TextInput
-            className="flex-1 bg-bg-elevated border border-border rounded-md px-md py-sm text-body"
+            className="flex-1 bg-bg-surface border border-border rounded-md px-md py-smtext-body-md"
             placeholder="Model"
             value={intake.model || ''}
             onChangeText={setModel}
@@ -290,7 +290,7 @@ export function SecondSightFlow({
       </View>
 
       <View className="mb-lg">
-        <Text className="text-bodyStrong text-text-primary mb-sm">Overall Condition</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-sm">Overall Condition</Text>
         {CONDITION_OPTIONS.map((option) => (
           <Pressable
             key={option.value}
@@ -301,21 +301,21 @@ export function SecondSightFlow({
             className={`border rounded-md p-md mb-sm ${
               intake.condition === option.value 
                 ? 'border-accent bg-accent/5' 
-                : 'border-border bg-bg-elevated'
+                : 'border-border bg-bg-surface'
             }`}
           >
-            <Text className="text-bodyStrong text-text-primary">{option.label}</Text>
-            <Text className="text-body text-text-muted">{option.description}</Text>
+            <Text className="text-body-md font-medium text-text-primary">{option.label}</Text>
+            <Text className="text-body-md text-text-muted">{option.description}</Text>
           </Pressable>
         ))}
       </View>
 
       <View className="mb-lg">
-        <Text className="text-bodyStrong text-text-primary mb-sm">
+        <Text className="text-body-md font-medium text-text-primary mb-sm">
           Can't identify it? Describe what you see
         </Text>
         <TextInput
-          className="bg-bg-elevated border border-border rounded-md px-md py-sm text-body min-h-[100px]"
+          className="bg-bg-surface border border-border rounded-md px-md py-sm text-body-md min-h-[100px]"
           placeholder="Frame description..."
           value={intake.frameDescription || ''}
           onChangeText={setFrameDescription}
@@ -331,7 +331,7 @@ export function SecondSightFlow({
       <Text className="text-displayMd text-text-primary font-bold mb-md">
         Capture Photos
       </Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Take 4 photos to document the frame condition
       </Text>
 
@@ -344,7 +344,7 @@ export function SecondSightFlow({
               onPress={() => openCamera(slot.id)}
               accessibilityRole="button"
               accessibilityLabel={photoUri ? `Retake ${slot.label} photo` : `Take ${slot.label} photo`}
-              className="bg-bg-elevated border border-border rounded-lg p-md aspect-square justify-center items-center"
+              className="bg-bg-surface border border-border rounded-lg p-md aspect-square justify-center items-center"
             >
               {photoUri ? (
                 <Image 
@@ -356,7 +356,7 @@ export function SecondSightFlow({
               ) : (
                 <View className="items-center">
                   <CameraIcon size={32} color="#6B6B6B" />
-                  <Text className="text-captionStrong text-text-muted mt-sm text-center">
+                  <Text className="text-caption-md font-medium text-text-muted mt-sm text-center">
                     {slot.label}
                   </Text>
                 </View>
@@ -373,7 +373,7 @@ export function SecondSightFlow({
       <Text className="text-displayMd text-text-primary font-bold mb-md">
         Grade the Frame
       </Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Select the grade that best describes the frame condition
       </Text>
 
@@ -388,18 +388,18 @@ export function SecondSightFlow({
             className={`border rounded-lg p-lg ${
               intake.grade === grade 
                 ? 'border-accent bg-accent/5' 
-                : 'border-border bg-bg-elevated'
+                : 'border-border bg-bg-surface'
             }`}
           >
             <View className="flex-row justify-between items-start mb-sm">
               <View>
-                <Text className="text-headline text-text-primary font-semibold">
+                <Text className="text-heading-xl text-text-primary font-semibold">
                   Grade {grade} - {info.title}
                 </Text>
-                <Text className="text-body text-text-muted">{info.description}</Text>
+                <Text className="text-body-md text-text-muted">{info.description}</Text>
               </View>
               <View className="bg-brand rounded-md px-md py-sm">
-                <Text className="text-text-inverse text-bodyStrong">
+                <Text className="text-text-inverse text-body-md font-medium">
                   ${GRADE_CREDIT_MAP[grade] / 100}
                 </Text>
               </View>
@@ -421,31 +421,31 @@ export function SecondSightFlow({
           Credit Calculation
         </Text>
 
-        <View className="bg-bg-elevated border border-border rounded-lg p-lg mb-lg">
+        <View className="bg-bg-surface border border-border rounded-lg p-lg mb-lg">
           <View className="flex-row justify-between items-center mb-md">
-            <Text className="text-body text-text-primary">Base Credit (Grade {intake.grade})</Text>
-            <Text className="text-bodyStrong text-text-primary">${baseCredit / 100}</Text>
+            <Text className="text-body-md text-text-primary">Base Credit (Grade {intake.grade})</Text>
+            <Text className="text-body-md font-medium text-text-primary">${baseCredit / 100}</Text>
           </View>
           
           <View className="flex-row justify-between items-center mb-md">
             <View className="flex-row items-center">
-              <Text className="text-body text-text-primary">Tier Multiplier</Text>
+              <Text className="text-body-md text-text-primary">Tier Multiplier</Text>
               <View className="bg-brand rounded px-sm py-1 ml-sm">
-                <Text className="text-text-inverse text-captionStrong uppercase">{clientTier}</Text>
+                <Text className="text-text-inverse text-caption-md font-medium uppercase">{clientTier}</Text>
               </View>
             </View>
-            <Text className="text-bodyStrong text-text-primary">×{tierMultiplier}</Text>
+            <Text className="text-body-md font-medium text-text-primary">×{tierMultiplier}</Text>
           </View>
           
           <View className="border-t border-border pt-md">
             <View className="flex-row justify-between items-center">
-              <Text className="text-headline text-text-primary font-semibold">Final Credit</Text>
-              <Text className="text-headline text-accent font-bold">${finalCredit / 100}</Text>
+              <Text className="text-heading-xl text-text-primary font-semibold">Final Credit</Text>
+              <Text className="text-heading-xl text-accent font-bold">${finalCredit / 100}</Text>
             </View>
           </View>
         </View>
 
-        <Text className="text-body text-text-muted text-center">
+        <Text className="text-body-md text-text-muted text-center">
           Credit will be added to {clientName}'s account
         </Text>
       </ScrollView>
@@ -458,11 +458,11 @@ export function SecondSightFlow({
         Client Decision
       </Text>
       
-      <View className="bg-bg-elevated border border-border rounded-lg p-lg mb-xl text-center">
-        <Text className="text-headline text-text-primary font-semibold mb-sm text-center">
+      <View className="bg-bg-surface border border-border rounded-lg p-lg mb-xl text-center">
+        <Text className="text-heading-xl text-text-primary font-semibold mb-sm text-center">
           ${intake.creditAmount ? intake.creditAmount / 100 : 0} Store Credit
         </Text>
-        <Text className="text-body text-text-muted text-center">
+        <Text className="text-body-md text-text-muted text-center">
           Does {clientName} accept this trade-in offer?
         </Text>
       </View>
@@ -475,7 +475,7 @@ export function SecondSightFlow({
           accessibilityLabel={`Client accepts ${intake.creditAmount ? intake.creditAmount / 100 : 0} dollar store credit`}
           className="bg-accent rounded-md py-lg px-xl"
         >
-          <Text className="text-text-inverse text-bodyStrong text-center">
+          <Text className="text-text-inverse text-body-md font-medium text-center">
             {isProcessing ? 'Processing...' : 'Client Accepts'}
           </Text>
         </Pressable>
@@ -486,7 +486,7 @@ export function SecondSightFlow({
           accessibilityLabel="Client declines trade-in offer"
           className="border border-border rounded-md py-lg px-xl"
         >
-          <Text className="text-text-primary text-bodyStrong text-center">Client Declines</Text>
+          <Text className="text-text-primary text-body-md font-medium text-center">Client Declines</Text>
         </Pressable>
       </View>
     </View>
@@ -502,17 +502,17 @@ export function SecondSightFlow({
         
         {!creditDeclined && (
           <>
-            <Text className="text-headline text-accent font-semibold mt-sm">
+            <Text className="text-heading-xl text-accent font-semibold mt-sm">
               ${intake.creditAmount ? intake.creditAmount / 100 : 0}
             </Text>
-            <Text className="text-body text-text-muted text-center mt-sm">
+            <Text className="text-body-md text-text-muted text-center mt-sm">
               Added to {clientName}'s account
             </Text>
           </>
         )}
         
         {creditDeclined && (
-          <Text className="text-body text-text-muted text-center mt-sm">
+          <Text className="text-body-md text-text-muted text-center mt-sm">
             No credit was issued for this trade-in
           </Text>
         )}
@@ -524,7 +524,7 @@ export function SecondSightFlow({
         accessibilityLabel="Complete Second Sight process"
         className="bg-brand rounded-md py-lg px-xl"
       >
-        <Text className="text-text-inverse text-bodyStrong">Done</Text>
+        <Text className="text-text-inverse text-body-md font-medium">Done</Text>
       </Pressable>
     </View>
   );
@@ -544,7 +544,7 @@ export function SecondSightFlow({
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="bg-bg-elevated border-b border-border px-lg py-md">
+      <View className="bg-bg-surface border-b border-border px-lg py-md">
         <View className="flex-row items-center justify-between">
           <Pressable 
             onPress={currentStep === 1 ? handleCancel : prevStep}
@@ -558,7 +558,7 @@ export function SecondSightFlow({
             )}
           </Pressable>
           
-          <Text className="text-headline text-text-primary font-semibold">
+          <Text className="text-heading-xl text-text-primary font-semibold">
             Second Sight - {clientName}
           </Text>
           
@@ -573,7 +573,7 @@ export function SecondSightFlow({
 
       {/* Bottom Action Bar */}
       {currentStep < 6 && currentStep !== 5 && (
-        <View className="bg-bg-elevated border-t border-border p-lg">
+        <View className="bg-bg-surface border-t border-border p-lg">
           <Pressable
             onPress={handleNext}
             disabled={!canProceedFromStep(currentStep) || isProcessing}
@@ -585,7 +585,7 @@ export function SecondSightFlow({
                 : 'bg-border'
             }`}
           >
-            <Text className={`text-center text-bodyStrong ${
+            <Text className={`text-center text-body-md font-medium ${
               canProceedFromStep(currentStep) && !isProcessing 
                 ? 'text-text-inverse' 
                 : 'text-text-muted'

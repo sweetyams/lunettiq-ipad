@@ -137,8 +137,8 @@ export default function HomeScreen() {
     return (
       <View className="flex-1 bg-bg-page">
         <View className="px-xl pt-2xl pb-lg border-b border-border">
-          <Text className="text-displayLg text-text-primary">Today</Text>
-          <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+          <Text className="text-display-lg text-text-primary">Today</Text>
+          <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
         </View>
         <View className="flex-1 flex-row">
           <View className="flex-[3] p-xl">
@@ -168,8 +168,8 @@ export default function HomeScreen() {
       return (
         <View className="flex-1 bg-bg-page">
           <View className="px-xl pt-2xl pb-lg border-b border-border">
-            <Text className="text-displayLg text-text-primary">Today</Text>
-            <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+            <Text className="text-display-lg text-text-primary">Today</Text>
+            <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
           </View>
           <View className="flex-1 items-center justify-center p-xl">
             <ErrorState error="Failed to load appointments" onRetry={refetch} />
@@ -184,8 +184,8 @@ export default function HomeScreen() {
     <View className="flex-1 bg-bg-page">
       {/* Header */}
       <View className="px-xl pt-2xl pb-lg border-b border-border">
-        <Text className="text-displayLg text-text-primary">Today</Text>
-        <Text className="text-body text-text-muted mt-xs">{formatDate()}</Text>
+        <Text className="text-display-lg text-text-primary">Today</Text>
+        <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
       </View>
 
       <View className="flex-1 flex-row">
@@ -194,10 +194,10 @@ export default function HomeScreen() {
           {sortedAppointments.length === 0 ? (
             <View className="flex-1 items-center justify-center p-xl">
               <Calendar color="#A3A3A3" size={40} />
-              <Text className="text-headline text-text-primary mt-lg">
+              <Text className="text-heading-xl text-text-primary mt-lg">
                 No appointments today
               </Text>
-              <Text className="text-body text-text-muted mt-sm text-center">
+              <Text className="text-body-md text-text-muted mt-sm text-center">
                 Walk-in clients can be started from the Clients tab
               </Text>
             </View>

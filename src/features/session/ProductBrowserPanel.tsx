@@ -222,7 +222,7 @@ export function ProductBrowserPanel({
           Browsing for {clientName}
         </Text>
         {productsResponse?.meta && (
-          <Text className="text-caption text-text-muted mt-xs">
+          <Text className="text-caption-md text-text-muted mt-xs">
             {productsResponse.meta.total} products
             {staleLabel && ` · ${staleLabel}`}
           </Text>
@@ -241,13 +241,13 @@ export function ProductBrowserPanel({
         <Pressable
           onPress={() => setShowFilterSheet(true)}
           className={`min-h-[44px] px-md rounded-md flex-row items-center gap-xs border ${
-            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-elevated'
+            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-surface'
           }`}
           accessibilityRole="button"
           accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
         >
           <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#FFFFFF' : '#2B2B2B'} />
-          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-white' : 'text-text-primary'}`}>
+          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-text-inverse' : 'text-text-primary'}`}>
             {activeFilterCount > 0 ? `${activeFilterCount}` : 'Filter'}
           </Text>
         </Pressable>

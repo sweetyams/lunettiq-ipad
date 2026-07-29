@@ -25,7 +25,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress, onToggleSelect }: S
       <Pressable
         onPress={onPress}
         onLongPress={onToggleSelect}
-        className={`w-20 h-20 rounded-md overflow-hidden ${selectedBorderClass} ${verdictBorderClass} bg-bg-elevated`}
+        className={`w-20 h-20 rounded-md overflow-hidden ${selectedBorderClass} ${verdictBorderClass} bg-bg-surface`}
         accessibilityRole="button"
         accessibilityLabel={`Photo ${photo.productName ? `of ${photo.productName}` : 'without product'}${photo.verdict ? `, verdict ${photo.verdict}` : ''}`}
       >
@@ -38,7 +38,7 @@ export function ShelfThumbnail({ photo, isSelected, onPress, onToggleSelect }: S
         {/* Upload status indicator */}
         {photo.uploadStatus === 'uploading' && (
           <View className="absolute inset-0 bg-black/30 items-center justify-center">
-            <View className="w-6 h-6 bg-bg-elevated/80 rounded-full" />
+            <View className="w-6 h-6 bg-bg-surface/80 rounded-full" />
           </View>
         )}
         
@@ -51,14 +51,14 @@ export function ShelfThumbnail({ photo, isSelected, onPress, onToggleSelect }: S
         
         {/* Verdict indicator */}
         {photo.verdict && (
-          <View className="absolute bottom-1 left-1 w-3 h-3 bg-bg-elevated rounded-full border border-border" />
+          <View className="absolute bottom-1 left-1 w-3 h-3 bg-bg-surface rounded-full border border-border" />
         )}
       </Pressable>
       
       {/* Product name */}
       {photo.productName && (
         <Text 
-          className="text-caption text-text-primary mt-xs text-center" 
+          className="text-caption-md text-text-primary mt-xs text-center" 
           numberOfLines={1}
         >
           {photo.productName}

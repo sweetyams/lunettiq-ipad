@@ -42,7 +42,7 @@ export function InlineEditField({
   if (editing) {
     return (
       <View className="flex-row items-center py-sm">
-        <Text className="text-body text-text-muted w-32">{label}</Text>
+        <Text className="text-body-md text-text-muted w-32">{label}</Text>
         <View className="flex-1 flex-row items-center">
           <TextInput
             value={draft}
@@ -51,7 +51,7 @@ export function InlineEditField({
             keyboardType={keyboardType}
             multiline={multiline}
             autoFocus
-            className="flex-1 text-body text-text-primary border border-border rounded-md px-md py-sm mr-sm"
+            className="flex-1 text-body-md text-text-primary border border-border rounded-md px-md py-sm mr-sm"
             placeholderTextColor="#6B6B6B"
           />
           <Pressable
@@ -82,8 +82,8 @@ export function InlineEditField({
       accessibilityRole={editable ? 'button' : 'text'}
       accessibilityLabel={`${label}: ${value || placeholder}${editable ? '. Tap to edit' : ''}`}
     >
-      <Text className="text-body text-text-muted w-32">{label}</Text>
-      <Text className={`flex-1 text-body ${value ? 'text-text-primary' : 'text-text-muted italic'}`}>
+      <Text className="text-body-md text-text-muted w-32">{label}</Text>
+      <Text className={`flex-1 text-body-md ${value ? 'text-text-primary' : 'text-text-muted italic'}`}>
         {value || placeholder}
       </Text>
       {editable && <Pencil color="#6B6B6B" size={16} />}

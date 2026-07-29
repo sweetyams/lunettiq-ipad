@@ -38,7 +38,7 @@ export function FilterPillRow({ filters, selected, onToggle, disabled = false }:
                 ? 'border-border opacity-40'
                 : isSelected
                   ? 'bg-brand border-brand'
-                  : 'border-border bg-bg-elevated'
+                  : 'border-border bg-bg-surface'
             }`}
           >
             {/* Colour swatch dot */}

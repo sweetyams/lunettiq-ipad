@@ -97,7 +97,7 @@ export function ClientTimeline({ clientId }: ClientTimelineProps) {
         {showAddNote ? (
           <View className="p-lg">
             <TextInput
-              className="border border-border rounded-md p-md text-[17px] bg-bg-elevated mb-md"
+              className="border border-border rounded-md p-md text-[17px] bg-bg-surface mb-md"
               placeholder="Add a note about this client..."
               value={noteText}
               onChangeText={setNoteText}

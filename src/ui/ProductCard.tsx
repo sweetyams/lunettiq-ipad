@@ -35,7 +35,7 @@ export function ProductCard({
       onPress={() => onPress(product.shopifyId ?? product.id)}
       accessibilityRole="button"
       accessibilityLabel={`${title}${product.vendor ? `, ${product.vendor}` : ''}${mode === 'staff' && product.priceMin ? `, $${product.priceMin}` : ''}${isOwned ? ', owned' : ''}`}
-      className={`bg-bg-elevated rounded-lg border border-border overflow-hidden ${isOwned ? 'opacity-70' : ''}`}
+      className={`bg-bg-surface rounded-lg border border-border overflow-hidden ${isOwned ? 'opacity-70' : ''}`}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}
     >
       {/* Image container */}
@@ -49,7 +49,7 @@ export function ProductCard({
           />
         ) : (
           <View className="w-full h-full bg-bg-surface items-center justify-center">
-            <Text className="text-text-muted text-caption">No image</Text>
+            <Text className="text-text-mutedtext-caption-md">No image</Text>
           </View>
         )}
 
@@ -63,18 +63,18 @@ export function ProductCard({
         {/* Owned badge — top-left corner */}
         {isOwned && (
           <View className="absolute top-2 left-2 bg-brand/80 rounded-full px-sm py-xs">
-            <Text className="text-brand-text text-caption font-medium">Owned</Text>
+            <Text className="text-brand-text text-caption-md font-medium">Owned</Text>
           </View>
         )}
       </View>
 
       {/* Meta */}
       <View className="p-sm">
-        <Text className="text-text-primary text-body font-medium" numberOfLines={1}>
+        <Text className="text-text-primary text-body-md font-medium" numberOfLines={1}>
           {title}
         </Text>
         {product.vendor && (
-          <Text className="text-text-muted text-caption mt-xs" numberOfLines={1}>
+          <Text className="text-text-muted text-caption-md mt-xs" numberOfLines={1}>
             {product.vendor}
           </Text>
         )}
@@ -82,12 +82,12 @@ export function ProductCard({
         <View className="flex-row items-center justify-between mt-sm">
           {/* Price — hidden in client mode */}
           {mode === 'staff' && product.priceMin && (
-            <Text className="text-text-primary text-body font-medium">
+            <Text className="text-text-primary text-body-md font-medium">
               ${product.priceMin}
             </Text>
           )}
           {mode === 'client' && (
-            <Text className="text-text-muted text-caption border border-border rounded-full px-sm py-xs">
+            <Text className="text-text-muted text-caption-md border border-border rounded-full px-sm py-xs">
               Tap for price
             </Text>
           )}
@@ -98,7 +98,7 @@ export function ProductCard({
             );
             const colourCount = colourOption?.values?.length ?? (product.variantCount > 1 ? product.variantCount : 0);
             return colourCount > 1 ? (
-              <Text className="text-text-muted text-caption">
+              <Text className="text-text-mutedtext-caption-md">
                 {colourCount} colours
               </Text>
             ) : null;

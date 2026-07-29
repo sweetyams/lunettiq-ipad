@@ -1,258 +1,205 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useClient, useUpdateClient, useClientEnrichment, useUpdateEnrichment, useClientPreferences, useUpdatePreferences, useClientWishlist, useClientSegments } from '@/src/api/useClients';
-import { ProfileSectionCard, ProfileEditModal, EnrichmentPanel, PreferencesPanel, InteractionsTimeline, OrdersPanel, PrescriptionsPanel, WishlistPanel, SegmentsPanel, TryonSessionsPanel, LinksPanel, LoyaltyPanel, QuickStats, RxStatus, InsuranceSummary, LifestyleSummary, MultiPairCTA, InsuranceFormSheet, LifestyleQuestionnaireSheet, MultiPairResultsSheet, PrescriptionSheet } from '@/src/features/client-profile';
-import type { FieldDef } from '@/src/features/client-profile';
-import type { ClientProfile } from '@/src/api/clients.types';
-import { LoadingState, ErrorState, EmptyState, Button } from '@/src/ui';
+import { ChevronLeft } from 'lucide-react-native';
+
+import { useClient } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
-import { ChevronLeft, Calendar, Clock, CreditCard, Settings2, Eye, Heart } from 'lucide-react-native';
+import { Avatar, Button, Chip, Tag, RowKV, LoadingState, ErrorState, EmptyState } from '@/src/ui';
+import { InsuranceFormSheet, LifestyleQuestionnaireSheet, MultiPairResultsSheet, PrescriptionSheet } from '@/src/features/client-profile';
+import { OverviewTab } from '@/src/features/client-profile/tabs/OverviewTab';
+import { ClinicalTab } from '@/src/features/client-profile/tabs/ClinicalTab';
+import { HistoryTab } from '@/src/features/client-profile/tabs/HistoryTab';
+import { RelationshipsTab } from '@/src/features/client-profile/tabs/RelationshipsTab';
 
 type TabType = 'overview' | 'clinical' | 'history' | 'relationships';
+
+const TABS: { key: TabType; label: string }[] = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'clinical', label: 'Clinical' },
+  { key: 'history', label: 'History' },
+  { key: 'relationships', label: 'Relationships' },
+];
 
 export default function ClientProfileScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const privacyMode = usePrivacyStore((s) => s.mode);
-  const { startSession, mode: sessionMode, activeClientId: sessionClientId } = useSessionStore();
-  const isSessionActive = sessionMode !== 'idle';
-  const isThisClientInSession = isSessionActive && sessionClientId === id;
-  
+  const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
+
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showInsuranceSheet, setShowInsuranceSheet] = useState(false);
   const [showLifestyleSheet, setShowLifestyleSheet] = useState(false);
   const [showMultiPairSheet, setShowMultiPairSheet] = useState(false);
   const [showPrescriptionSheet, setShowPrescriptionSheet] = useState(false);
 
-  // Data hooks
+  // Data
   const { data: client, isLoading, error, refetch } = useClient(id);
-  
+
+  // Derived
+  const clientName = useMemo(() => {
+    if (!client) return '';
+    return [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
+  }, [client]);
+
+  const tierTag = useMemo(() => {
+    const tag = (client?.tags ?? []).find((t) => t.startsWith('member-'));
+    return tag?.replace('member-', '').toUpperCase() ?? null;
+  }, [client?.tags]);
+
+  const tierVariant = tierTag === 'CULT' ? 'cult' as const : tierTag === 'VAULT' ? 'vault' as const : 'default' as const;
+
+  // Handlers
   const handleStartSession = useCallback(() => {
-    if (client) {
-      const clientName = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown Client';
-      startSession(client.id, clientName);
-      router.push(`/clients/${client.id}/session`);
-    }
-  }, [client, startSession, router]);
+    if (!client) return;
+    startSession(client.id, clientName);
+    router.push(`/clients/${client.id}/session`);
+  }, [client, clientName, startSession, router]);
 
-  const handleSecondSight = useCallback(() => {
-    router.push(`/more/second-sight?clientId=${id}`);
-  }, [router, id]);
+  const handleOpenSheet = useCallback((sheet: string) => {
+    if (sheet === 'insurance') setShowInsuranceSheet(true);
+    if (sheet === 'lifestyle') setShowLifestyleSheet(true);
+    if (sheet === 'multipair') setShowMultiPairSheet(true);
+    if (sheet === 'prescription') setShowPrescriptionSheet(true);
+  }, []);
 
-  const handleCustomDesign = useCallback(() => {
-    router.push(`/more/custom-design?clientId=${id}`);
-  }, [router, id]);
-
-  const handleRefresh = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+  // Tabs available based on privacy mode
+  const availableTabs = privacyMode === 'client' ? TABS.slice(0, 1) : TABS;
 
   if (isLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} onRetry={refetch} />;
   if (!client) return <EmptyState message="Client not found" />;
 
-  const clientName = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown Client';
-  const availableTabs: TabType[] = privacyMode === 'client' 
-    ? ['overview'] 
-    : ['overview', 'clinical', 'history', 'relationships'];
-
   return (
     <View className="flex-1 bg-bg-page">
       {/* TopBar */}
-      <View className="bg-bg-surface border-b border-border px-lg py-md flex-row items-center justify-between">
-        {/* Back Button */}
+      <View className="flex-row items-center justify-between px-lg py-md border-b border-border">
         <Pressable
           onPress={() => router.back()}
-          className="min-w-[44px] min-h-[44px] items-center justify-center -ml-sm"
+          className="flex-row items-center min-h-[44px] gap-xs"
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
         >
-          <ChevronLeft size={24} color="rgb(64,64,64)" />
+          <ChevronLeft size={20} color="#1D1F21" />
+          <Text className="text-heading-md text-text-primary">{clientName}</Text>
         </Pressable>
-
-        {/* Client Name */}
-        <Text className="text-heading-md text-text-primary flex-1 text-center mx-md">
-          {clientName}
-        </Text>
-
-        {/* Actions — context-aware based on session state */}
-        <View className="flex-row gap-sm">
-          {isSessionActive && isThisClientInSession ? (
-            /* Session active for THIS client — show session nav actions */
-            <>
-              <Pressable
-                onPress={() => router.push(`/clients/${id}/session`)}
-                className="bg-brand rounded-md px-lg py-sm min-h-[44px] justify-center"
-                hitSlop={4}
-              >
-                <Text className="text-brand-text text-body-md font-semibold">
-                  Go to Session
-                </Text>
-              </Pressable>
-            </>
-          ) : isSessionActive ? (
-            /* Session active for a DIFFERENT client — show muted state */
-            <View className="border border-border rounded-md px-md py-sm min-h-[44px] justify-center opacity-50">
-              <Text className="text-text-muted text-body-sm">
-                Session active with another client
-              </Text>
-            </View>
-          ) : (
-            /* No session — show full action set */
-            <>
-              <Pressable
-                onPress={handleStartSession}
-                className="bg-brand rounded-md px-lg py-sm min-h-[44px] justify-center"
-                hitSlop={4}
-              >
-                <Text className="text-brand-text text-body-md font-semibold">
-                  Start Session
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleSecondSight}
-                className="border border-border rounded-md px-md py-sm min-h-[44px] justify-center"
-                hitSlop={4}
-              >
-                <Text className="text-text-primary text-body-md">
-                  Second Sight
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={handleCustomDesign}
-                className="border border-border rounded-md px-md py-sm min-h-[44px] justify-center"
-                hitSlop={4}
-              >
-                <Text className="text-text-primary text-body-md">
-                  Custom Design
-                </Text>
-              </Pressable>
-            </>
-          )}
+        <View className="flex-row gap-md items-center">
+          <Chip label="Staff view ▾" />
+          <Chip label="⋯" />
         </View>
       </View>
 
-      {/* Main Layout */}
+      {/* Split: Rail + Content */}
       <View className="flex-1 flex-row">
-        {/* Fixed Left Rail - 300px */}
-        <View className="w-[300px] bg-bg-surface border-r border-border">
-          <ScrollView className="flex-1 p-lg">
+        {/* Fixed Left Rail — 328px */}
+        <View className="w-[328px] border-r border-border flex-col">
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
             {/* Identity */}
-            <View className="items-center mb-lg">
-              <View className="w-[72px] h-[72px] rounded-full bg-bg-muted items-center justify-center mb-sm">
-                <Text className="text-heading-lg text-text-secondary font-medium">
-                  {[client.firstName?.[0], client.lastName?.[0]].filter(Boolean).join('').toUpperCase() || '?'}
-                </Text>
-              </View>
-              <Text className="text-heading-md text-text-primary text-center font-medium">
+            <View className="p-lg border-b border-border">
+              <Avatar firstName={client.firstName} lastName={client.lastName} size="lg" />
+              <Text className="text-heading-sm font-medium text-text-primary mt-[14px]">
                 {clientName}
               </Text>
-              {client.email && (
-                <Text className="text-body-sm text-text-muted mt-xs text-center">
-                  {client.email}
-                </Text>
-              )}
-              {client.phone && (
-                <Text className="text-body-sm text-text-muted text-center">
-                  {client.phone}
-                </Text>
-              )}
-              
-              {/* Badges */}
-              <View className="flex-row gap-xs mt-sm">
-                {client.status === "active" && (
-                  <View className="bg-success px-sm py-xs rounded-md">
-                    <Text className="text-white text-caption-md font-medium">
-                      Active
-                    </Text>
-                  </View>
-                )}
+              <Text className="text-body-sm text-text-muted">{client.email || 'No email'}</Text>
+              <View className="flex-row gap-[6px] mt-[10px]">
+                {tierTag && <Tag label={tierTag} variant={tierVariant} />}
+                {client.status === 'active' && <Tag label="Active" variant="ok" />}
               </View>
             </View>
 
-            {/* Separator */}
-            <View className="h-px bg-border mb-lg" />
-
             {/* Quick Stats */}
-            <QuickStats client={client} />
-
-            {/* Separator */}
-            <View className="h-px bg-border my-lg" />
+            <View className="px-lg py-md border-b border-border">
+              <Text className="text-caption-md tracking-widest uppercase text-text-muted mb-[10px]">
+                Quick stats
+              </Text>
+              <RowKV label="Orders" value={String(client.orderCount ?? 0)} mono />
+              <RowKV label="Lifetime value" value={formatCurrency(client.totalSpent)} mono />
+              <RowKV label="Average order" value={client.orderCount ? formatCurrency((client.totalSpent ?? 0) / client.orderCount) : '—'} mono />
+              <RowKV label="Member since" value={formatDate(client.createdAt)} mono />
+              <RowKV label="Last visit" value={formatDate(client.updatedAt)} mono isLast />
+            </View>
 
             {/* Loyalty */}
-            <LoyaltyPanel clientId={client.id} />
+            <View className="px-lg py-md border-b border-border">
+              <Text className="text-caption-md tracking-widest uppercase text-text-muted mb-[10px]">
+                Loyalty
+              </Text>
+              <RowKV label="Credits" value="$0.00" mono />
+              <RowKV label="Next tier" value={tierTag === 'CULT' ? 'VAULT' : 'CULT'} isLast />
+            </View>
 
-            {/* Separator */}
-            <View className="h-px bg-border my-lg" />
-
-            {/* Rx Status */}
-            <RxStatus clientId={client.id} />
+            {/* Prescription */}
+            <View className="px-lg py-md border-b border-border">
+              <Text className="text-caption-md tracking-widest uppercase text-text-muted mb-[10px]">
+                Prescription
+              </Text>
+              <Text className="text-body-sm text-text-muted">
+                None on file · <Text className="text-brand font-medium" onPress={() => setActiveTab('clinical')}>add in Clinical</Text>
+              </Text>
+            </View>
           </ScrollView>
+
+          {/* Pinned Actions */}
+          <View className="px-lg py-md border-t border-border gap-sm bg-bg-surface">
+            <Button variant="primary" block onPress={handleStartSession}>
+              Start session
+            </Button>
+            <Button variant="ghost" block onPress={() => router.push(`/more/second-sight?clientId=${id}`)}>
+              Second Sight intake
+            </Button>
+            <Button variant="quiet" block onPress={() => router.push(`/more/custom-design?clientId=${id}`)}>
+              Custom design
+            </Button>
+          </View>
         </View>
 
-        {/* Right Content Area */}
-        <View className="flex-1">
+        {/* Right Content */}
+        <View className="flex-1 flex-col">
           {/* Tab Bar */}
-          <View className="bg-bg-surface border-b border-border">
-            <View className="flex-row px-lg">
-              {availableTabs.map((tab) => (
-                <Pressable
-                  key={tab}
-                  onPress={() => setActiveTab(tab)}
-                  className="py-md mr-xl min-h-[44px] justify-center"
-                  style={{ minWidth: 100 }} // Fixed width to prevent text jumping
-                  hitSlop={8}
+          <View className="flex-row gap-lg px-lg border-b border-border">
+            {availableTabs.map((tab) => (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                className="py-[14px]"
+                hitSlop={8}
+                accessibilityRole="tab"
+                accessibilityLabel={tab.label}
+              >
+                <Text
+                  className={`text-body-md ${
+                    activeTab === tab.key
+                      ? 'text-text-primary font-medium'
+                      : 'text-text-muted'
+                  }`}
                 >
-                  <View className="items-center">
-                    <Text 
-                      className={`text-heading-sm capitalize ${
-                        activeTab === tab 
-                          ? 'text-text-primary font-semibold' 
-                          : 'text-text-muted font-normal'
-                      }`}
-                    >
-                      {tab}
-                    </Text>
-                    {activeTab === tab && (
-                      <View className="absolute -bottom-[13px] left-0 right-0 h-[2px] bg-brand rounded-full" />
-                    )}
-                  </View>
-                </Pressable>
-              ))}
-            </View>
+                  {tab.label}
+                </Text>
+                {activeTab === tab.key && (
+                  <View className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand" />
+                )}
+              </Pressable>
+            ))}
           </View>
 
           {/* Tab Content */}
-          <ScrollView 
-            className="flex-1"
-            refreshControl={
-              <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-            }
-          >
+          <ScrollView className="flex-1" contentContainerClassName="p-lg">
             {activeTab === 'overview' && (
-              <OverviewTab 
-                clientId={client.id} 
+              <OverviewTab
+                clientId={client.id}
                 client={client}
-                onOpenSheet={(sheet: string) => {
-                  if (sheet === 'insurance') setShowInsuranceSheet(true);
-                  if (sheet === 'lifestyle') setShowLifestyleSheet(true);
-                  if (sheet === 'multipair') setShowMultiPairSheet(true);
-                  if (sheet === 'prescription') setShowPrescriptionSheet(true);
-                }}
+                onOpenSheet={handleOpenSheet}
+                onEditSection={() => {}}
               />
             )}
-
             {activeTab === 'clinical' && privacyMode === 'staff' && (
-              <ClinicalTab clientId={client.id} />
+              <ClinicalTab clientId={client.id} onAddPrescription={() => setShowPrescriptionSheet(true)} />
             )}
-
             {activeTab === 'history' && privacyMode === 'staff' && (
               <HistoryTab clientId={client.id} />
             )}
-
             {activeTab === 'relationships' && privacyMode === 'staff' && (
               <RelationshipsTab clientId={client.id} />
             )}
@@ -262,423 +209,29 @@ export default function ClientProfileScreen() {
 
       {/* Sheets */}
       {showInsuranceSheet && (
-        <InsuranceFormSheet
-          visible={showInsuranceSheet}
-          onClose={() => setShowInsuranceSheet(false)}
-          clientId={client.id}
-        />
+        <InsuranceFormSheet visible={showInsuranceSheet} onClose={() => setShowInsuranceSheet(false)} clientId={client.id} />
       )}
-      
       {showLifestyleSheet && (
-        <LifestyleQuestionnaireSheet
-          visible={showLifestyleSheet}
-          onClose={() => setShowLifestyleSheet(false)}
-          clientId={client.id}
-        />
+        <LifestyleQuestionnaireSheet visible={showLifestyleSheet} onClose={() => setShowLifestyleSheet(false)} clientId={client.id} />
       )}
-      
       {showMultiPairSheet && (
-        <MultiPairResultsSheet
-          visible={showMultiPairSheet}
-          onClose={() => setShowMultiPairSheet(false)}
-          clientId={client.id}
-        />
+        <MultiPairResultsSheet visible={showMultiPairSheet} onClose={() => setShowMultiPairSheet(false)} clientId={client.id} />
       )}
-      
       {showPrescriptionSheet && (
-        <PrescriptionSheet
-          visible={showPrescriptionSheet}
-          onClose={() => setShowPrescriptionSheet(false)}
-          clientId={client.id}
-        />
+        <PrescriptionSheet visible={showPrescriptionSheet} onClose={() => setShowPrescriptionSheet(false)} clientId={client.id} />
       )}
     </View>
   );
 }
 
-// Tab Components
+// --- Utilities ---
 
-function OverviewTab({ clientId, client, onOpenSheet }: { 
-  clientId: string; 
-  client: ClientProfile;
-  onOpenSheet: (sheet: string) => void;
-}) {
-  const { data: enrichment } = useClientEnrichment(clientId);
-  const { data: preferences } = useClientPreferences(clientId);
-  const { data: wishlist } = useClientWishlist(clientId);
-  const { data: segments } = useClientSegments(clientId);
-  const updateClient = useUpdateClient();
-  const updateEnrichment = useUpdateEnrichment();
-  const updatePreferences = useUpdatePreferences();
-  const privacyMode = usePrivacyStore((s) => s.mode);
-
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-
-  // Contact fields
-  const contactFields: FieldDef[] = [
-    { key: 'firstName', label: 'First name', type: 'text', required: true, half: true },
-    { key: 'lastName', label: 'Last name', type: 'text', required: true, half: true },
-    { key: 'email', label: 'Email', type: 'email' },
-    { key: 'phone', label: 'Phone', type: 'phone' },
-  ];
-
-  // Fit profile fields
-  const fitFields: FieldDef[] = [
-    { key: 'faceShape', label: 'Face shape', type: 'select', options: ['oval', 'round', 'square', 'heart', 'oblong', 'diamond'] },
-    { key: 'frameWidthMm', label: 'Frame width', type: 'number', suffix: 'mm', half: true },
-    { key: 'bridgeWidthMm', label: 'Bridge width', type: 'number', suffix: 'mm', half: true },
-  ];
-
-  // Preferences fields
-  const prefFields: FieldDef[] = [
-    { key: 'shapes', label: 'Shapes', type: 'chips', options: ['rectangular', 'square', 'round', 'cat-eye', 'aviator', 'geometric', 'oval'] },
-    { key: 'materials', label: 'Materials', type: 'chips', options: ['acetate', 'titanium', 'steel', 'combination', 'wood', 'horn'] },
-    { key: 'colours', label: 'Colours', type: 'chips', options: ['tortoise', 'black', 'crystal', 'bold colour', 'metallic', 'gold', 'silver'] },
-    { key: 'brandsAdmired', label: 'Brands', type: 'chips', options: ['CHIMI', 'Kaleos', 'Jimmy Fairly', 'Lexxola', 'Moscot', 'Garrett Leight'] },
-    { key: 'avoid', label: 'Avoid', type: 'chips', inverted: true, options: ['round', 'rimless', 'heavy', 'flashy', 'oversized'] },
-    { key: 'notes', label: 'Notes', type: 'textarea', placeholder: 'Style notes' },
-  ];
-
-  // Data processing
-  const hasFitData = !!(enrichment?.faceShape || enrichment?.frameWidthMm);
-  const hasPrefs = !!(preferences?.stated?.shapes?.length || preferences?.stated?.materials?.length);
-  const hasWishlist = wishlist && wishlist.length > 0;
-  const hasTagsOrSegments = (client.tags?.length || 0) > 0 || (segments && segments.length > 0);
-
-  // Save handlers
-  const handleSaveContact = async (values: Record<string, string>) => {
-    await updateClient.mutateAsync({ id: clientId, data: values });
-  };
-
-  const handleSaveFit = async (values: Record<string, string>) => {
-    await updateEnrichment.mutateAsync({
-      clientId,
-      data: {
-        faceShape: values.faceShape || null,
-        frameWidthMm: values.frameWidthMm ? Number(values.frameWidthMm) : null,
-        bridgeWidthMm: values.bridgeWidthMm ? Number(values.bridgeWidthMm) : null,
-      },
-    });
-  };
-
-  const handleSavePrefs = async (values: Record<string, string>) => {
-    await updatePreferences.mutateAsync({
-      clientId,
-      data: {
-        shapes: values.shapes ? values.shapes.split(',') : [],
-        materials: values.materials ? values.materials.split(',') : [],
-        colours: values.colours ? values.colours.split(',') : [],
-        brandsAdmired: values.brandsAdmired ? values.brandsAdmired.split(',') : [],
-        avoid: values.avoid ? values.avoid.split(',') : [],
-        notes: values.notes || '',
-      },
-    });
-  };
-
-  const handleSaveNotes = async (values: Record<string, string>) => {
-    await updateEnrichment.mutateAsync({ 
-      clientId, 
-      data: { internalNotes: values.internalNotes || null } 
-    });
-  };
-
-  return (
-    <>
-      <View className="p-lg gap-lg">
-        {/* 1. Contact */}
-        <ProfileSectionCard
-          title="Contact"
-          actionLabel="Edit"
-          onAction={() => setEditingSection('contact')}
-          rows={[
-            { label: 'First name', value: client.firstName },
-            { label: 'Last name', value: client.lastName },
-            { label: 'Email', value: client.email },
-            { label: 'Phone', value: client.phone },
-          ]}
-        />
-
-        {/* 2. Fit Profile */}
-        <ProfileSectionCard
-          title="Fit Profile"
-          actionLabel={hasFitData ? "Edit" : "Add"}
-          onAction={() => setEditingSection('fit')}
-          isEmpty={!hasFitData}
-          emptyMessage="No measurements taken yet."
-          emptyCta="Add measurements"
-          rows={hasFitData ? [
-            { label: 'Face shape', value: enrichment?.faceShape },
-            { label: 'Frame width', value: enrichment?.frameWidthMm?.toString(), suffix: ' mm' },
-            { label: 'Bridge width', value: enrichment?.bridgeWidthMm?.toString(), suffix: ' mm' },
-          ] : undefined}
-        />
-
-        {/* 3. Preferences */}
-        <ProfileSectionCard
-          title="Preferences"
-          actionLabel={hasPrefs ? "Edit" : "Add"}
-          onAction={() => setEditingSection('preferences')}
-          isEmpty={!hasPrefs}
-          emptyMessage="No style preferences recorded yet."
-          emptyCta="Add preferences"
-          chips={hasPrefs ? [
-            { label: 'Shapes', values: preferences?.stated?.shapes || [] },
-            { label: 'Materials', values: preferences?.stated?.materials || [] },
-            { label: 'Colours', values: preferences?.stated?.colours || [] },
-            { label: 'Brands', values: preferences?.stated?.brandsAdmired || [] },
-            { label: 'Avoid', values: preferences?.stated?.avoid || [], inverted: true },
-          ] : undefined}
-        />
-
-        {/* 4. Insurance */}
-        <ProfileSectionCard
-          title="Insurance"
-          actionLabel="Add"
-          onAction={() => onOpenSheet('insurance')}
-          isEmpty
-          emptyMessage="No insurance on file. Add to unlock multi-pair coverage calculations."
-          emptyCta="Add insurance"
-        />
-
-        {/* 5. Lifestyle */}
-        <ProfileSectionCard
-          title="Lifestyle"
-          actionLabel="Fill"
-          onAction={() => onOpenSheet('lifestyle')}
-          isEmpty
-          emptyMessage="Questionnaire not filled. Unlocks better recommendations."
-          emptyCta="Fill questionnaire — 2 min"
-        />
-
-        {/* 6. Wishlist */}
-        <ProfileSectionCard
-          title="Wishlist"
-          actionLabel={hasWishlist ? 'View All' : 'Browse'}
-          onAction={() => {/* Navigate to wishlist or products */}}
-          isEmpty={!hasWishlist}
-          emptyMessage="No items in wishlist."
-          emptyCta="Browse products"
-        >
-          {hasWishlist && (
-            <View className="flex-row flex-wrap gap-sm">
-              {wishlist!.slice(0, 6).map((item, index) => (
-                <View key={item.id || index} className="w-[80px] h-[60px] bg-bg-muted rounded-md items-center justify-center">
-                  <Heart size={16} color="rgb(115, 115, 115)" />
-                  <Text className="text-caption-sm text-text-muted mt-xs text-center" numberOfLines={1}>
-                    {item.product?.title?.split(' ')[0] || 'Item'}
-                  </Text>
-                </View>
-              ))}
-              {wishlist!.length > 6 && (
-                <View className="w-[80px] h-[60px] bg-bg-muted rounded-md items-center justify-center">
-                  <Text className="text-caption-md text-text-muted">
-                    +{wishlist!.length - 6}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-        </ProfileSectionCard>
-
-        {/* 7. Multi-pair Suggestions */}
-        <ProfileSectionCard
-          title="Multi-pair Suggestions"
-          actionLabel="Generate"
-          onAction={() => onOpenSheet('multipair')}
-          isEmpty
-          emptyMessage="AI recommendations for complete eyewear wardrobe."
-          emptyCta="Generate suggestions"
-        />
-
-        {/* 8. Tags & Segments (Staff Only) */}
-        {privacyMode === 'staff' && (
-          <ProfileSectionCard
-            title="Tags & Segments"
-            actionLabel="Manage"
-            onAction={() => {/* Open tag management */}}
-            staffOnly
-            isEmpty={!hasTagsOrSegments}
-            emptyMessage="No tags or segment memberships."
-            emptyCta="Add tags"
-          >
-            {hasTagsOrSegments && (
-              <View className="gap-sm">
-                {client.tags && client.tags.length > 0 && (
-                  <View className="flex-row flex-wrap gap-xs">
-                    {client.tags.map(tag => (
-                      <View key={tag} className="px-sm py-xs bg-bg-muted rounded-md">
-                        <Text className="text-caption-md text-text-primary">{tag}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-                {segments && segments.length > 0 && (
-                  <View className="flex-row flex-wrap gap-xs">
-                    {segments.map(seg => (
-                      <View key={seg.id} className="px-sm py-xs bg-brand/10 rounded-md">
-                        <Text className="text-caption-md text-brand">
-                          {typeof seg.name === 'string' ? seg.name : seg.name?.en || 'Segment'}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-            )}
-          </ProfileSectionCard>
-        )}
-
-        {/* 9. Internal Notes (Staff Only) */}
-        {privacyMode === 'staff' && (
-          <ProfileSectionCard
-            title="Internal Notes"
-            actionLabel={enrichment?.internalNotes ? "Edit" : "Add"}
-            onAction={() => setEditingSection('notes')}
-            staffOnly
-            isEmpty={!enrichment?.internalNotes}
-            emptyMessage="No notes yet."
-            emptyCta="Add note"
-          >
-            {enrichment?.internalNotes && (
-              <Text className="text-body-sm text-text-primary">
-                {enrichment.internalNotes}
-              </Text>
-            )}
-          </ProfileSectionCard>
-        )}
-      </View>
-
-      {/* Edit Modals */}
-      <ProfileEditModal
-        title="Edit Contact"
-        visible={editingSection === 'contact'}
-        onClose={() => setEditingSection(null)}
-        fields={contactFields}
-        initialValues={{
-          firstName: client.firstName || '',
-          lastName: client.lastName || '',
-          email: client.email || '',
-          phone: client.phone || '',
-        }}
-        onSave={handleSaveContact}
-        saving={updateClient.isPending}
-      />
-
-      <ProfileEditModal
-        title="Edit Fit Profile"
-        subtitle="Measurements for frame recommendations"
-        visible={editingSection === 'fit'}
-        onClose={() => setEditingSection(null)}
-        fields={fitFields}
-        initialValues={{
-          faceShape: enrichment?.faceShape || '',
-          frameWidthMm: enrichment?.frameWidthMm?.toString() || '',
-          bridgeWidthMm: enrichment?.bridgeWidthMm?.toString() || '',
-        }}
-        onSave={handleSaveFit}
-        saving={updateEnrichment.isPending}
-      />
-
-      <ProfileEditModal
-        title="Edit Preferences"
-        subtitle="Style likes, dislikes, and notes"
-        visible={editingSection === 'preferences'}
-        onClose={() => setEditingSection(null)}
-        fields={prefFields}
-        initialValues={{
-          shapes: (preferences?.stated?.shapes || []).join(','),
-          materials: (preferences?.stated?.materials || []).join(','),
-          colours: (preferences?.stated?.colours || []).join(','),
-          brandsAdmired: (preferences?.stated?.brandsAdmired || []).join(','),
-          avoid: (preferences?.stated?.avoid || []).join(','),
-          notes: preferences?.stated?.notes || '',
-        }}
-        onSave={handleSavePrefs}
-        saving={updatePreferences.isPending}
-      />
-
-      <ProfileEditModal
-        title="Internal Notes"
-        visible={editingSection === 'notes'}
-        onClose={() => setEditingSection(null)}
-        fields={[{ key: 'internalNotes', label: 'Notes', type: 'textarea', placeholder: 'Internal notes about this client' }]}
-        initialValues={{ internalNotes: enrichment?.internalNotes || '' }}
-        onSave={handleSaveNotes}
-        saving={updateEnrichment.isPending}
-      />
-    </>
-  );
+function formatCurrency(amount: number | null): string {
+  if (!amount) return '$0.00';
+  return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function ClinicalTab({ clientId }: { clientId: string }) {
-  return (
-    <View className="p-lg gap-lg">
-      <PrescriptionsPanel clientId={clientId} />
-      <EnrichmentPanel clientId={clientId} />
-    </View>
-  );
-}
-
-function HistoryTab({ clientId }: { clientId: string }) {
-  const [filter, setFilter] = useState<string>('all');
-  
-  const filters = [
-    { key: 'all', label: 'All' },
-    { key: 'orders', label: 'Orders' },
-    { key: 'tryons', label: 'Try-ons' },
-    { key: 'notes', label: 'Notes' },
-    { key: 'visits', label: 'Visits' },
-  ];
-
-  return (
-    <View className="p-lg gap-lg">
-      {/* Filter Pills */}
-      <View className="flex-row gap-sm items-center">
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View className="flex-row gap-sm">
-            {filters.map((f) => (
-              <Pressable
-                key={f.key}
-                onPress={() => setFilter(f.key)}
-                className={`px-md py-sm rounded-full min-h-[44px] justify-center ${
-                  filter === f.key 
-                    ? 'bg-brand' 
-                    : 'bg-bg-muted'
-                }`}
-                hitSlop={4}
-              >
-                <Text className={`text-body-sm ${
-                  filter === f.key 
-                    ? 'text-brand-text font-medium' 
-                    : 'text-text-secondary'
-                }`}>
-                  {f.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-        
-        <Button
-          variant="ghost"
-          onPress={() => {/* Open add note modal */}}
-        >
-          + Add note
-        </Button>
-      </View>
-
-      <InteractionsTimeline clientId={clientId} />
-      <OrdersPanel clientId={clientId} />
-      <TryonSessionsPanel clientId={clientId} />
-    </View>
-  );
-}
-
-function RelationshipsTab({ clientId }: { clientId: string }) {
-  return (
-    <View className="p-lg gap-lg">
-      <LinksPanel clientId={clientId} />
-      <SegmentsPanel clientId={clientId} />
-    </View>
-  );
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }

@@ -82,13 +82,13 @@ function ChoiceCard({ choice, isSelected, onPress, priceDelta }: ChoiceCardProps
           {label}
         </Text>
         {description && (
-          <Text className="text-caption text-text-muted mt-xs">{description}</Text>
+          <Text className="text-caption-md text-text-muted mt-xs">{description}</Text>
         )}
       </View>
 
       {/* Price delta */}
       {price && (
-        <Text className="text-bodyStrong text-text-primary ml-md">{price}</Text>
+        <Text className="text-body-md font-medium text-text-primary ml-md">{price}</Text>
       )}
     </Pressable>
   );
@@ -123,10 +123,10 @@ function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
           // Gradient not natively supported — show start colour; hexEnd is visual only
         }}
       />
-      <Text className="text-caption text-text-primary text-center" numberOfLines={2} style={{ maxWidth: 56 }}>
+      <Text className="text-caption-md text-text-primary text-center" numberOfLines={2} style={{ maxWidth: 56 }}>
         {displayLabel}
       </Text>
-      <Text className="text-caption text-text-muted text-center">{priceLabel}</Text>
+      <Text className="text-caption-md text-text-muted text-center">{priceLabel}</Text>
     </Pressable>
   );
 }
@@ -160,11 +160,11 @@ function GroupSection({
   return (
     <View className="mb-xl">
       <View className="flex-row items-center mb-md">
-        <Text className="text-headline text-text-primary flex-1">
+        <Text className="text-heading-xl text-text-primary flex-1">
           {group.label?.en ?? group.code}
         </Text>
         {group.isRequired && (
-          <Text className="text-caption text-error ml-sm">Required</Text>
+          <Text className="text-caption-md text-error ml-sm">Required</Text>
         )}
       </View>
 
@@ -188,7 +188,7 @@ function GroupSection({
               {/* Colour swatches below selected colour choice */}
               {isSelected && colours.length > 0 && (
                 <View className="ml-xl mb-md">
-                  <Text className="text-caption text-text-muted mb-sm">Select colour:</Text>
+                  <Text className="text-caption-md text-text-muted mb-sm">Select colour:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View className="flex-row flex-wrap" style={{ gap: 0 }}>
                       {colours.map((colour) => (
@@ -252,9 +252,9 @@ function SummaryStep({
       {steps.map((step, stepIdx) => (
         <View key={step.id} className="mb-lg">
           <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-headline text-text-primary">{step.name?.en}</Text>
+            <Text className="text-heading-xl text-text-primary">{step.name?.en}</Text>
             <Pressable onPress={() => onGoToStep(stepIdx)} className="min-h-[44px] justify-center px-sm">
-              <Text className="text-body text-navy">Edit</Text>
+              <Text className="text-body-md text-navy">Edit</Text>
             </Pressable>
           </View>
 
@@ -263,7 +263,7 @@ function SummaryStep({
             if (!selectedIds.length) return null;
             return (
               <View key={group.id} className="mb-sm">
-                <Text className="text-caption text-text-muted">{group.label?.en}</Text>
+                <Text className="text-caption-md text-text-muted">{group.label?.en}</Text>
                 {selectedIds.map((choiceId) => {
                   const choice = choiceMap.get(choiceId);
                   if (!choice) return null;
@@ -271,7 +271,7 @@ function SummaryStep({
                   const selectedColourId = colourSelections[colourKey];
                   const colour = selectedColourId ? colourMap.get(selectedColourId) : null;
                   return (
-                    <Text key={choiceId} className="text-body text-text-primary">
+                    <Text key={choiceId} className="text-body-md text-text-primary">
                       {choice.label?.en ?? choice.code}
                       {colour && ` — ${resolveLensColourLabel(colour.label)}`}
                     </Text>
@@ -285,26 +285,26 @@ function SummaryStep({
 
       {/* Price breakdown */}
       <View className="bg-bg-surface rounded-lg border border-border p-lg mt-md">
-        <Text className="text-headline text-text-primary mb-md">Price breakdown</Text>
+        <Text className="text-heading-xl text-text-primary mb-md">Price breakdown</Text>
         {priceSummary.basePrice > 0 && (
           <View className="flex-row justify-between py-xs">
-            <Text className="text-body text-text-primary">Frame</Text>
-            <Text className="text-body text-text-primary">
+            <Text className="text-body-md text-text-primary">Frame</Text>
+            <Text className="text-body-md text-text-primary">
               ${(priceSummary.basePrice / 100).toFixed(2)}
             </Text>
           </View>
         )}
         {priceSummary.pricingLines.map((line) => (
           <View key={line.code} className="flex-row justify-between py-xs">
-            <Text className="text-body text-text-muted">{line.label}</Text>
-            <Text className="text-body text-text-primary">
+            <Text className="text-body-md text-text-muted">{line.label}</Text>
+            <Text className="text-body-md text-text-primary">
               +${(line.amount / 100).toFixed(2)}
             </Text>
           </View>
         ))}
         <View className="flex-row justify-between pt-md border-t border-border mt-md">
-          <Text className="text-headline text-text-primary">Total</Text>
-          <Text className="text-headline text-text-primary">
+          <Text className="text-heading-xl text-text-primary">Total</Text>
+          <Text className="text-heading-xl text-text-primary">
             ${(priceSummary.total / 100).toFixed(2)}
           </Text>
         </View>
@@ -494,8 +494,8 @@ export function ConfiguratorSheet({
         {/* Top bar */}
         <View className="flex-row items-center px-xl pt-xl pb-md border-b border-border">
           <View className="flex-1">
-            <Text className="text-caption text-text-muted">Configure lenses for</Text>
-            <Text className="text-headline text-text-primary" numberOfLines={1}>
+            <Text className="text-caption-md text-text-muted">Configure lenses for</Text>
+            <Text className="text-heading-xl text-text-primary" numberOfLines={1}>
               {productName}
             </Text>
           </View>
@@ -513,20 +513,20 @@ export function ConfiguratorSheet({
         {isLoading && (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator size="large" color="#0A153D" />
-            <Text className="text-body text-text-muted mt-md">Loading lens options…</Text>
+            <Text className="text-body-md text-text-muted mt-md">Loading lens options…</Text>
           </View>
         )}
 
         {/* No configurator for this product */}
         {!isLoading && !hasConfigurator && (
           <View className="flex-1 items-center justify-center p-xl">
-            <Text className="text-headline text-text-primary text-center mb-md">
+            <Text className="text-heading-xl text-text-primary text-center mb-md">
               No lens options available
             </Text>
-            <Text className="text-body text-text-muted text-center mb-xl">
+            <Text className="text-body-md text-text-muted text-center mb-xl">
               This frame doesn't have a lens configuration. It can be ordered as-is.
             </Text>
-            <Button variant="secondary" onPress={handleClose}>Close</Button>
+            <Button variant="dark" onPress={handleClose}>Close</Button>
           </View>
         )}
 
@@ -559,7 +559,7 @@ export function ConfiguratorSheet({
                 {/* Summary dot */}
                 <View className={`w-3 h-3 rounded-full ${isSummaryStep ? 'bg-green' : 'bg-warmGrey'}`} />
               </View>
-              <Text className="text-caption text-text-muted mt-xs">
+              <Text className="text-caption-md text-text-muted mt-xs">
                 {isSummaryStep
                   ? 'Summary'
                   : `Step ${currentStepIdx + 1} of ${steps.length}: ${currentStep?.name?.en}`}
@@ -569,8 +569,8 @@ export function ConfiguratorSheet({
             {/* Running price */}
             {priceDelta > 0 && (
               <View className="px-xl pb-sm">
-                <Text className="text-caption text-text-muted">
-                  Lens options: <Text className="text-bodyStrong text-text-primary">+${(priceDelta / 100).toFixed(2)}</Text>
+                <Text className="text-caption-md text-text-muted">
+                  Lens options: <Text className="text-body-md font-medium text-text-primary">+${(priceDelta / 100).toFixed(2)}</Text>
                 </Text>
               </View>
             )}
@@ -590,7 +590,7 @@ export function ConfiguratorSheet({
               ) : (
                 <View className="pt-md pb-2xl">
                   {currentStep?.description?.en && (
-                    <Text className="text-body text-text-muted mb-lg">
+                    <Text className="text-body-md text-text-muted mb-lg">
                       {currentStep.description.en}
                     </Text>
                   )}
@@ -612,7 +612,7 @@ export function ConfiguratorSheet({
             </ScrollView>
 
             {/* Bottom navigation */}
-            <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-elevated">
+            <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-surface">
               {currentStepIdx > 0 && (
                 <Pressable
                   onPress={handleBack}
@@ -636,7 +636,7 @@ export function ConfiguratorSheet({
                     disabled={!currentStepComplete}
                   >
                     <View className="flex-row items-center gap-xs justify-center">
-                      <Text className="text-text-inverse text-bodyStrong">
+                      <Text className="text-text-inverse text-body-md font-medium">
                         {currentStepIdx === steps.length - 1 ? 'Review' : 'Next'}
                       </Text>
                       <ChevronRight size={18} color="white" />

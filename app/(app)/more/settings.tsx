@@ -94,40 +94,40 @@ export default function SettingsScreen() {
               ) : (
                 <CloudOff size={18} color="#D4A017" />
               )}
-              <Text className="text-body text-text-primary ml-md flex-1">
+              <Text className="text-body-md text-text-primary ml-md flex-1">
                 {isOnline ? 'Connected' : 'Offline'}
               </Text>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-caption-md text-text-muted">
                 {isConnectedToWifi ? 'WiFi' : isOnline ? 'Cellular' : 'No connection'}
               </Text>
             </View>
 
             {/* Last sync */}
             <View className="flex-row items-center px-lg py-md border-b border-border">
-              <Text className="text-body text-text-primary flex-1">Last sync</Text>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-body-md text-text-primary flex-1">Last sync</Text>
+              <Text className="text-caption-md text-text-muted">
                 {formatTimestamp(lastSyncAt)}
               </Text>
             </View>
 
             {/* Last full sync */}
             <View className="flex-row items-center px-lg py-md border-b border-border">
-              <Text className="text-body text-text-primary flex-1">Last full sync</Text>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-body-md text-text-primary flex-1">Last full sync</Text>
+              <Text className="text-caption-md text-text-muted">
                 {formatTimestamp(lastFullSyncAt)}
               </Text>
             </View>
 
             {/* Pending */}
             <View className="flex-row items-center px-lg py-md border-b border-border">
-              <Text className="text-body text-text-primary flex-1">Pending writes</Text>
+              <Text className="text-body-md text-text-primary flex-1">Pending writes</Text>
               <Text className={`text-body ${pendingWrites > 0 ? 'text-warning' : 'text-text-muted'}`}>
                 {pendingWrites}
               </Text>
             </View>
 
             <View className="flex-row items-center px-lg py-md border-b border-border">
-              <Text className="text-body text-text-primary flex-1">Pending uploads</Text>
+              <Text className="text-body-md text-text-primary flex-1">Pending uploads</Text>
               <Text className={`text-body ${pendingUploads > 0 ? 'text-warning' : 'text-text-muted'}`}>
                 {pendingUploads}
               </Text>
@@ -135,7 +135,7 @@ export default function SettingsScreen() {
 
             {/* Auto-sync toggle */}
             <View className="flex-row items-center px-lg py-md border-b border-border min-h-[44px]">
-              <Text className="text-body text-text-primary flex-1">Auto-sync</Text>
+              <Text className="text-body-md text-text-primary flex-1">Auto-sync</Text>
               <Switch
                 value={autoSyncEnabled}
                 onValueChange={setAutoSyncEnabled}
@@ -146,7 +146,7 @@ export default function SettingsScreen() {
             {/* WiFi-only uploads toggle */}
             <View className="flex-row items-center px-lg py-md min-h-[44px]">
               <Wifi size={16} color="#6B6B6B" />
-              <Text className="text-body text-text-primary ml-sm flex-1">Upload photos on WiFi only</Text>
+              <Text className="text-body-md text-text-primary ml-sm flex-1">Upload photos on WiFi only</Text>
               <Switch
                 value={wifiOnlyUploads}
                 onValueChange={setWifiOnlyUploads}
@@ -157,13 +157,13 @@ export default function SettingsScreen() {
             {/* Force sync button */}
             <View className="px-lg py-md border-t border-border">
               <Button
-                variant="secondary"
+                variant="dark"
                 onPress={handleForceSync}
                 disabled={syncingStatus === 'syncing'}
               >
                 <View className="flex-row items-center gap-sm">
                   <RefreshCw size={16} color="white" />
-                  <Text className="text-text-inverse text-bodyStrong">
+                  <Text className="text-text-inverse text-body-md font-medium">
                     {syncingStatus === 'syncing' ? `Syncing... ${progress}%` : 'Force full sync'}
                   </Text>
                 </View>
@@ -178,10 +178,10 @@ export default function SettingsScreen() {
           <View className="bg-bg-surface rounded-lg border border-border">
             {Object.entries(dbStats).map(([key, value], index, arr) => (
               <View key={key} className={`flex-row items-center px-lg py-sm ${index < arr.length - 1 ? 'border-b border-border' : ''}`}>
-                <Text className="text-body text-text-primary flex-1 capitalize">
+                <Text className="text-body-md text-text-primary flex-1 capitalize">
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </Text>
-                <Text className="text-caption text-text-muted">{value}</Text>
+                <Text className="text-caption-md text-text-muted">{value}</Text>
               </View>
             ))}
 
@@ -193,7 +193,7 @@ export default function SettingsScreen() {
                   className="flex-row items-center justify-center py-sm min-h-[44px]"
                 >
                   <Trash2 size={16} color="#C53030" />
-                  <Text className="text-body text-destructive ml-sm">Clear local cache (DEV)</Text>
+                  <Text className="text-body-md text-destructive ml-sm">Clear local cache (DEV)</Text>
                 </Pressable>
               </View>
             )}
@@ -216,10 +216,10 @@ export default function SettingsScreen() {
             <View className="flex-row items-center px-lg py-md border-b border-border">
               <User size={18} color="#2B2B2B" />
               <View className="ml-md flex-1">
-                <Text className="text-body text-text-primary">
+                <Text className="text-body-md text-text-primary">
                   {user?.firstName} {user?.lastName}
                 </Text>
-                <Text className="text-caption text-text-muted">
+                <Text className="text-caption-md text-text-muted">
                   {user?.primaryEmailAddress?.emailAddress}
                 </Text>
               </View>
@@ -227,18 +227,18 @@ export default function SettingsScreen() {
 
             {/* Permissions */}
             <View className="px-lg py-md">
-              <Text className="text-bodyStrong text-text-primary mb-xs">Permissions</Text>
+              <Text className="text-body-md font-medium text-text-primary mb-xs">Permissions</Text>
               <View className="flex-row flex-wrap gap-xs">
                 {permissions.length > 0 ? (
                   permissions.map((perm) => (
                     <View key={perm} className="bg-warmGrey rounded-md px-sm py-xs">
-                      <Text className="text-caption text-text-primary">
+                      <Text className="text-caption-md text-text-primary">
                         {perm.replace('org:', '')}
                       </Text>
                     </View>
                   ))
                 ) : (
-                  <Text className="text-caption text-text-muted">No permissions found in token</Text>
+                  <Text className="text-caption-md text-text-muted">No permissions found in token</Text>
                 )}
               </View>
             </View>
@@ -249,7 +249,7 @@ export default function SettingsScreen() {
                 onPress={() => signOut()}
                 className="flex-row items-center justify-center py-sm min-h-[44px]"
               >
-                <Text className="text-body text-destructive">Sign Out</Text>
+                <Text className="text-body-md text-destructive">Sign Out</Text>
               </Pressable>
             </View>
           </View>
@@ -260,19 +260,19 @@ export default function SettingsScreen() {
           <Text className="text-displayMd text-text-primary mb-md">About</Text>
           <View className="bg-bg-surface rounded-lg border border-border">
             <View className="flex-row items-center px-lg py-sm border-b border-border">
-              <Text className="text-body text-text-primary flex-1">App version</Text>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-body-md text-text-primary flex-1">App version</Text>
+              <Text className="text-caption-md text-text-muted">
                 {Application.nativeApplicationVersion || '0.1.0'}
               </Text>
             </View>
             <View className="flex-row items-center px-lg py-sm border-b border-border">
-              <Text className="text-body text-text-primary flex-1">Build number</Text>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-body-md text-text-primary flex-1">Build number</Text>
+              <Text className="text-caption-md text-text-muted">
                 {Application.nativeBuildVersion || '1'}
               </Text>
             </View>
             <View className="flex-row items-center px-lg py-sm">
-              <Text className="text-body text-text-primary flex-1">Environment</Text>
+              <Text className="text-body-md text-text-primary flex-1">Environment</Text>
               <View className={`rounded-full px-sm py-xs ${__DEV__ ? 'bg-warning/20' : 'bg-green/20'}`}>
                 <Text className={`text-caption ${__DEV__ ? 'text-warning' : 'text-green'}`}>
                   {__DEV__ ? 'Development' : 'Production'}
@@ -366,15 +366,15 @@ function PinSetupSection() {
       <View className="px-lg py-md">
         <View className="flex-row items-center mb-sm">
           <Lock size={16} color="#404040" />
-          <Text className="text-body text-text-primary ml-sm flex-1">
+          <Text className="text-body-md text-text-primary ml-sm flex-1">
             Set a PIN for quick device switching
           </Text>
         </View>
-        <Text className="text-caption text-text-muted mb-md">
+        <Text className="text-caption-md text-text-muted mb-md">
           Your PIN lets you quickly switch to your identity on shared devices without a full sign-in.
         </Text>
-        <Button variant="secondary" onPress={handleStartSetup}>
-          <Text className="text-text-inverse text-body font-medium">Set up PIN</Text>
+        <Button variant="dark" onPress={handleStartSetup}>
+          <Text className="text-text-inverse text-body-md font-medium">Set up PIN</Text>
         </Button>
       </View>
     );
@@ -383,7 +383,7 @@ function PinSetupSection() {
   return (
     <View className="px-lg py-md">
       <View className="flex-row items-center justify-between mb-md">
-        <Text className="text-body font-medium text-text-primary">
+        <Text className="text-body-md font-medium text-text-primary">
           {step === 'enter' ? 'Enter a 4-digit PIN' : 'Confirm your PIN'}
         </Text>
         <Pressable
@@ -392,7 +392,7 @@ function PinSetupSection() {
           accessibilityLabel="Cancel PIN setup"
           className="min-h-[44px] min-w-[44px] items-center justify-center"
         >
-          <Text className="text-body text-text-muted">Cancel</Text>
+          <Text className="text-body-md text-text-muted">Cancel</Text>
         </Pressable>
       </View>
       <PinPad

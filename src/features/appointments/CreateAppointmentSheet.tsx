@@ -422,7 +422,7 @@ function ServiceStep({ services, isLoading, selected, onSelect }: {
                 key={service.id}
                 onPress={() => onSelect(service)}
                 className={`min-h-[44px] p-lg rounded-lg border flex-row items-center gap-md ${
-                  isSelected ? 'border-brand bg-bg-elevated' : 'border-border bg-bg-page'
+                  isSelected ? 'border-brand bg-bg-surface' : 'border-border bg-bg-page'
                 }`}
                 accessibilityRole="button"
                 accessibilityLabel={`${serviceName(service.name)}, ${service.durationMinutes} minutes`}
@@ -470,7 +470,7 @@ function ClientStep({ search, onSearchChange, results, isLoading, selected, onSe
       <Text className="text-body-md text-text-muted mb-sm">Search for a client, or skip for walk-in</Text>
 
       {selected ? (
-        <View className="p-lg rounded-lg border border-brand bg-bg-elevated flex-row items-center gap-md">
+        <View className="p-lg rounded-lg border border-brand bg-bg-surface flex-row items-center gap-md">
           <View className="w-10 h-10 rounded-full bg-bg-muted items-center justify-center">
             <User color="#737373" size={18} />
           </View>
@@ -550,7 +550,7 @@ function StaffStep({ staff, selected, onSelect, onClear }: {
         <Pressable
           onPress={onClear}
           className={`min-h-[44px] p-lg rounded-lg border flex-row items-center gap-md ${
-            !selected ? 'border-brand bg-bg-elevated' : 'border-border bg-bg-page'
+            !selected ? 'border-brand bg-bg-surface' : 'border-border bg-bg-page'
           }`}
           accessibilityRole="button"
           accessibilityLabel="Any available staff"
@@ -570,7 +570,7 @@ function StaffStep({ staff, selected, onSelect, onClear }: {
               key={member.id}
               onPress={() => onSelect(member)}
               className={`min-h-[44px] p-lg rounded-lg border flex-row items-center gap-md ${
-                isSelected ? 'border-brand bg-bg-elevated' : 'border-border bg-bg-page'
+                isSelected ? 'border-brand bg-bg-surface' : 'border-border bg-bg-page'
               }`}
               accessibilityRole="button"
               accessibilityLabel={`${member.name}, ${member.role}`}
@@ -656,7 +656,7 @@ function DateTimeStep({ date, onDatePress, showDatePicker, onDateChange, onDismi
 
       {/* Inline date picker — give it proper height for iPad */}
       {showDatePicker && (
-        <View className="border border-border rounded-lg overflow-hidden bg-bg-elevated" style={{ minHeight: 420 }}>
+        <View className="border border-border rounded-lg overflow-hidden bg-bg-surface" style={{ minHeight: 420 }}>
           <DateTimePicker
             value={date}
             mode="date"

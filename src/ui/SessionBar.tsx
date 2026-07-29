@@ -108,7 +108,7 @@ export function SessionBar() {
 
   return (
     <>
-      <View className="flex-row h-[52px] items-center px-lg bg-bg-elevated border-b border-border">
+      <View className="flex-row h-[52px] items-center px-lg bg-bg-surface border-b border-border">
         {/* Left: Live indicator + Client info */}
         <Pressable
           onPress={handleGoToSession}

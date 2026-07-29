@@ -74,25 +74,25 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
   const recentInteractions = interactionsData?.interactions?.slice(0, 5) ?? [];
 
   return (
-    <ScrollView className="flex-1 bg-bg-elevated p-lg" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1 bg-bg-surface p-lg" showsVerticalScrollIndicator={false}>
       {/* Identity header */}
       <View className="flex-row items-center mb-lg">
         <View className="w-14 h-14 rounded-full bg-brand items-center justify-center mr-md">
-          <Text className="text-text-inverse text-headline font-bold">{initials}</Text>
+          <Text className="text-text-inverse text-heading-xl font-bold">{initials}</Text>
         </View>
 
         <View className="flex-1">
-          <Text className="text-text-primary text-headline font-semibold" numberOfLines={1}>
+          <Text className="text-text-primary text-heading-xl font-semibold" numberOfLines={1}>
             {name}
           </Text>
           <View className="flex-row items-center mt-xs gap-sm">
             {tier && mode === 'staff' && (
               <View className="bg-brand rounded-full px-sm py-[2px]">
-                <Text className="text-text-inverse text-captionStrong">{tier}</Text>
+                <Text className="text-text-inverse text-caption-md font-medium">{tier}</Text>
               </View>
             )}
             {mode === 'staff' && client.orderCount != null && (
-              <Text className="text-text-muted text-caption">
+              <Text className="text-text-mutedtext-caption-md">
                 {client.orderCount} orders
               </Text>
             )}
@@ -103,7 +103,7 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
             accessibilityRole="link"
             accessibilityLabel="View full profile"
           >
-            <Text className="text-caption text-accent">View full profile →</Text>
+            <Text className="text-caption-md text-accent">View full profile →</Text>
           </Pressable>
         </View>
       </View>
@@ -122,11 +122,11 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
               <DataRow label="Bridge width" value={`${client.enrichment.bridgeWidthMm}mm`} />
             )}
             {!client.enrichment.faceShape && !client.enrichment.frameWidthMm && !client.enrichment.bridgeWidthMm && (
-              <Text className="text-text-muted text-body italic">No measurements yet</Text>
+              <Text className="text-text-muted text-body-md italic">No measurements yet</Text>
             )}
           </View>
         ) : (
-          <Text className="text-text-muted text-body italic">No measurements yet</Text>
+          <Text className="text-text-muted text-body-md italic">No measurements yet</Text>
         )}
       </SectionCard>
 
@@ -139,7 +139,7 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
             ))}
           </View>
         ) : (
-          <Text className="text-text-muted text-body italic">No preferences recorded</Text>
+          <Text className="text-text-muted text-body-md italic">No preferences recorded</Text>
         )}
       </SectionCard>
 
@@ -170,10 +170,10 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
           >
             <Users2 size={18} color="#0A153D" />
             <View className="flex-1 ml-sm">
-              <Text className="text-bodyStrong text-navy">Multi-Pair</Text>
-              <Text className="text-caption text-text-muted">Recommend multiple frames</Text>
+              <Text className="text-body-md font-medium text-navy">Multi-Pair</Text>
+              <Text className="text-caption-md text-text-muted">Recommend multiple frames</Text>
             </View>
-            <Text className="text-body text-text-muted">→</Text>
+            <Text className="text-body-md text-text-muted">→</Text>
           </Pressable>
         </PermissionGate>
       )}
@@ -187,12 +187,12 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
           placeholderTextColor="#6B6B6B"
           multiline
           textAlignVertical="top"
-          className="bg-bg-page border border-border rounded-lg p-md text-text-primary text-body min-h-[120px]"
+          className="bg-bg-page border border-border rounded-lg p-md text-text-primary text-body-md min-h-[120px]"
           accessibilityLabel="Session notes"
           accessibilityHint="Notes are saved automatically every 30 seconds"
         />
         {notesLastSavedAt && (
-          <Text className="text-text-muted text-caption mt-xs">
+          <Text className="text-text-muted text-caption-md mt-xs">
             Last saved {new Date(notesLastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
         )}
@@ -206,10 +206,10 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
               <View key={interaction.id} className="flex-row items-start">
                 <FileText className="text-text-muted mt-[2px]" size={14} />
                 <View className="flex-1 ml-sm">
-                  <Text className="text-text-primary text-body" numberOfLines={1}>
+                  <Text className="text-text-primarytext-body-md" numberOfLines={1}>
                     {interaction.subject ?? interaction.type}
                   </Text>
-                  <Text className="text-text-muted text-caption">
+                  <Text className="text-text-mutedtext-caption-md">
                     {formatRelativeTime(interaction.occurredAt)}
                   </Text>
                 </View>
@@ -230,7 +230,7 @@ export function ClientContextPanel({ clientId, onAiChipPress }: ClientContextPan
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="mb-lg">
-      <Text className="text-text-primary text-bodyStrong mb-sm">{title}</Text>
+      <Text className="text-text-primary text-body-md font-medium mb-sm">{title}</Text>
       <View className="bg-bg-page rounded-lg p-md border border-border">
         {children}
       </View>
@@ -241,8 +241,8 @@ function SectionCard({ title, children }: { title: string; children: React.React
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row justify-between items-center">
-      <Text className="text-text-muted text-body">{label}</Text>
-      <Text className="text-text-primary text-body font-medium">{value}</Text>
+      <Text className="text-text-mutedtext-body-md">{label}</Text>
+      <Text className="text-text-primary text-body-md font-medium">{value}</Text>
     </View>
   );
 }
@@ -266,14 +266,14 @@ function FrameTriedRow({ frame }: { frame: FrameTried }) {
 
   return (
     <View className="flex-row items-center justify-between py-xs">
-      <Text className="text-text-primary text-body flex-1" numberOfLines={1}>
+      <Text className="text-text-primary text-body-md flex-1" numberOfLines={1}>
         {frame.productName}
       </Text>
       {verdictInfo && VerdictIcon && verdictColor && (
         <View className="flex-row items-center ml-sm">
           <VerdictIcon color={verdictColor} size={14} />
           <Text
-            className="text-caption ml-xs"
+            className="text-caption-md ml-xs"
             style={{ color: verdictColor }}
           >
             {verdictInfo.label}

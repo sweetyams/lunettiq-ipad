@@ -23,10 +23,10 @@ export function LockScreen({ onUnlock }: LockScreenProps) {
       accessibilityLabel="Tap to unlock"
     >
       <View className="items-center">
-        <Text className="text-text-inverse text-displayLg font-bold mb-xl">
+        <Text className="text-text-inverse text-display-lg font-bold mb-xl">
           Lunettiq
         </Text>
-        <Text className="text-text-inverse text-body opacity-80">
+        <Text className="text-text-inverse text-body-md opacity-80">
           Tap to unlock
         </Text>
       </View>

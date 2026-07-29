@@ -40,9 +40,9 @@ export function OrdersPanel({ clientId }: OrdersPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <ShoppingBag color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Orders</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Orders</Text>
         {orders && (
-          <Text className="text-caption text-text-muted ml-sm">{orders.length} total</Text>
+          <Text className="text-caption-md text-text-muted ml-sm">{orders.length} total</Text>
         )}
       </View>
 
@@ -57,21 +57,21 @@ export function OrdersPanel({ clientId }: OrdersPanelProps) {
             >
               <View className="flex-row justify-between items-start">
                 <View className="flex-1">
-                  <Text className="text-bodyStrong text-text-primary">
+                  <Text className="text-body-md font-medium text-text-primary">
                     Order #{order.orderNumber}
                   </Text>
-                  <Text className="text-caption text-text-muted mt-xs">
+                  <Text className="text-caption-md text-text-muted mt-xs">
                     {new Date(order.createdAt).toLocaleDateString()} · {(order.lineItems ?? []).length} items
                   </Text>
                   {(order.lineItems ?? []).slice(0, 2).map((item) => (
-                    <Text key={item.id} className="text-caption text-text-muted mt-xs">
+                    <Text key={item.id} className="text-caption-md text-text-muted mt-xs">
                       {item.title}{item.variantTitle ? ` - ${item.variantTitle}` : ''}
                     </Text>
                   ))}
                 </View>
                 <View className="items-end">
                   {privacyMode === 'staff' && (
-                    <Text className="text-bodyStrong text-text-primary">
+                    <Text className="text-body-md font-medium text-text-primary">
                       ${order.totalPrice.toFixed(2)}
                     </Text>
                   )}
@@ -81,7 +81,7 @@ export function OrdersPanel({ clientId }: OrdersPanelProps) {
             </View>
           ))
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">No orders yet</Text>
+          <Text className="text-body-md text-text-muted italic text-center py-md">No orders yet</Text>
         )}
       </Card>
     </View>
@@ -119,7 +119,7 @@ export function PrescriptionsPanel({ clientId }: PrescriptionsPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Eye color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Prescriptions</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Prescriptions</Text>
       </View>
 
       <Card>
@@ -130,7 +130,7 @@ export function PrescriptionsPanel({ clientId }: PrescriptionsPanelProps) {
             <PrescriptionRow key={rx.id} rx={rx} isLast={index === prescriptions.length - 1} />
           ))
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             No prescription on file
           </Text>
         )}
@@ -143,11 +143,11 @@ function PrescriptionRow({ rx, isLast }: { rx: Prescription; isLast: boolean }) 
   return (
     <View className={`py-md ${!isLast ? 'border-b border-border' : ''}`}>
       <View className="flex-row justify-between items-center mb-sm">
-        <Text className="text-bodyStrong text-text-primary">
+        <Text className="text-body-md font-medium text-text-primary">
           {rx.prescriber ?? 'Unknown prescriber'}
         </Text>
         <View className={`px-md py-xs rounded-full ${rx.isValid ? 'bg-accent/20' : 'bg-warning/20'}`}>
-          <Text className={`text-captionStrong ${rx.isValid ? 'text-accent' : 'text-warning'}`}>
+          <Text className={`text-caption-md font-medium ${rx.isValid ? 'text-accent' : 'text-warning'}`}>
             {rx.isValid ? 'Valid' : rx.status}
           </Text>
         </View>
@@ -157,61 +157,61 @@ function PrescriptionRow({ rx, isLast }: { rx: Prescription; isLast: boolean }) 
       {(rx.rightEye || rx.leftEye) && (
         <View className="bg-bg-page rounded-md p-sm mt-sm">
           <View className="flex-row mb-xs">
-            <Text className="text-caption text-text-muted w-12" />
-            <Text className="text-caption text-text-muted w-16 text-center">SPH</Text>
-            <Text className="text-caption text-text-muted w-16 text-center">CYL</Text>
-            <Text className="text-caption text-text-muted w-16 text-center">AXIS</Text>
+            <Text className="text-caption-md text-text-muted w-12" />
+            <Text className="text-caption-md text-text-muted w-16 text-center">SPH</Text>
+            <Text className="text-caption-md text-text-muted w-16 text-center">CYL</Text>
+            <Text className="text-caption-md text-text-muted w-16 text-center">AXIS</Text>
           </View>
           {rx.rightEye && (
             <View className="flex-row">
-              <Text className="text-captionStrong text-text-primary w-12">OD</Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md font-medium text-text-primary w-12">OD</Text>
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.rightEye.sphere != null ? formatRx(rx.rightEye.sphere) : '—'}
               </Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.rightEye.cylinder != null ? formatRx(rx.rightEye.cylinder) : '—'}
               </Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.rightEye.axis ?? '—'}
               </Text>
             </View>
           )}
           {rx.leftEye && (
             <View className="flex-row mt-xs">
-              <Text className="text-captionStrong text-text-primary w-12">OS</Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md font-medium text-text-primary w-12">OS</Text>
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.leftEye.sphere != null ? formatRx(rx.leftEye.sphere) : '—'}
               </Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.leftEye.cylinder != null ? formatRx(rx.leftEye.cylinder) : '—'}
               </Text>
-              <Text className="text-caption text-text-primary w-16 text-center font-mono">
+              <Text className="text-caption-md text-text-primary w-16 text-center font-mono">
                 {rx.leftEye.axis ?? '—'}
               </Text>
             </View>
           )}
           {rx.addPower != null && (
             <View className="flex-row mt-xs">
-              <Text className="text-captionStrong text-text-primary w-12">ADD</Text>
-              <Text className="text-caption text-text-primary font-mono">
+              <Text className="text-caption-md font-medium text-text-primary w-12">ADD</Text>
+              <Text className="text-caption-md text-text-primary font-mono">
                 {formatRx(rx.addPower)}
               </Text>
             </View>
           )}
           {rx.pd != null && (
             <View className="flex-row mt-xs">
-              <Text className="text-captionStrong text-text-primary w-12">PD</Text>
-              <Text className="text-caption text-text-primary font-mono">{rx.pd}mm</Text>
+              <Text className="text-caption-md font-medium text-text-primary w-12">PD</Text>
+              <Text className="text-caption-md text-text-primary font-mono">{rx.pd}mm</Text>
             </View>
           )}
         </View>
       )}
 
       <View className="flex-row justify-between mt-sm">
-        <Text className="text-caption text-text-muted">
+        <Text className="text-caption-md text-text-muted">
           Issued: {new Date(rx.issuedAt).toLocaleDateString()}
         </Text>
-        <Text className="text-caption text-text-muted">
+        <Text className="text-caption-md text-text-muted">
           Expires: {new Date(rx.expiresAt).toLocaleDateString()}
         </Text>
       </View>
@@ -237,9 +237,9 @@ export function WishlistPanel({ clientId }: WishlistPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Star color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Wishlist</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Wishlist</Text>
         {wishlist && (
-          <Text className="text-caption text-text-muted ml-sm">{wishlist.length} items</Text>
+          <Text className="text-caption-md text-text-muted ml-sm">{wishlist.length} items</Text>
         )}
       </View>
 
@@ -262,11 +262,11 @@ export function WishlistPanel({ clientId }: WishlistPanelProps) {
                     <GlassesIcon color="#6B6B6B" size={24} />
                   </View>
                 )}
-                <Text className="text-caption text-text-primary text-center mt-xs" numberOfLines={2}>
+                <Text className="text-caption-md text-text-primary text-center mt-xs" numberOfLines={2}>
                   {item.product?.title ?? 'Unknown product'}
                 </Text>
                 {item.notes && (
-                  <Text className="text-caption text-text-muted text-center" numberOfLines={1}>
+                  <Text className="text-caption-md text-text-muted text-center" numberOfLines={1}>
                     {item.notes}
                   </Text>
                 )}
@@ -274,7 +274,7 @@ export function WishlistPanel({ clientId }: WishlistPanelProps) {
             ))}
           </View>
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             No wishlist items yet
           </Text>
         )}
@@ -296,7 +296,7 @@ export function SegmentsPanel({ clientId }: SegmentsPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Tag color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Segments</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Segments</Text>
       </View>
 
       <Card>
@@ -306,17 +306,17 @@ export function SegmentsPanel({ clientId }: SegmentsPanelProps) {
           <View className="flex-row flex-wrap gap-sm">
             {segments.map((segment) => (
               <View key={segment.id} className="bg-bg-page px-md py-sm rounded-md">
-                <Text className="text-bodyStrong text-text-primary">
+                <Text className="text-body-md font-medium text-text-primary">
                   {segment.name.en || segment.name.fr}
                 </Text>
-                <Text className="text-caption text-text-muted">
+                <Text className="text-caption-md text-text-muted">
                   {segment.memberCount} members
                 </Text>
               </View>
             ))}
           </View>
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             Not in any segments
           </Text>
         )}
@@ -349,11 +349,11 @@ export function ProductInteractionsPanel({ clientId }: ProductInteractionsPanelP
     <View>
       <View className="flex-row items-center mb-md">
         <GlassesIcon color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">
           Product History
         </Text>
         {interactions && (
-          <Text className="text-caption text-text-muted ml-sm">
+          <Text className="text-caption-md text-text-muted ml-sm">
             {interactions.length} interactions
           </Text>
         )}
@@ -371,20 +371,20 @@ export function ProductInteractionsPanel({ clientId }: ProductInteractionsPanelP
               }`}
             >
               <View className="flex-1">
-                <Text className="text-body text-text-primary">
+                <Text className="text-body-md text-text-primary">
                   {pi.product?.title ?? pi.productId}
                 </Text>
-                <Text className="text-caption text-text-muted">
+                <Text className="text-caption-md text-text-muted">
                   {typeLabels[pi.type] ?? pi.type} · {pi.source}
                 </Text>
               </View>
-              <Text className="text-caption text-text-muted">
+              <Text className="text-caption-md text-text-muted">
                 {new Date(pi.occurredAt).toLocaleDateString()}
               </Text>
             </View>
           ))
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             No product interactions yet
           </Text>
         )}
@@ -406,7 +406,7 @@ export function TryonSessionsPanel({ clientId }: TryonSessionsPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Users color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">
           Try-on Sessions
         </Text>
       </View>
@@ -422,25 +422,25 @@ export function TryonSessionsPanel({ clientId }: TryonSessionsPanelProps) {
             >
               <View className="flex-row justify-between items-start">
                 <View>
-                  <Text className="text-bodyStrong text-text-primary">
+                  <Text className="text-body-md font-medium text-text-primary">
                     {new Date(session.startedAt).toLocaleDateString()}
                   </Text>
-                  <Text className="text-caption text-text-muted">
+                  <Text className="text-caption-md text-text-muted">
                     {session.framesTried} frames tried · {session.photosCount} photos
                   </Text>
                 </View>
                 <View className="items-end">
                   <SessionOutcomeBadge outcome={session.outcome} />
-                  <Text className="text-caption text-text-muted mt-xs">{session.status}</Text>
+                  <Text className="text-caption-md text-text-muted mt-xs">{session.status}</Text>
                 </View>
               </View>
               {session.notes && (
-                <Text className="text-caption text-text-muted mt-sm">{session.notes}</Text>
+                <Text className="text-caption-md text-text-muted mt-sm">{session.notes}</Text>
               )}
             </View>
           ))
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             No sessions yet
           </Text>
         )}
@@ -496,7 +496,7 @@ export function LinksPanel({ clientId }: LinksPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Link2 color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Relationships</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Relationships</Text>
       </View>
 
       <Card>
@@ -511,7 +511,7 @@ export function LinksPanel({ clientId }: LinksPanelProps) {
               }`}
             >
               <View className="w-10 h-10 rounded-full bg-bg-page items-center justify-center mr-md">
-                <Text className="text-captionStrong text-text-primary">
+                <Text className="text-caption-md font-medium text-text-primary">
                   {[link.linkedClient.firstName?.[0], link.linkedClient.lastName?.[0]]
                     .filter(Boolean)
                     .join('')
@@ -519,22 +519,22 @@ export function LinksPanel({ clientId }: LinksPanelProps) {
                 </Text>
               </View>
               <View className="flex-1">
-                <Text className="text-bodyStrong text-text-primary">
+                <Text className="text-body-md font-medium text-text-primary">
                   {[link.linkedClient.firstName, link.linkedClient.lastName]
                     .filter(Boolean)
                     .join(' ') || 'Unknown'}
                 </Text>
-                <Text className="text-caption text-text-muted">
+                <Text className="text-caption-md text-text-muted">
                   {relationshipLabels[link.relationshipType] ?? link.relationshipType}
                 </Text>
               </View>
               {link.linkedClient.email && (
-                <Text className="text-caption text-text-muted">{link.linkedClient.email}</Text>
+                <Text className="text-caption-md text-text-muted">{link.linkedClient.email}</Text>
               )}
             </View>
           ))
         ) : (
-          <Text className="text-body text-text-muted italic text-center py-md">
+          <Text className="text-body-md text-text-muted italic text-center py-md">
             No linked clients
           </Text>
         )}
@@ -574,7 +574,7 @@ export function LoyaltyPanel({ clientId }: LoyaltyPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Award color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Loyalty Credits</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Loyalty Credits</Text>
       </View>
 
         <Card>
@@ -703,7 +703,7 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Receipt color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Insurance Receipts</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Insurance Receipts</Text>
       </View>
 
         <Card>
@@ -716,13 +716,13 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
                 className={`flex-row items-center py-md ${i < receipts.length - 1 ? 'border-b border-border' : ''}`}
               >
                 <View className="flex-1">
-                  <Text className="text-body text-text-primary">{receipt.insurerName}</Text>
-                  <Text className="text-caption text-text-muted">
+                  <Text className="text-body-md text-text-primary">{receipt.insurerName}</Text>
+                  <Text className="text-caption-md text-text-muted">
                     {new Date(receipt.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     {receipt.sentAt && ` · Sent ${new Date(receipt.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                   </Text>
                 </View>
-                <Text className="text-body text-text-primary mr-md">
+                <Text className="text-body-md text-text-primary mr-md">
                   ${(receipt.amount / 100).toFixed(2)}
                 </Text>
                 <PermissionGate permission="org:receipts:write">
@@ -740,13 +740,13 @@ export function ReceiptsPanel({ clientId }: ReceiptsPanelProps) {
                     accessibilityLabel={`Resend receipt for ${receipt.insurerName}, ${(receipt.amount / 100).toFixed(2)} dollars`}
                     className="min-h-[44px] px-md items-center justify-center border border-border rounded-md"
                   >
-                    <Text className="text-caption text-navy">Resend</Text>
+                    <Text className="text-caption-md text-navy">Resend</Text>
                   </Pressable>
                 </PermissionGate>
               </View>
             ))
           ) : (
-            <Text className="text-body text-text-muted italic text-center py-md">
+            <Text className="text-body-md text-text-muted italic text-center py-md">
               No receipts
             </Text>
           )}

@@ -106,8 +106,8 @@ export default function LoginScreen() {
             <View className="w-10 h-10 rounded-lg bg-brand items-center justify-center mb-4">
               <Text className="text-brand-text text-lg font-bold">L</Text>
             </View>
-            <Text className="text-headline text-text-primary">Sign in to Lunettiq</Text>
-            <Text className="text-body text-text-muted mt-xs">Welcome back</Text>
+            <Text className="text-heading-xl text-text-primary">Sign in to Lunettiq</Text>
+            <Text className="text-body-md text-text-muted mt-xs">Welcome back</Text>
           </View>
 
           {stage === 'main' ? (
@@ -118,7 +118,7 @@ export default function LoginScreen() {
                 disabled={isLoading}
                 className="rounded-lg py-md px-lg min-h-[44px] items-center justify-center border border-border bg-bg-page"
               >
-                <Text className="text-bodyStrong text-text-primary">
+                <Text className="text-body-md font-medium text-text-primary">
                   {isLoading ? 'Signing in...' : 'Continue with Google'}
                 </Text>
               </Pressable>
@@ -126,7 +126,7 @@ export default function LoginScreen() {
               {/* Divider */}
               <View className="flex-row items-center py-sm">
                 <View className="flex-1 h-[1px] bg-border" />
-                <Text className="text-caption text-text-muted px-md">or</Text>
+                <Text className="text-caption-md text-text-muted px-md">or</Text>
                 <View className="flex-1 h-[1px] bg-border" />
               </View>
 
@@ -135,7 +135,7 @@ export default function LoginScreen() {
                 onPress={() => setStage('password')}
                 className="rounded-lg py-md px-lg min-h-[44px] items-center justify-center bg-brand"
               >
-                <Text className="text-bodyStrong text-brand-text">Sign in with email</Text>
+                <Text className="text-body-md font-medium text-brand-text">Sign in with email</Text>
               </Pressable>
             </View>
           ) : (
@@ -148,7 +148,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoComplete="email"
-                className="border border-border rounded-lg px-md py-md text-body text-text-primary min-h-[44px] bg-bg-page"
+                className="border border-border rounded-lg px-md py-md text-body-md text-text-primary min-h-[44px] bg-bg-page"
                 editable={!isLoading}
               />
               <TextInput
@@ -158,7 +158,7 @@ export default function LoginScreen() {
                 placeholderTextColor="#A3A3A3"
                 secureTextEntry
                 autoComplete="current-password"
-                className="border border-border rounded-lg px-md py-md text-body text-text-primary min-h-[44px] bg-bg-page"
+                className="border border-border rounded-lg px-md py-md text-body-md text-text-primary min-h-[44px] bg-bg-page"
                 editable={!isLoading}
                 onSubmitEditing={handlePasswordSignIn}
               />
@@ -170,7 +170,7 @@ export default function LoginScreen() {
                   email.trim() && !isLoading ? 'bg-brand' : 'bg-bg-surface'
                 }`}
               >
-                <Text className={`text-bodyStrong ${
+                <Text className={`text-body-md font-medium ${
                   email.trim() && !isLoading ? 'text-brand-text' : 'text-text-muted'
                 }`}>
                   {isLoading ? 'Signing in...' : 'Continue'}
@@ -178,7 +178,7 @@ export default function LoginScreen() {
               </Pressable>
 
               <Pressable onPress={() => { setStage('main'); setPassword(''); }} className="items-center mt-sm min-h-[44px] justify-center">
-                <Text className="text-caption text-text-muted">← Back</Text>
+                <Text className="text-caption-md text-text-muted">← Back</Text>
               </Pressable>
             </View>
           )}

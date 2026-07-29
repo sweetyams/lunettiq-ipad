@@ -177,7 +177,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
   const renderStep1 = () => (
     <View className="flex-1">
       <Text className="text-displayMd font-bold text-text-primary mb-sm">Reference Photos</Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Add inspiration photos or examples of frames you like (minimum 1 photo)
       </Text>
       
@@ -200,7 +200,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               placeholder="What do you like about this?"
               value={photo.caption || ''}
               onChangeText={(text) => updatePhotoCaption(index, text)}
-              className="mt-sm p-sm bg-bg-elevated rounded-md border border-border text-body"
+              className="mt-sm p-sm bg-bg-surface rounded-md border border-bordertext-body-md"
               multiline
             />
           </View>
@@ -215,7 +215,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               className="w-24 h-24 bg-border rounded-md items-center justify-center border-2 border-dashed border-border-strong"
             >
               <Camera size={24} color="#6B6B6B" />
-              <Text className="text-captionStrong text-text-muted mt-xs">Camera</Text>
+              <Text className="text-caption-md font-medium text-text-muted mt-xs">Camera</Text>
             </Pressable>
             
             <Pressable
@@ -225,7 +225,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               className="w-24 h-24 bg-border rounded-md items-center justify-center border-2 border-dashed border-border-strong"
             >
               <Plus size={24} color="#6B6B6B" />
-              <Text className="text-captionStrong text-text-muted mt-xs">Library</Text>
+              <Text className="text-caption-md font-medium text-text-muted mt-xs">Library</Text>
             </Pressable>
           </View>
         )}
@@ -236,7 +236,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
   const renderStep2 = () => (
     <View className="flex-1">
       <Text className="text-displayMd font-bold text-text-primary mb-sm">Design Brief</Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Describe the modifications and preferences
       </Text>
       
@@ -244,12 +244,12 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         placeholder="Describe the modifications you'd like..."
         value={intake.designBrief || ''}
         onChangeText={setDesignBrief}
-        className="p-md bg-bg-elevated rounded-md border border-border text-body min-h-[100px]"
+        className="p-md bg-bg-surface rounded-md border border-border text-body-md min-h-[100px]"
         multiline
         textAlignVertical="top"
       />
       
-      <Text className="text-bodyStrong text-text-primary mt-lg mb-sm">Quick Tags</Text>
+      <Text className="text-body-md font-medium text-text-primary mt-lg mb-sm">Quick Tags</Text>
       <View className="flex-row flex-wrap gap-sm mb-lg">
         {[
           'Wider bridge',
@@ -270,12 +270,12 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             accessibilityLabel={`Add modification: ${tag}`}
             className="px-md py-sm bg-border rounded-full"
           >
-            <Text className="text-captionStrong text-text-primary">{tag}</Text>
+            <Text className="text-caption-md font-medium text-text-primary">{tag}</Text>
           </Pressable>
         ))}
       </View>
       
-      <Text className="text-bodyStrong text-text-primary mb-sm">Material Preference</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Material Preference</Text>
       <View className="flex-row gap-sm mb-lg">
         {(['acetate', 'titanium', 'mixed', 'other'] as MaterialPreference[]).map((material) => (
           <Pressable
@@ -287,10 +287,10 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             className={`px-md py-sm rounded-md border ${
               intake.materialPreference === material
                 ? 'bg-brand border-brand'
-                : 'bg-bg-elevated border-border'
+                : 'bg-bg-surface border-border'
             }`}
           >
-            <Text className={`text-captionStrong capitalize ${
+            <Text className={`text-caption-md font-medium capitalize ${
               intake.materialPreference === material ? 'text-text-inverse' : 'text-text-primary'
             }`}>
               {material}
@@ -299,12 +299,12 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         ))}
       </View>
       
-      <Text className="text-bodyStrong text-text-primary mb-sm">Color Preference</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Color Preference</Text>
       <TextInput
         placeholder="e.g., tortoise, black, clear, custom..."
         value={intake.colourPreference || ''}
         onChangeText={setColourPreference}
-        className="p-md bg-bg-elevated rounded-md border border-border text-body"
+        className="p-md bg-bg-surface rounded-md border border-bordertext-body-md"
       />
     </View>
   );
@@ -312,7 +312,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
   const renderStep3 = () => (
     <View className="flex-1">
       <Text className="text-displayMd font-bold text-text-primary mb-sm">Measurements</Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Frame measurements in millimeters (optional)
       </Text>
       
@@ -325,7 +325,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           { key: 'lensWidth', label: 'Lens Width' },
         ].map(({ key, label }) => (
           <View key={key} className="flex-row items-center justify-between">
-            <Text className="text-bodyStrong text-text-primary flex-1">{label}</Text>
+            <Text className="text-body-md font-medium text-text-primary flex-1">{label}</Text>
             <View className="flex-row items-center">
               <TextInput
                 placeholder="--"
@@ -334,10 +334,10 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
                   const value = parseFloat(text) || undefined;
                   setMeasurements({ [key]: value });
                 }}
-                className="w-20 p-sm bg-bg-elevated rounded-md border border-border text-body text-center"
+                className="w-20 p-sm bg-bg-surface rounded-md border border-border text-body-md text-center"
                 keyboardType="numeric"
               />
-              <Text className="text-body text-text-muted ml-sm">mm</Text>
+              <Text className="text-body-md text-text-muted ml-sm">mm</Text>
             </View>
           </View>
         ))}
@@ -348,8 +348,8 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         accessibilityLabel="Copy measurements from current frames"
         className="mt-lg p-md bg-border rounded-md items-center"
       >
-        <Text className="text-bodyStrong text-text-primary">Copy from Current Frames</Text>
-        <Text className="text-caption text-text-muted">Uses client fit profile if available</Text>
+        <Text className="text-body-md font-medium text-text-primary">Copy from Current Frames</Text>
+        <Text className="text-caption-md text-text-muted">Uses client fit profile if available</Text>
       </Pressable>
     </View>
   );
@@ -357,11 +357,11 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
   const renderStep4 = () => (
     <View className="flex-1">
       <Text className="text-displayMd font-bold text-text-primary mb-sm">Quote Details</Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Budget range and timeline preferences
       </Text>
       
-      <Text className="text-bodyStrong text-text-primary mb-sm">Budget Range</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Budget Range</Text>
       <View className="gap-sm mb-lg">
         {(['$500-800', '$800-1200', '$1200-2000', '$2000+'] as BudgetRange[]).map((range) => (
           <Pressable
@@ -373,10 +373,10 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             className={`p-md rounded-md border ${
               intake.budgetRange === range
                 ? 'bg-brand border-brand'
-                : 'bg-bg-elevated border-border'
+                : 'bg-bg-surface border-border'
             }`}
           >
-            <Text className={`text-bodyStrong ${
+            <Text className={`text-body-md font-medium ${
               intake.budgetRange === range ? 'text-text-inverse' : 'text-text-primary'
             }`}>
               {range}
@@ -385,21 +385,21 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         ))}
       </View>
       
-      <Text className="text-bodyStrong text-text-primary mb-sm">Target Completion Date</Text>
+      <Text className="text-body-md font-medium text-text-primary mb-sm">Target Completion Date</Text>
       <Pressable
         onPress={() => setShowDatePicker(true)}
         accessibilityRole="button"
         accessibilityLabel="Select target completion date"
-        className="p-md bg-bg-elevated rounded-md border border-border"
+        className="p-md bg-bg-surface rounded-md border border-border"
       >
-        <Text className="text-body text-text-primary">
+        <Text className="text-body-md text-text-primary">
           {intake.targetDate || 'Select date (minimum 8 weeks)'}
         </Text>
       </Pressable>
       
       {showDatePicker && (
-        <View className="bg-bg-elevated border border-border rounded-md p-md mt-sm">
-          <Text className="text-caption text-text-muted mb-sm">Minimum 8 weeks from today</Text>
+        <View className="bg-bg-surface border border-border rounded-md p-md mt-sm">
+          <Text className="text-caption-md text-text-muted mb-sm">Minimum 8 weeks from today</Text>
           <Pressable
             onPress={() => {
               const defaultDate = new Date(Date.now() + 8 * 7 * 24 * 60 * 60 * 1000);
@@ -411,17 +411,17 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
             accessibilityLabel="Set target date to 8 weeks from today"
             className="bg-brand rounded-md p-sm items-center"
           >
-            <Text className="text-text-inverse text-body">Set to 8 weeks from today</Text>
+            <Text className="text-text-inversetext-body-md">Set to 8 weeks from today</Text>
           </Pressable>
         </View>
       )}
       
-      <Text className="text-bodyStrong text-text-primary mt-lg mb-sm">Additional Notes</Text>
+      <Text className="text-body-md font-medium text-text-primary mt-lg mb-sm">Additional Notes</Text>
       <TextInput
         placeholder="Any other preferences or requirements..."
         value={intake.notes || ''}
         onChangeText={setNotes}
-        className="p-md bg-bg-elevated rounded-md border border-border text-body min-h-[100px]"
+        className="p-md bg-bg-surface rounded-md border border-border text-body-md min-h-[100px]"
         multiline
         textAlignVertical="top"
       />
@@ -431,74 +431,74 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
   const renderStep5 = () => (
     <View className="flex-1">
       <Text className="text-displayMd font-bold text-text-primary mb-sm">Review & Submit</Text>
-      <Text className="text-body text-text-muted mb-lg">
+      <Text className="text-body-md text-text-muted mb-lg">
         Review all details before submitting for quote
       </Text>
       
       <ScrollView className="flex-1 gap-lg">
         {/* Reference Photos Summary */}
-        <View className="p-md bg-bg-elevated rounded-lg border border-border">
+        <View className="p-md bg-bg-surface rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-bodyStrong text-text-primary">Reference Photos</Text>
+            <Text className="text-body-md font-medium text-text-primary">Reference Photos</Text>
             <Pressable 
               onPress={() => goToStep(1)}
               accessibilityRole="button"
               accessibilityLabel="Edit reference photos"
             >
-              <Text className="text-captionStrong text-brand">Edit</Text>
+              <Text className="text-caption-md font-medium text-brand">Edit</Text>
             </Pressable>
           </View>
-          <Text className="text-body text-text-muted">
+          <Text className="text-body-md text-text-muted">
             {intake.referencePhotos?.length || 0} photos added
           </Text>
         </View>
         
         {/* Design Brief Summary */}
-        <View className="p-md bg-bg-elevated rounded-lg border border-border">
+        <View className="p-md bg-bg-surface rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-bodyStrong text-text-primary">Design Brief</Text>
+            <Text className="text-body-md font-medium text-text-primary">Design Brief</Text>
             <Pressable 
               onPress={() => goToStep(2)}
               accessibilityRole="button"
               accessibilityLabel="Edit design brief"
             >
-              <Text className="text-captionStrong text-brand">Edit</Text>
+              <Text className="text-caption-md font-medium text-brand">Edit</Text>
             </Pressable>
           </View>
-          <Text className="text-body text-text-muted">
+          <Text className="text-body-md text-text-muted">
             {intake.designBrief || 'No description provided'}
           </Text>
           {intake.materialPreference && (
-            <Text className="text-caption text-text-muted mt-sm">
+            <Text className="text-caption-md text-text-muted mt-sm">
               Material: {intake.materialPreference}
             </Text>
           )}
           {intake.colourPreference && (
-            <Text className="text-caption text-text-muted">
+            <Text className="text-caption-md text-text-muted">
               Color: {intake.colourPreference}
             </Text>
           )}
         </View>
         
         {/* Measurements Summary */}
-        <View className="p-md bg-bg-elevated rounded-lg border border-border">
+        <View className="p-md bg-bg-surface rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-bodyStrong text-text-primary">Measurements</Text>
+            <Text className="text-body-md font-medium text-text-primary">Measurements</Text>
             <Pressable 
               onPress={() => goToStep(3)}
               accessibilityRole="button"
               accessibilityLabel="Edit measurements"
             >
-              <Text className="text-captionStrong text-brand">Edit</Text>
+              <Text className="text-caption-md font-medium text-brand">Edit</Text>
             </Pressable>
           </View>
           {Object.keys(intake.measurements || {}).length === 0 ? (
-            <Text className="text-body text-text-muted">No measurements provided</Text>
+            <Text className="text-body-md text-text-muted">No measurements provided</Text>
           ) : (
             <View className="gap-xs">
               {Object.entries(intake.measurements || {}).map(([key, value]) => (
                 value && (
-                  <Text key={key} className="text-caption text-text-muted">
+                  <Text key={key} className="text-caption-md text-text-muted">
                     {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: {value}mm
                   </Text>
                 )
@@ -508,22 +508,22 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
         </View>
         
         {/* Quote Details Summary */}
-        <View className="p-md bg-bg-elevated rounded-lg border border-border">
+        <View className="p-md bg-bg-surface rounded-lg border border-border">
           <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-bodyStrong text-text-primary">Quote Details</Text>
+            <Text className="text-body-md font-medium text-text-primary">Quote Details</Text>
             <Pressable 
               onPress={() => goToStep(4)}
               accessibilityRole="button"
               accessibilityLabel="Edit quote details"
             >
-              <Text className="text-captionStrong text-brand">Edit</Text>
+              <Text className="text-caption-md font-medium text-brand">Edit</Text>
             </Pressable>
           </View>
-          <Text className="text-body text-text-muted">
+          <Text className="text-body-md text-text-muted">
             Budget: {intake.budgetRange || 'Not specified'}
           </Text>
           {intake.targetDate && (
-            <Text className="text-caption text-text-muted mt-xs">
+            <Text className="text-caption-md text-text-muted mt-xs">
               Target date: {intake.targetDate}
             </Text>
           )}
@@ -558,7 +558,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
       </ScrollView>
       
       {/* Navigation */}
-      <View className="flex-row items-center justify-between p-2xl bg-bg-elevated border-t border-border">
+      <View className="flex-row items-center justify-between p-2xl bg-bg-surface border-t border-border">
         <Pressable
           onPress={currentStep === 1 ? () => router.back() : prevStep}
           accessibilityRole="button"
@@ -566,7 +566,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
           className="flex-row items-center px-lg py-sm"
         >
           <ChevronLeft size={20} color="#2B2B2B" />
-          <Text className="text-bodyStrong text-text-primary ml-xs">
+          <Text className="text-body-md font-medium text-text-primary ml-xs">
             {currentStep === 1 ? 'Cancel' : 'Back'}
           </Text>
         </Pressable>
@@ -581,7 +581,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               isSubmitting ? 'bg-text-muted' : 'bg-accent'
             }`}
           >
-            <Text className="text-bodyStrong text-text-inverse mr-xs">
+            <Text className="text-body-md font-medium text-text-inverse mr-xs">
               {isSubmitting ? 'Submitting...' : 'Submit for Quote'}
             </Text>
             <Check size={20} color="white" />
@@ -596,7 +596,7 @@ export function CustomDesignFlow({ clientId, clientName }: CustomDesignFlowProps
               canProceedFromStep(currentStep) ? 'bg-brand' : 'bg-text-muted'
             }`}
           >
-            <Text className="text-bodyStrong text-text-inverse mr-xs">Next</Text>
+            <Text className="text-body-md font-medium text-text-inverse mr-xs">Next</Text>
             <ChevronRight size={20} color="white" />
           </Pressable>
         )}

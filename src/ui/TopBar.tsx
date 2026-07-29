@@ -63,7 +63,7 @@ export function TopBar({
         {/* Center: Client name */}
         <View className="flex-1 items-center">
           {activeClientName && (
-            <Text className="text-text-inverse text-body font-medium">
+            <Text className="text-text-inverse text-body-md font-medium">
               {activeClientName}
             </Text>
           )}
@@ -72,7 +72,7 @@ export function TopBar({
         {/* Right: Photo count */}
         <View className="min-w-[44px] items-center">
           {typeof photoCount === 'number' && (
-            <Text className="text-text-inverse/70 text-caption">
+            <Text className="text-text-inverse/70text-caption-md">
               {photoCount}/20
             </Text>
           )}
@@ -83,11 +83,11 @@ export function TopBar({
 
   // Full variant - default TopBar
   return (
-    <View className="flex-row h-[60px] items-center px-xl bg-bg-elevated/90 border-b border-border">
+    <View className="flex-row h-[60px] items-center px-xl bg-bg-surface/90 border-b border-border">
       {/* Left: Title */}
       <View className="flex-row items-center">
         {title && (
-          <Text className="text-headline font-bold text-text-primary">
+          <Text className="text-heading-xl font-bold text-text-primary">
             {title}
           </Text>
         )}
@@ -99,9 +99,9 @@ export function TopBar({
       {/* Right: Session chip + Sync + Privacy */}
       <View className="flex-row items-center gap-2">
         {sessionChip && (
-          <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-bg-elevated border border-border">
+          <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-bg-surface border border-border">
             <View className="w-2 h-2 rounded-full bg-accent" />
-            <Text className="text-body text-text-primary">
+            <Text className="text-body-md text-text-primary">
               Session · {sessionChip.clientName} · {sessionChip.duration}
             </Text>
           </View>

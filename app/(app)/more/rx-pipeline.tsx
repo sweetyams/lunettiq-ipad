@@ -46,33 +46,33 @@ function RxOrderCard({ order }: { order: RxOrder }) {
   return (
     <View className="bg-bg-surface rounded-lg border border-border p-md mb-sm">
       <View className="flex-row items-center justify-between mb-xs">
-        <Text className="text-headline text-text-primary flex-1" numberOfLines={1}>
+        <Text className="text-heading-xl text-text-primary flex-1" numberOfLines={1}>
           {order.clientName}
         </Text>
         <View className={`rounded-full px-sm py-xs ${bgClass}`}>
-          <Text className={`text-captionStrong ${textClass}`}>
+          <Text className={`text-caption-md font-medium ${textClass}`}>
             {STATE_LABELS[order.state]}
           </Text>
         </View>
       </View>
       {order.productName && (
-        <Text className="text-body text-text-muted mb-xs" numberOfLines={1}>
+        <Text className="text-body-md text-text-muted mb-xs" numberOfLines={1}>
           {order.productName}
         </Text>
       )}
       <View className="flex-row items-center justify-between">
         {order.lab && (
-          <Text className="text-caption text-text-muted">Lab: {order.lab}</Text>
+          <Text className="text-caption-md text-text-muted">Lab: {order.lab}</Text>
         )}
         {order.estimatedReadyAt && (
-          <Text className="text-caption text-text-muted">
+          <Text className="text-caption-md text-text-muted">
             Est. {new Date(order.estimatedReadyAt).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric',
             })}
           </Text>
         )}
         {!order.lab && !order.estimatedReadyAt && (
-          <Text className="text-caption text-text-muted">
+          <Text className="text-caption-md text-text-muted">
             Created {new Date(order.createdAt).toLocaleDateString('en-US', {
               month: 'short', day: 'numeric',
             })}
@@ -102,20 +102,20 @@ function RxPipelineContent() {
       {counts && (
         <View className="flex-row gap-md px-xl py-sm">
           <View className="items-center">
-            <Text className="text-headline text-text-primary">{counts.awaiting_rx}</Text>
-            <Text className="text-caption text-text-muted">Awaiting</Text>
+            <Text className="text-heading-xl text-text-primary">{counts.awaiting_rx}</Text>
+            <Text className="text-caption-md text-text-muted">Awaiting</Text>
           </View>
           <View className="items-center">
-            <Text className="text-headline text-text-primary">{counts.ordered + counts.in_lab}</Text>
-            <Text className="text-caption text-text-muted">In Progress</Text>
+            <Text className="text-heading-xl text-text-primary">{counts.ordered + counts.in_lab}</Text>
+            <Text className="text-caption-md text-text-muted">In Progress</Text>
           </View>
           <View className="items-center">
-            <Text className="text-headline text-green">{counts.ready}</Text>
-            <Text className="text-caption text-text-muted">Ready</Text>
+            <Text className="text-heading-xl text-green">{counts.ready}</Text>
+            <Text className="text-caption-md text-text-muted">Ready</Text>
           </View>
           <View className="items-center">
-            <Text className="text-headline text-text-muted">{counts.total}</Text>
-            <Text className="text-caption text-text-muted">Total</Text>
+            <Text className="text-heading-xl text-text-muted">{counts.total}</Text>
+            <Text className="text-caption-md text-text-muted">Total</Text>
           </View>
         </View>
       )}
@@ -136,8 +136,8 @@ function RxPipelineContent() {
                   : 'border border-border'
               }`}
             >
-              <Text className={`text-bodyStrong ${
-                activeFilter === item.key ? 'text-white' : 'text-text-primary'
+              <Text className={`text-body-md font-medium ${
+                activeFilter === item.key ? 'text-text-inverse' : 'text-text-primary'
               }`}>
                 {item.label}
               </Text>
@@ -170,8 +170,8 @@ export default function RxPipelineScreen() {
       fallback={
         <View className="flex-1 bg-bg-page items-center justify-center p-xl">
           <ClipboardList size={48} color="#6B6B6B" />
-          <Text className="text-headline text-text-primary mt-lg">Permission Required</Text>
-          <Text className="text-body text-text-muted mt-sm text-center">
+          <Text className="text-heading-xl text-text-primary mt-lg">Permission Required</Text>
+          <Text className="text-body-md text-text-muted mt-sm text-center">
             You need Rx Pipeline access to view this screen
           </Text>
         </View>

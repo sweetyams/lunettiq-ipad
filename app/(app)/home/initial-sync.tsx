@@ -30,10 +30,10 @@ export default function InitialSyncScreen() {
     <View className="flex-1 bg-brand justify-center items-center px-2xl">
       {/* Logo area */}
       <View className="mb-2xl">
-        <Text className="text-text-inverse text-displayLg font-bold text-center">
+        <Text className="text-text-inverse text-display-lg font-bold text-center">
           Lunettiq
         </Text>
-        <Text className="text-text-inverse text-body text-center mt-sm">
+        <Text className="text-text-inverse text-body-md text-center mt-sm">
           Preparing your workspace
         </Text>
       </View>
@@ -49,26 +49,26 @@ export default function InitialSyncScreen() {
       </View>
 
       {/* Status message */}
-      <Text className="text-text-inverse text-body text-center mb-sm">
+      <Text className="text-text-inverse text-body-md text-center mb-sm">
         {message}
       </Text>
 
       {/* Percentage */}
-      <Text className="text-text-inverse text-caption">
+      <Text className="text-text-inversetext-caption-md">
         {Math.round(progress)}%
       </Text>
 
       {/* Error state */}
       {status === 'error' && (
         <View className="mt-xl items-center">
-          <Text className="text-error text-body text-center mb-lg">
+          <Text className="text-error text-body-md text-center mb-lg">
             Unable to download data. Check your internet connection.
           </Text>
           <Pressable
             onPress={handleRetry}
             className="bg-accent px-lg py-sm rounded-md min-w-[120px] min-h-[44px] justify-center items-center"
           >
-            <Text className="text-text-inverse text-bodyStrong">
+            <Text className="text-text-inverse text-body-md font-medium">
               Try Again
             </Text>
           </Pressable>
@@ -78,7 +78,7 @@ export default function InitialSyncScreen() {
       {/* Success state */}
       {status === 'complete' && (
         <View className="mt-xl items-center">
-          <Text className="text-accent text-body text-center">
+          <Text className="text-accent text-body-md text-center">
             Ready! Opening workspace...
           </Text>
         </View>

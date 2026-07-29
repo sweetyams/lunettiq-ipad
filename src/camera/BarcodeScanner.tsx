@@ -145,7 +145,7 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
   if (!permission) {
     return (
       <View className="flex-1 bg-black justify-center items-center">
-        <Text className="text-text-inverse text-body mb-lg">Loading camera...</Text>
+        <Text className="text-text-inverse text-body-md mb-lg">Loading camera...</Text>
       </View>
     );
   }
@@ -154,10 +154,10 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
     return (
       <View className="flex-1 bg-black justify-center items-center px-xl">
         <ScanLine size={48} color="white" className="mb-lg" />
-        <Text className="text-text-inverse text-headline text-center mb-md">
+        <Text className="text-text-inverse text-heading-xl text-center mb-md">
           Camera Permission Required
         </Text>
-        <Text className="text-text-inverse text-body text-center mb-lg opacity-80">
+        <Text className="text-text-inverse text-body-md text-center mb-lg opacity-80">
           This app needs camera access to scan barcodes
         </Text>
         <Pressable
@@ -166,7 +166,7 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
           accessibilityRole="button"
           accessibilityLabel="Grant camera permission"
         >
-          <Text className="text-text-inverse text-bodyStrong">Grant Permission</Text>
+          <Text className="text-text-inverse text-body-md font-medium">Grant Permission</Text>
         </Pressable>
       </View>
     );
@@ -197,7 +197,7 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
             <X size={24} color="white" />
           </Pressable>
           
-          <Text className="text-text-inverse text-bodyStrong">Scan Product Barcode</Text>
+          <Text className="text-text-inverse text-body-md font-medium">Scan Product Barcode</Text>
           
           <View className="w-11" />
         </View>
@@ -232,10 +232,10 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
       <View className="absolute bottom-0 left-0 right-0 pb-12 px-6">
         {isScanning && !isResolving && !scannedProduct && (
           <View className="bg-black/70 rounded-lg p-4">
-            <Text className="text-text-inverse text-body text-center">
+            <Text className="text-text-inverse text-body-md text-center">
               Position the barcode within the frame
             </Text>
-            <Text className="text-text-inverse text-caption text-center mt-2 opacity-80">
+            <Text className="text-text-inverse text-caption-md text-center mt-2 opacity-80">
               The camera will scan automatically
             </Text>
           </View>
@@ -243,7 +243,7 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
 
         {isResolving && (
           <View className="bg-black/70 rounded-lg p-4">
-            <Text className="text-text-inverse text-bodyStrong text-center">
+            <Text className="text-text-inverse text-body-md font-medium text-center">
               Identifying product...
             </Text>
           </View>
@@ -253,21 +253,21 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
           <View className="bg-accent/90 rounded-lg p-4">
             <View className="flex-row items-center justify-center mb-2">
               <Package size={20} color="white" className="mr-2" />
-              <Text className="text-text-inverse text-bodyStrong">Product Found</Text>
+              <Text className="text-text-inverse text-body-md font-medium">Product Found</Text>
             </View>
             
-            <Text className="text-text-inverse text-headline text-center mb-1">
+            <Text className="text-text-inverse text-heading-xl text-center mb-1">
               {scannedProduct.familyName || scannedProduct.name}
             </Text>
             
             {scannedProduct.collection && (
-              <Text className="text-text-inverse text-body text-center opacity-90">
+              <Text className="text-text-inverse text-body-md text-center opacity-90">
                 {scannedProduct.collection}
               </Text>
             )}
             
             {scannedProduct.sku && (
-              <Text className="text-text-inverse text-caption text-center mt-1 opacity-80">
+              <Text className="text-text-inverse text-caption-md text-center mt-1 opacity-80">
                 SKU: {scannedProduct.sku}
               </Text>
             )}
@@ -275,20 +275,20 @@ export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps
             <View className="flex-row justify-center mt-4 space-x-4">
               <Pressable
                 onPress={handleRescan}
-                className="bg-bg-elevated/20 rounded-md px-4 py-2"
+                className="bg-bg-surface/20 rounded-md px-4 py-2"
                 accessibilityRole="button"
                 accessibilityLabel="Scan again"
               >
-                <Text className="text-text-inverse text-bodyStrong">Rescan</Text>
+                <Text className="text-text-inverse text-body-md font-medium">Rescan</Text>
               </Pressable>
               
               <Pressable
                 onPress={handleManualConfirm}
-                className="bg-bg-elevated rounded-md px-6 py-2"
+                className="bg-bg-surface rounded-md px-6 py-2"
                 accessibilityRole="button"
                 accessibilityLabel="Confirm product selection"
               >
-                <Text className="text-accent text-bodyStrong">Confirm</Text>
+                <Text className="text-accent text-body-md font-medium">Confirm</Text>
               </Pressable>
             </View>
           </View>

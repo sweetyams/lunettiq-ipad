@@ -54,7 +54,7 @@ export function ScreenHeader({
       <View className="flex-1">
         <Text className="text-displayMd text-text-primary">{title}</Text>
         {subtitle && (
-          <Text className="text-caption text-text-muted mt-xs">{subtitle}</Text>
+          <Text className="text-caption-md text-text-muted mt-xs">{subtitle}</Text>
         )}
       </View>
 

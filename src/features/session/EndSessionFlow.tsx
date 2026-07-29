@@ -249,7 +249,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
               onPress={() => handleOutcomeSelect(option.key)}
               accessibilityRole="button"
               accessibilityLabel={`Session outcome: ${option.label}`}
-              className="bg-bg-elevated rounded-lg border border-border p-lg items-center justify-center min-h-[120px] w-[48%] mb-md"
+              className="bg-bg-surface rounded-lg border border-border p-lg items-center justify-center min-h-[120px] w-[48%] mb-md"
               style={{ 
                 borderColor: option.key === 'purchased' ? colors.success : colors.border,
                 borderWidth: option.key === 'purchased' ? 2 : 1
@@ -260,7 +260,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
                 color={option.color}
                 style={{ marginBottom: 8 }}
               />
-              <Text className="text-body font-medium text-center text-text-primary">
+              <Text className="text-body-md font-medium text-center text-text-primary">
                 {option.label}
               </Text>
             </Pressable>
@@ -271,7 +271,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       {/* Show order reference field if purchased is selected */}
       {outcome === 'purchased' && (
         <View className="mt-lg">
-          <Text className="text-body font-medium text-text-primary mb-sm">
+          <Text className="text-body-md font-medium text-text-primary mb-sm">
             Link to order (optional)
           </Text>
           <View className="flex-row">
@@ -279,7 +279,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
               value={orderRef}
               onChangeText={setOrderRef}
               placeholder="Order number or receipt..."
-              className="flex-1 bg-bg-elevated border border-border rounded-md p-md text-body text-text-primary min-h-[44px]"
+              className="flex-1 bg-bg-surface border border-border rounded-md p-md text-body-md text-text-primary min-h-[44px]"
             />
             <Pressable
               onPress={handleBarcodeScan}
@@ -300,7 +300,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         accessibilityLabel="Cancel and return to session"
         className="mt-xl py-md items-center min-h-[44px] justify-center"
       >
-        <Text className="text-body text-text-muted">Cancel — back to session</Text>
+        <Text className="text-body-md text-text-muted">Cancel — back to session</Text>
       </Pressable>
     </View>
   );
@@ -324,7 +324,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       {/* Send summary toggle */}
       <View className="mb-lg">
         <View className="flex-row items-center justify-between mb-md">
-          <Text className="text-body font-medium text-text-primary">Send summary email</Text>
+          <Text className="text-body-md font-medium text-text-primary">Send summary email</Text>
           <Switch
             value={sendSummary}
             onValueChange={setSendSummary}
@@ -335,7 +335,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
 
         {/* Show consent warning if declined */}
         {!consentCaptured && (
-          <Text className="text-caption text-text-muted mb-md">
+          <Text className="text-caption-md text-text-muted mb-md">
             Photos not permitted — email will show frame names only
           </Text>
         )}
@@ -343,7 +343,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         {/* Language selector */}
         {sendSummary && (
           <View className="flex-row items-center mb-lg">
-            <Text className="text-body text-text-primary mr-md">Language:</Text>
+            <Text className="text-body-md text-text-primary mr-md">Language:</Text>
             <View className="flex-row">
               {[
                 { key: 'en' as const, label: 'EN' },
@@ -358,7 +358,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
                   className={`px-md py-sm rounded-md mr-sm min-w-[44px] min-h-[44px] items-center justify-center ${
                     language === lang.key
                       ? 'bg-brand'
-                      : 'border border-border bg-bg-elevated'
+                      : 'border border-border bg-bg-surface'
                   }`}
                 >
                   <Text className={`text-body font-medium ${
@@ -374,38 +374,38 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
       </View>
 
       {/* Email preview */}
-      <View className="bg-bg-elevated border border-border rounded-lg p-lg mb-xl min-h-[200px]">
-        <Text className="text-body font-medium text-text-primary mb-md">
+      <View className="bg-bg-surface border border-border rounded-lg p-lg mb-xl min-h-[200px]">
+        <Text className="text-body-md font-medium text-text-primary mb-md">
           Email preview
         </Text>
         
         {sendSummary ? (
           <View>
-            <Text className="text-caption text-text-muted mb-sm">
+            <Text className="text-caption-md text-text-muted mb-sm">
               To: {activeClientName}
             </Text>
-            <Text className="text-caption text-text-muted mb-sm">
+            <Text className="text-caption-md text-text-muted mb-sm">
               Subject: Your fitting session summary
             </Text>
             
             {shortlistedFrames.length > 0 ? (
               <View className="mt-md">
-                <Text className="text-body text-text-primary mb-sm">
+                <Text className="text-body-md text-text-primary mb-sm">
                   Frames you {language === 'en' ? 'loved' : 'avez aimées'}:
                 </Text>
                 {shortlistedFrames.slice(0, 3).map((photo, idx) => (
-                  <Text key={idx} className="text-caption text-text-muted">
+                  <Text key={idx} className="text-caption-md text-text-muted">
                     • {photo.productName || 'Frame'} - {photo.verdict}
                   </Text>
                 ))}
                 {shortlistedFrames.length > 3 && (
-                  <Text className="text-caption text-text-muted">
+                  <Text className="text-caption-md text-text-muted">
                     ... and {shortlistedFrames.length - 3} more
                   </Text>
                 )}
               </View>
             ) : (
-              <Text className="text-body text-text-muted mt-md">
+              <Text className="text-body-md text-text-muted mt-md">
                 {language === 'en' 
                   ? 'Thank you for visiting us today.'
                   : 'Merci de votre visite aujourd\'hui.'
@@ -414,7 +414,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
             )}
           </View>
         ) : (
-          <Text className="text-body text-text-muted text-center">
+          <Text className="text-body-md text-text-muted text-center">
             No email will be sent
           </Text>
         )}
@@ -427,7 +427,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         accessibilityLabel="Next step"
         className="bg-brand rounded-md py-md px-lg items-center min-h-[44px] justify-center"
       >
-        <Text className="text-body font-medium text-text-inverse">Next</Text>
+        <Text className="text-body-md font-medium text-text-inverse">Next</Text>
       </Pressable>
 
       {/* Skip — end without notes */}
@@ -438,7 +438,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
         accessibilityLabel="End session without notes"
         className="mt-md py-md items-center min-h-[44px] justify-center"
       >
-        <Text className="text-body text-text-muted">Done — skip notes</Text>
+        <Text className="text-body-md text-text-muted">Done — skip notes</Text>
       </Pressable>
     </ScrollView>
   );
@@ -468,13 +468,13 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
           multiline
           numberOfLines={4}
           textAlignVertical="top"
-          className="bg-bg-elevated border border-border rounded-lg p-md text-body text-text-primary min-h-[100px]"
+          className="bg-bg-surface border border-border rounded-lg p-md text-body-md text-text-primary min-h-[100px]"
         />
       </View>
 
       {/* Quick tag chips */}
       <View className="mb-xl">
-        <Text className="text-body font-medium text-text-primary mb-md">Quick tags</Text>
+        <Text className="text-body-md font-medium text-text-primary mb-md">Quick tags</Text>
         <View className="flex-row flex-wrap">
           {quickTags.map((tag) => {
             const isSelected = selectedTags.includes(tag.key);
@@ -488,7 +488,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
                 className={`rounded-md px-md py-sm mr-sm mb-sm min-h-[44px] items-center justify-center ${
                   isSelected
                     ? 'bg-brand'
-                    : 'border border-border bg-bg-elevated'
+                    : 'border border-border bg-bg-surface'
                 }`}
               >
                 <Text className={`text-body font-medium ${
@@ -519,7 +519,7 @@ export function EndSessionFlow({ onComplete, onCancel }: EndSessionFlowProps) {
           ) ? 0.6 : 1
         }}
       >
-        <Text className="text-body font-medium text-text-inverse">
+        <Text className="text-body-md font-medium text-text-inverse">
           {(
             endSessionMutation.isPending ||
             createProductInteractionsMutation.isPending

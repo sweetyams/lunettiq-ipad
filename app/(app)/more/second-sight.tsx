@@ -18,10 +18,10 @@ export default function SecondSightScreen() {
       <View className="flex-1 bg-bg-page">
         <ScreenHeader title="Second Sight" subtitle="Trade-in intake, grading, and credit" />
         <View className="flex-1 justify-center items-center px-2xl">
-          <Text className="text-headline text-text-primary font-semibold text-center">
+          <Text className="text-heading-xl text-text-primary font-semibold text-center">
             Select a client first
           </Text>
-          <Text className="text-body text-text-muted mt-sm text-center">
+          <Text className="text-body-md text-text-muted mt-sm text-center">
             Open a client profile and tap "Second Sight" from the sidebar to start an intake.
           </Text>
           <View className="mt-xl">

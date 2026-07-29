@@ -21,8 +21,8 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="flex-row items-center justify-between p-lg border-b border-border bg-bg-elevated">
-        <Text className="text-headline text-text-primary font-semibold">
+      <View className="flex-row items-center justify-between p-lg border-b border-border bg-bg-surface">
+        <Text className="text-heading-xl text-text-primary font-semibold">
           Compare Frames
         </Text>
         <Pressable
@@ -49,7 +49,7 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
                 }
 
                 return (
-                  <View key={photo.id} className="flex-1 bg-bg-elevated rounded-lg p-md border border-border">
+                  <View key={photo.id} className="flex-1 bg-bg-surface rounded-lg p-md border border-border">
                     {/* Photo */}
                     <View className="aspect-square rounded-lg overflow-hidden mb-md bg-border">
                       <Image
@@ -61,11 +61,11 @@ export function CompareView({ photos, onClose, onVerdictChange }: CompareViewPro
 
                     {/* Product Info */}
                     <View className="mb-md">
-                      <Text className="text-bodyStrong text-text-primary font-medium mb-xs">
+                      <Text className="text-body-md font-medium text-text-primary font-medium mb-xs">
                         {photo.productName || 'Unknown Frame'}
                       </Text>
                       {photo.notes && (
-                        <Text className="text-caption text-text-muted" numberOfLines={2}>
+                        <Text className="text-caption-md text-text-muted" numberOfLines={2}>
                           {photo.notes}
                         </Text>
                       )}

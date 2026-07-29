@@ -94,7 +94,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
     <View>
       <View className="flex-row items-center mb-md">
         <Glasses color="#6B6B6B" size={20} />
-        <Text className="text-headline text-text-primary font-semibold ml-sm">Fit Profile</Text>
+        <Text className="text-heading-xl text-text-primary font-semibold ml-sm">Fit Profile</Text>
       </View>
 
       <Card>
@@ -107,13 +107,13 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
           >
             {editingField === row.key ? (
               <>
-                <Text className="text-body text-text-muted w-32">{row.label}</Text>
+                <Text className="text-body-md text-text-muted w-32">{row.label}</Text>
                 <TextInput
                   value={draftValue}
                   onChangeText={setDraftValue}
                   keyboardType={row.numeric ? 'numeric' : 'default'}
                   autoFocus
-                  className="flex-1 text-body text-text-primary border border-border rounded-md px-md py-sm"
+                  className="flex-1 text-body-md text-text-primary border border-border rounded-md px-md py-sm"
                   placeholder={`Enter ${row.label.toLowerCase()}`}
                   placeholderTextColor="#6B6B6B"
                 />
@@ -151,9 +151,9 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
                     : `${row.label}: ${row.value ? `${row.value}${row.suffix ?? ''}` : 'Not measured'}. Tap to edit`
                 }
               >
-                <Text className="text-body text-text-muted w-32">{row.label}</Text>
+                <Text className="text-body-md text-text-muted w-32">{row.label}</Text>
                 <Text
-                  className={`flex-1 text-bodyStrong ${
+                  className={`flex-1 text-body-md font-medium ${
                     row.value != null ? 'text-text-primary' : 'text-text-muted italic'
                   }`}
                 >
@@ -175,7 +175,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
         {/* Internal notes — staff only */}
         {privacyMode === 'staff' && (
           <View className="pt-md mt-md border-t border-border">
-            <Text className="text-bodyStrong text-text-primary mb-sm">Internal Notes</Text>
+            <Text className="text-body-md font-medium text-text-primary mb-sm">Internal Notes</Text>
             {editingField === 'internalNotes' ? (
               <View>
                 <TextInput
@@ -183,7 +183,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
                   onChangeText={setDraftValue}
                   multiline
                   numberOfLines={4}
-                  className="text-body text-text-primary border border-border rounded-md px-md py-sm min-h-[88px]"
+                  className="text-body-md text-text-primary border border-border rounded-md px-md py-sm min-h-[88px]"
                   placeholder="Add internal notes..."
                   placeholderTextColor="#6B6B6B"
                   textAlignVertical="top"
@@ -195,7 +195,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Cancel"
                   >
-                    <Text className="text-body text-text-muted">Cancel</Text>
+                    <Text className="text-body-md text-text-muted">Cancel</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => handleSave('internalNotes')}
@@ -203,7 +203,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Save notes"
                   >
-                    <Text className="text-bodyStrong text-text-inverse">Save</Text>
+                    <Text className="text-body-md font-medium text-text-inverse">Save</Text>
                   </Pressable>
                 </View>
               </View>
@@ -225,7 +225,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
         {/* Empty state */}
         {!enrichment?.faceShape && !enrichment?.frameWidthMm && (
           <View className="mt-md p-md bg-bg-page rounded-md">
-            <Text className="text-body text-text-muted text-center">
+            <Text className="text-body-md text-text-muted text-center">
               Start a fitting session to capture measurements
             </Text>
           </View>

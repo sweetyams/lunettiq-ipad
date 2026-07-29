@@ -38,7 +38,7 @@ function EnvErrorScreen({ result }: { result: EnvValidationResult }) {
 
         {/* Problems */}
         {problems.map((d) => (
-          <View key={d.key} className="bg-bg-elevated/10 rounded-lg p-lg mb-md border border-white/20">
+          <View key={d.key} className="bg-bg-surface/10 rounded-lg p-lg mb-md border border-white/20">
             <View className="flex-row items-center mb-xs">
               <View className="w-2 h-2 rounded-full bg-color-error mr-sm" />
               <Text className="text-text-inverse/50 text-caption-sm font-bold tracking-wider">
@@ -51,7 +51,7 @@ function EnvErrorScreen({ result }: { result: EnvValidationResult }) {
         ))}
 
         {/* How to fix */}
-        <View className="bg-bg-elevated/5 rounded-lg p-lg mt-lg border border-white/10">
+        <View className="bg-bg-surface/5 rounded-lg p-lg mt-lg border border-white/10">
           <Text className="text-text-inverse/50 text-[12px] font-bold tracking-wider mb-sm">
             HOW TO FIX
           </Text>
@@ -64,7 +64,7 @@ function EnvErrorScreen({ result }: { result: EnvValidationResult }) {
         </View>
 
         {/* Quick reference */}
-        <View className="bg-bg-elevated/5 rounded-lg p-lg mt-md border border-white/10">
+        <View className="bg-bg-surface/5 rounded-lg p-lg mt-md border border-white/10">
           <Text className="text-text-inverse/50 text-[12px] font-bold tracking-wider mb-sm">
             REFERENCE — .env.local
           </Text>

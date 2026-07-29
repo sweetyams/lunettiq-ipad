@@ -22,7 +22,7 @@ export function StockDot({ status, showLabel = false }: StockDotProps) {
     >
       <View className={`w-2 h-2 rounded-full ${config.dotColor}`} />
       {(showLabel || status === 'out') && (
-        <Text className="text-caption text-text-muted">
+        <Text className="text-caption-md text-text-muted">
           {config.label}
         </Text>
       )}

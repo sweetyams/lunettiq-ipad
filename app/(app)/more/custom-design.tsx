@@ -16,10 +16,10 @@ export default function CustomDesignScreen() {
       <View className="flex-1 bg-bg-page">
         <ScreenHeader title="Custom Designs" subtitle="Capture custom frame orders" />
         <View className="flex-1 justify-center items-center px-2xl">
-          <Text className="text-headline font-semibold text-text-primary text-center">
+          <Text className="text-heading-xl font-semibold text-text-primary text-center">
             Select a client first
           </Text>
-          <Text className="text-body text-text-muted text-center mt-sm">
+          <Text className="text-body-md text-text-muted text-center mt-sm">
             Open a client profile and tap "Custom Design" from the sidebar to start a design.
           </Text>
           <View className="mt-xl">

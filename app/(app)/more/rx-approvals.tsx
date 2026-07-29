@@ -56,17 +56,17 @@ function ApprovalCard({
   return (
     <View className="bg-bg-surface rounded-lg border border-border p-md mb-sm">
       <View className="flex-row items-center justify-between mb-xs">
-        <Text className="text-headline text-text-primary flex-1" numberOfLines={1}>
+        <Text className="text-heading-xl text-text-primary flex-1" numberOfLines={1}>
           {approval.clientName}
         </Text>
         <View className={`rounded-full px-sm py-xs ${statusColor}`}>
-          <Text className="text-captionStrong text-text-primary">
+          <Text className="text-caption-md font-medium text-text-primary">
             {STATUS_LABELS[approval.status]}
           </Text>
         </View>
       </View>
 
-      <Text className="text-caption text-text-muted mb-sm">
+      <Text className="text-caption-md text-text-muted mb-sm">
         Submitted {new Date(approval.submittedAt).toLocaleDateString('en-US', {
           month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
         })}
@@ -75,7 +75,7 @@ function ApprovalCard({
 
       {/* Snapshot summary */}
       {approval.snapshot?.product && (
-        <Text className="text-body text-text-muted mb-sm" numberOfLines={1}>
+        <Text className="text-body-md text-text-muted mb-sm" numberOfLines={1}>
           {approval.snapshot.product.name}
           {approval.snapshot.lensType && ` — ${approval.snapshot.lensType}`}
         </Text>
@@ -165,16 +165,16 @@ function RxApprovalsContent() {
       {summary && (
         <View className="flex-row gap-md px-xl py-sm">
           <View className="items-center">
-            <Text className="text-headline text-warning">{summary.submitted}</Text>
-            <Text className="text-caption text-text-muted">Pending</Text>
+            <Text className="text-heading-xl text-warning">{summary.submitted}</Text>
+            <Text className="text-caption-md text-text-muted">Pending</Text>
           </View>
           <View className="items-center">
-            <Text className="text-headline text-text-primary">{summary.in_review}</Text>
-            <Text className="text-caption text-text-muted">In Review</Text>
+            <Text className="text-heading-xl text-text-primary">{summary.in_review}</Text>
+            <Text className="text-caption-md text-text-muted">In Review</Text>
           </View>
           <View className="items-center">
-            <Text className="text-headline text-green">{summary.approved}</Text>
-            <Text className="text-caption text-text-muted">Approved</Text>
+            <Text className="text-heading-xl text-green">{summary.approved}</Text>
+            <Text className="text-caption-md text-text-muted">Approved</Text>
           </View>
         </View>
       )}
@@ -193,8 +193,8 @@ function RxApprovalsContent() {
               activeTab === tab.key ? 'bg-navy' : 'border border-border'
             }`}
           >
-            <Text className={`text-bodyStrong ${
-              activeTab === tab.key ? 'text-white' : 'text-text-primary'
+            <Text className={`text-body-md font-medium ${
+              activeTab === tab.key ? 'text-text-inverse' : 'text-text-primary'
             }`}>
               {tab.label}
             </Text>
@@ -233,8 +233,8 @@ export default function RxApprovalsScreen() {
       fallback={
         <View className="flex-1 bg-bg-page items-center justify-center p-xl">
           <FileCheck size={48} color="#6B6B6B" />
-          <Text className="text-headline text-text-primary mt-lg">Permission Required</Text>
-          <Text className="text-body text-text-muted mt-sm text-center">
+          <Text className="text-heading-xl text-text-primary mt-lg">Permission Required</Text>
+          <Text className="text-body-md text-text-muted mt-sm text-center">
             You need Rx verification access to view approvals
           </Text>
         </View>

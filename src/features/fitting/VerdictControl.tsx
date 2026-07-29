@@ -43,7 +43,7 @@ export function VerdictControl({ value, onChange, size = 'medium', clientVoice =
   };
 
   return (
-    <View className="flex-row bg-bg-elevated rounded-lg p-xs border border-border">
+    <View className="flex-row bg-bg-surface rounded-lg p-xs border border-border">
       {verdictOptions.map((option) => {
         const isSelected = value === option.key;
         const Icon = option.icon;
@@ -76,7 +76,7 @@ export function VerdictControl({ value, onChange, size = 'medium', clientVoice =
               )}
             </View>
             <Text 
-              className={`text-captionStrong mt-xs ${
+              className={`text-caption-md font-medium mt-xs ${
                 isSelected ? 'text-text-primary' : 'text-text-muted'
               }`}
               style={isSelected ? { color: verdictColor } : undefined}

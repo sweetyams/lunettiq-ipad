@@ -131,8 +131,8 @@ export function FrameDetailPopover({
     >
       <View className="flex-1 bg-bg-page">
         {/* Header */}
-        <View className="flex-row items-center justify-between px-lg py-md bg-bg-elevated border-b border-border">
-          <Text className="text-headline font-semibold text-text-primary">
+        <View className="flex-row items-center justify-between px-lg py-md bg-bg-surface border-b border-border">
+          <Text className="text-heading-xl font-semibold text-text-primary">
             Photo Detail
           </Text>
           <Pressable
@@ -147,7 +147,7 @@ export function FrameDetailPopover({
 
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           {/* Large Photo */}
-          <View className="bg-bg-elevated mx-lg mt-lg rounded-lg border border-border overflow-hidden">
+          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border overflow-hidden">
             <ScrollView
               maximumZoomScale={3}
               minimumZoomScale={1}
@@ -160,7 +160,7 @@ export function FrameDetailPopover({
                 // Mock photo placeholder
                 <View className="w-full h-full bg-gray-200 items-center justify-center">
                   <BarChart3 size={48} color="#6B6B6B" />
-                  <Text className="text-text-muted text-body mt-sm">
+                  <Text className="text-text-muted text-body-md mt-sm">
                     Photo {photo.localUri.split('_')[1]}
                   </Text>
                 </View>
@@ -177,7 +177,7 @@ export function FrameDetailPopover({
             {/* Upload Status Indicator */}
             <View className="absolute top-2 right-2 bg-black/70 px-sm py-xs rounded-md">
               <Text 
-                className="text-caption text-text-inverse"
+                className="text-caption-md text-text-inverse"
                 style={{ color: getUploadStatusColor() }}
               >
                 {getUploadStatusText()}
@@ -186,14 +186,14 @@ export function FrameDetailPopover({
           </View>
 
           {/* Product Link Section */}
-          <View className="bg-bg-elevated mx-lg mt-lg rounded-lg border border-border p-md">
+          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
             <View className="flex-row items-center justify-between">
               <View className="flex-1">
-                <Text className="text-captionStrong text-text-muted mb-xs">PRODUCT</Text>
+                <Text className="text-caption-md font-medium text-text-muted mb-xs">PRODUCT</Text>
                 {photo.productName ? (
-                  <Text className="text-body text-text-primary">{photo.productName}</Text>
+                  <Text className="text-body-md text-text-primary">{photo.productName}</Text>
                 ) : (
-                  <Text className="text-body text-text-muted italic">Not linked</Text>
+                  <Text className="text-body-md text-text-muted italic">Not linked</Text>
                 )}
               </View>
               <Pressable
@@ -203,7 +203,7 @@ export function FrameDetailPopover({
                 accessibilityLabel={photo.productName ? "Re-link product" : "Link product"}
               >
                 <Link size={16} color="white" />
-                <Text className="text-bodyStrong text-text-inverse ml-sm">
+                <Text className="text-body-md font-medium text-text-inverse ml-sm">
                   {photo.productName ? 'Re-link' : 'Link Product'}
                 </Text>
               </Pressable>
@@ -211,23 +211,23 @@ export function FrameDetailPopover({
           </View>
 
           {/* Notes Section */}
-          <View className="bg-bg-elevated mx-lg mt-lg rounded-lg border border-border p-md">
-            <Text className="text-captionStrong text-text-muted mb-sm">NOTES</Text>
+          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
+            <Text className="text-caption-md font-medium text-text-muted mb-sm">NOTES</Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
               placeholder="Add notes..."
               multiline
               numberOfLines={4}
-              className="text-body text-text-primary border border-border rounded-md p-sm min-h-[100px]"
+              className="text-body-md text-text-primary border border-border rounded-md p-sm min-h-[100px]"
               style={{ textAlignVertical: 'top' }}
               accessibilityLabel="Photo notes"
             />
           </View>
 
           {/* Verdict Section */}
-          <View className="bg-bg-elevated mx-lg mt-lg rounded-lg border border-border p-md">
-            <Text className="text-captionStrong text-text-muted mb-sm">CLIENT'S VERDICT</Text>
+          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
+            <Text className="text-caption-md font-medium text-text-muted mb-sm">CLIENT'S VERDICT</Text>
             <VerdictControl
               value={photo.verdict}
               onChange={handleVerdictChange}
@@ -239,7 +239,7 @@ export function FrameDetailPopover({
           <View className="mx-lg mt-lg mb-lg space-y-md">
             {/* Shortlist Button */}
             <Button
-              variant={isShortlisted ? "ghost" : "secondary"}
+              variant={isShortlisted ? "ghost" : "dark"}
               onPress={handleShortlist}
               disabled={isShortlisted}
               className="flex-row items-center justify-center"

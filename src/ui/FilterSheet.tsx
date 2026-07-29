@@ -60,7 +60,7 @@ export function FilterSheet({
         {/* Sheet — stops event propagation so tapping inside doesn't close */}
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          className="absolute bottom-0 left-0 right-0 bg-bg-elevated rounded-t-2xl"
+          className="absolute bottom-0 left-0 right-0 bg-bg-surface rounded-t-2xl"
           style={{ maxHeight: height * 0.72 }}
           accessible={false}
         >
@@ -71,7 +71,7 @@ export function FilterSheet({
 
           {/* Header */}
           <View className="flex-row items-center justify-between px-xl pb-md border-b border-border">
-            <Text className="text-headline font-semibold text-text-primary">
+            <Text className="text-heading-xl font-semibold text-text-primary">
               Filters{activeCount > 0 ? ` · ${activeCount} active` : ''}
             </Text>
             <View className="flex-row items-center gap-md">
@@ -82,7 +82,7 @@ export function FilterSheet({
                   accessibilityRole="button"
                   accessibilityLabel="Clear all filters"
                 >
-                  <Text className="text-body text-text-secondary">Clear all</Text>
+                  <Text className="text-body-md text-text-secondary">Clear all</Text>
                 </Pressable>
               )}
               <Pressable
@@ -167,7 +167,7 @@ function FilterSection({
 }) {
   return (
     <View className="pt-lg">
-      <Text className="text-captionStrong font-semibold text-text-muted uppercase tracking-wider px-xl mb-sm">
+      <Text className="text-caption-md font-medium font-semibold text-text-muted uppercase tracking-wider px-xl mb-sm">
         {title}
       </Text>
       {children}
@@ -252,7 +252,7 @@ function SwatchGrid({
             </View>
             {/* Label */}
             <Text
-              className={`text-captionStrong text-center ${
+              className={`text-caption-md font-medium text-center ${
                 isSelected ? 'text-text-primary' : 'text-text-muted'
               }`}
               numberOfLines={1}

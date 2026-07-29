@@ -77,12 +77,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
           style={{
             backgroundColor: 'rgba(255, 255, 255, 0.92)',
             borderWidth: 1,
-            borderColor: 'rgba(0, 0, 0, 0.06)',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.15,
-            shadowRadius: 20,
-            elevation: 12,
+            borderColor: 'rgba(0, 0, 0, 0.08)',
             paddingHorizontal: 12,
             paddingVertical: 12,
             gap: 16,
