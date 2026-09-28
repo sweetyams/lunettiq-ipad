@@ -368,3 +368,36 @@ existing `location-management/handlers.test.ts` (28) all green; `tsc --noEmit` c
 Status flip: REQ 3 was "⚠️ needs platform work" → now **implemented** for attribution +
 the tryon-sessions reference write, with the remaining writes and the proxy-strip caveat
 called out above.
+
+
+---
+
+# REQ 3 — COMPLETE (Foundry, 2026-09-28, follow-up)
+
+All write endpoints the doc named are now wired. Device-location (`X-Found-Location`)
+resolution + validation is applied on every relevant mutation:
+
+| Write | Status | Behaviour |
+|---|---|---|
+| `tryon-sessions` create | ✅ wired | body `locationId` OR header; validated (400 if unknown/inactive); stored |
+| `inventory/protections` create | ✅ wired | header fills `locationId` before schema-parse (schema requires it); validated |
+| `scheduling` create | ✅ wired | header fallback; location optional for appointments, but validated if resolved |
+| orders / sales | ✅ attribution-only (by design) | Orders use `pickupLocationId` = the **customer's chosen** fulfillment location, which is NOT the device's physical branch. Overwriting it with the device location would be wrong. Orders instead get correct **device-branch attribution** via `audit.location_id` (automatic from the header). |
+
+**Every tablet mutation** is branch-attributed in `audit_log.location_id` (automatic).
+**Where the branch is also operational data** (holds, sessions, appointments), the handler
+now takes it from `X-Found-Location` when the body omits it, and rejects an id that isn't a
+real active location of the tenant (400).
+
+**Tests (all green):** `context.device-location.test.ts` (6), `is-active-location.test.ts`
+(5), `protections.device-location.test.ts` (4), plus existing `location-management` (28).
+`tsc --noEmit` clean.
+
+**Net for the iPad:** send `Authorization: Bearer` + `X-Found-Surface: tablet` +
+`X-Found-Location: <locationId>` on tablet requests. Reads scope by location (REQ4), writes
+attribute + scope by the device branch (REQ3), locations list is authoritative (REQ1). The
+only outstanding platform nicety is the `proxy.ts` strip-list hardening (forgery
+defense-in-depth) — a one-line change a maintainer with write access to that protected file
+must make; not required for correctness (validation is tenant-scoped).
+
+**All six requirements are now resolved: 1 ✅, 2 ✅, 3 ✅, 4 ✅, 5 ✅, 6 ✅.**
