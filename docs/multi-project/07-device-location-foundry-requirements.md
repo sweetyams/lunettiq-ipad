@@ -318,3 +318,53 @@ you want a real dedicated permission, that's a small manifest addition I can mak
 you (adopt `X-Found-Location`?) before I wire the write-path + audit. Everything else is
 either confirmed or a local iPad choice. **Reply on REQ 3 (header yes/no) and REQ 3
 validation (accept-trusted vs 400-on-unknown) and I'll implement the platform side.**
+
+
+---
+
+# REQ 3 — IMPLEMENTED (Foundry, 2026-09-28)
+
+Decision taken: **adopt `X-Found-Location`** header, **trusted-but-validated** (accept the
+device's location, but reject an id that isn't a real active location of the tenant with a
+400 — never 403, never silent accept). Shipped:
+
+**What the iPad does now:** send `X-Found-Location: <locationId>` on tablet requests
+(alongside `Authorization: Bearer` + `X-Found-Surface: tablet`). One place in your API
+client.
+
+**Foundry side (implemented + tested):**
+- `getDeviceLocationId()` / `resolveDeviceLocation(bodyLocationId)` in
+  `src/lib/platform/context.ts` — read the header (mirrors `getSurface`); body id wins,
+  else the device header.
+- `isActiveLocation(ctx, id)` in `src/lib/modules/location-management/queries.ts` —
+  validates the id is a real **active** location of THIS tenant (query scoped by
+  `projectId`, so a foreign id simply returns no row → false).
+- `audit()` (`src/lib/platform/audit.ts`) now writes the device branch to the existing
+  `audit_log.location_id` column automatically — precedence `entry.locationId ?? session.locationId ?? X-Found-Location header`. **No migration needed** (the column already existed). So every tablet mutation is branch-attributed with zero per-handler work.
+- `StaffSession.locationId` added (`permissions.ts`) for handlers that want it explicitly.
+- **`tryon-sessions` create is fully wired** as the reference: `locationId` may now come
+  from the body OR `X-Found-Location`; it's validated (400 if unknown/inactive) and stored
+  on the interaction. Tests cover header resolution, body precedence, and validation reject.
+
+**Remaining writes to wire (same 3-line pattern as tryon-sessions):**
+`inventory/protections`, `scheduling` create, and any order/sale write. These currently
+still take `locationId` from body/query only and are **not yet** device-fallback-enabled.
+They already get correct **audit attribution** for free (audit reads the header). I did NOT
+wire their data-scoping in this pass to keep the change proportional — say the word and I'll
+apply the identical `resolveDeviceLocation` + `isActiveLocation` pattern to each.
+
+**One caveat (security, by design):** `src/proxy.ts` is a frozen/protected middleware file
+I can't modify, so `X-Found-Location` is **not** added to the header-strip list. It passes
+through to handlers unstripped, which means a client could *forge* it. This is acceptable
+under the trusted-but-validated model: a forged value only lets a device claim a **valid,
+active location of its own tenant** (every read is `projectId`-scoped) — it cannot reach
+another tenant's data. If you want middleware-level strip+re-issue for defense-in-depth,
+that's a one-line change to `FOUND_HEADERS` in `proxy.ts` that a maintainer with write
+access to that file must make. Flagging explicitly rather than pretending it's covered.
+
+**Tests:** `context.device-location.test.ts` (6), `is-active-location.test.ts` (5),
+existing `location-management/handlers.test.ts` (28) all green; `tsc --noEmit` clean.
+
+Status flip: REQ 3 was "⚠️ needs platform work" → now **implemented** for attribution +
+the tryon-sessions reference write, with the remaining writes and the proxy-strip caveat
+called out above.
