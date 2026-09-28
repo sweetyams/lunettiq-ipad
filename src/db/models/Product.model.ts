@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { text, field, json, date, readonly } from '@nozbe/watermelondb/decorators';
+import { text, field, json, date } from '@nozbe/watermelondb/decorators';
 
 export interface ProductDimensions {
   width: number;
@@ -38,7 +38,7 @@ export class Product extends Model {
   @field('stock_level') stockLevel!: number;
   @json('location_stock_json', (json) => json) locationStock!: ProductLocationStock;
   @field('sort_order') sortOrder!: number;
-  @readonly @date('synced_at') syncedAt!: Date;
+  @date('synced_at') syncedAt!: Date;
 
   // Computed properties
   get displayPrice(): string {

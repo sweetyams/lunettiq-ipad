@@ -35,7 +35,7 @@ export class Client extends Model {
   @json('enrichment_json', (json) => json) enrichment!: ClientEnrichment;
   @json('preferences_json', (json) => json) preferences!: ClientPreferences;
   @json('tags', (json) => json) tags!: string[];
-  @readonly @date('synced_at') syncedAt!: Date;
+  @date('synced_at') syncedAt!: Date;
 
   // Computed properties
   get fullName(): string {

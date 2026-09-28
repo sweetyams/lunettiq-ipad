@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026-09-28] — Fix: initial sync crash + location-picker navigation crash
+
+### Fixed
+- Initial sync threw "Attempt to set new value on a property marked as @readonly": `synced_at` (Product, Client, Appointment) and `starts_at`/`ends_at`/`reminder_sent_at` (Appointment) were `@readonly` but the hand-rolled sync in `useInitialSync` sets them. Removed `@readonly` on those app-managed fields. (Pre-existing bug, surfaced when selecting a location re-ran sync.)
+- Selecting a device location threw "Couldn't find a navigation context": `DeviceLocationNotice` (rendered above the navigator in the root layout) called `useRouter`. Made the banner informational (points to Profile → Store → Location) with no router dependency.
+
 ## [2026-09-28] — Device-bound location
 
 ### Added

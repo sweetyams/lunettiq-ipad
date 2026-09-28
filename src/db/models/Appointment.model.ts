@@ -1,5 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
-import { text, field, date, readonly, relation } from '@nozbe/watermelondb/decorators';
+import { text, field, date, relation } from '@nozbe/watermelondb/decorators';
 import type { Relation } from '@nozbe/watermelondb';
 import type { Client } from './Client.model';
 
@@ -20,13 +20,13 @@ export class Appointment extends Model {
   @text('type_id') typeId?: string;
   @text('type_name') typeName!: string;
   @text('location_id') locationId!: string;
-  @readonly @date('starts_at') startsAt!: Date;
-  @readonly @date('ends_at') endsAt!: Date;
+  @date('starts_at') startsAt!: Date;
+  @date('ends_at') endsAt!: Date;
   @text('status') status!: AppointmentStatus;
   @text('notes') notes?: string;
   @text('intake_form_type') intakeFormType?: string;
-  @readonly @date('reminder_sent_at') reminderSentAt?: Date;
-  @readonly @date('synced_at') syncedAt!: Date;
+  @date('reminder_sent_at') reminderSentAt?: Date;
+  @date('synced_at') syncedAt!: Date;
 
   @relation('clients', 'client_id') client!: Relation<Client>;
 
