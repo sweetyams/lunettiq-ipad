@@ -47,15 +47,17 @@ function InitialLayout() {
     api.setTokenGetter(getToken);
   }, [getToken]);
 
-  // Discover project memberships once per signed-in session, when no project is active yet.
+  // Discover project memberships once per signed-in session.
+  //
+  // IMPORTANT: this runs even when an activeProject is already restored from MMKV — we
+  // still need the full membership list in `knownProjects` so the Change-store UI and
+  // picker work. We just DON'T auto-select / re-route when a project is already active.
   useEffect(() => {
     if (!isLoaded || !isSignedIn) {
       discoveryRanFor.current = null;
       if (discovery.phase !== 'idle') setDiscovery({ phase: 'idle' });
       return;
     }
-    // Already have an active project (e.g. restored from MMKV) — skip discovery.
-    if (activeProject) return;
     // Only run once per mount/sign-in.
     if (discoveryRanFor.current === 'ran') return;
     discoveryRanFor.current = 'ran';
@@ -66,8 +68,9 @@ function InitialLayout() {
       switch (outcome.status) {
         case 'ok': {
           setKnownProjects(outcome.projects);
-          if (outcome.projects.length === 1) {
-            setActiveProject(outcome.projects[0]!); // auto-select
+          // Auto-select only when nothing is active yet.
+          if (!activeProject && outcome.projects.length === 1) {
+            setActiveProject(outcome.projects[0]!);
           }
           setDiscovery({ phase: 'done' });
           break;

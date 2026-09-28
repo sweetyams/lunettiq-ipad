@@ -1,5 +1,10 @@
 # Changelog
 
+## [2026-09-28] — Fix: refresh store memberships even when a store is already active
+
+### Fixed
+- The discovery gate skipped `my-projects` entirely whenever an `activeProject` was restored from MMKV, so `knownProjects` never got populated on relaunch. A user pinned to a stale store (e.g. their first-seen tenant) never saw the Change-store row or picker even after being granted more memberships. Discovery now always runs to populate `knownProjects`; it only auto-selects/re-routes when no store is active yet.
+
 ## [2026-09-28] — Change-store UX moved to the reachable Profile tab
 
 ### Fixed
