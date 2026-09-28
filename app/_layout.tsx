@@ -14,6 +14,7 @@ import { PushProvider } from '@/src/features/push';
 import { ModeStrip } from '@/src/ui/ModeStrip';
 import { DemoStrip } from '@/src/ui/DemoStrip';
 import { TenantCapabilityNotice } from '@/src/ui/TenantCapabilityNotice';
+import { DeviceLocationNotice } from '@/src/ui/DeviceLocationNotice';
 import { ToastContainer } from '@/src/ui/Toast';
 import { tokenCache } from '@/src/api/tokenCache';
 import { DevErrorBoundary } from '@/src/ui/DevErrorBoundary';
@@ -185,6 +186,8 @@ function InitialLayout() {
       {isSignedIn && activeProject && <DemoStrip />}
       {/* Uncapable-tenant notice — when the active store lacks required modules */}
       {isSignedIn && activeProject && <TenantCapabilityNotice />}
+      {/* First-run device-location prompt */}
+      {isSignedIn && activeProject && <DeviceLocationNotice />}
       {/* Toast notifications — positioned below ModeStrip, above content */}
       <ToastContainer />
       <Slot />

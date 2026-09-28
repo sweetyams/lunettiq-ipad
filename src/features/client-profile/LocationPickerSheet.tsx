@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, Modal } from 'react-native'; import { Dimensions } from 'react-native';
 import { MapPin, Clock, X } from 'lucide-react-native';
-import { useLocations, type Location } from '@/src/api/useLocations';
+import { useLocations, locationName, type Location } from '@/src/api/useLocations';
 import { Card, LoadingState, ErrorState } from '@/src/ui';
 
 interface LocationPickerSheetProps {
@@ -8,30 +8,32 @@ interface LocationPickerSheetProps {
   onClose: () => void;
   onSelect: (locationId: string) => void;
   selectedLocationId?: string | null;
+  /** Sheet title — defaults to the client home-location wording. */
+  title?: string;
 }
 
-export function LocationPickerSheet({ 
-  isOpen, 
-  onClose, 
-  onSelect, 
-  selectedLocationId 
+export function LocationPickerSheet({
+  isOpen,
+  onClose,
+  onSelect,
+  selectedLocationId,
+  title = 'Select Home Location',
 }: LocationPickerSheetProps) {
   const { data: locations, isLoading, error } = useLocations();
 
   const formatHours = (location: Location) => {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    
+
     const todayIndex = new Date().getDay();
-    const adjustedIndex = todayIndex === 0 ? 6 : todayIndex - 1; // Convert Sunday=0 to index 6
-    
+    const adjustedIndex = todayIndex === 0 ? 6 : todayIndex - 1; // Sunday=0 → index 6
+
     const todayKey = days[adjustedIndex];
-    const todayHours = location.hours[todayKey as keyof typeof location.hours];
-    
+    const todayHours = location.operatingHours?.[todayKey as string];
+
     if (!todayHours) {
       return 'Closed today';
     }
-    
+
     return `Today: ${todayHours.open} - ${todayHours.close}`;
   };
 
@@ -53,7 +55,7 @@ export function LocationPickerSheet({
           >
             <X color="#404040" size={22} />
           </Pressable>
-          <Text className="text-heading-md text-text-primary font-medium">Select Home Location</Text>
+          <Text className="text-heading-md text-text-primary font-medium">{title}</Text>
           <View className="min-w-[44px]" />
         </View>
 
@@ -74,9 +76,7 @@ export function LocationPickerSheet({
 
         {locations && (
           <View className="gap-sm">
-            {locations
-              .filter(loc => loc.isActive)
-              .map((location) => (
+            {locations.map((location) => (
                 <Pressable
                   key={location.id}
                   onPress={() => {
@@ -85,7 +85,7 @@ export function LocationPickerSheet({
                   }}
                   className="min-h-[44px]"
                   accessibilityRole="button"
-                  accessibilityLabel={`Select ${location.name} as home location`}
+                  accessibilityLabel={`Select ${locationName(location)}`}
                 >
                   <Card 
                     className={`p-md ${
@@ -97,24 +97,23 @@ export function LocationPickerSheet({
                     <View className="flex-row items-start justify-between">
                       <View className="flex-1">
                         <Text className="text-heading-sm text-text-primary font-semibold mb-xs">
-                          {location.name}
+                          {locationName(location)}
                         </Text>
                         
-                        <View className="flex-row items-start mb-sm">
-                          <MapPin 
-                            color="#737373" 
-                            size={16} 
-                            className="mt-0.5 mr-xs" 
-                          />
-                          <View className="flex-1">
-                            <Text className="text-body-md text-text-secondary">
-                              {location.address}
-                            </Text>
-                            <Text className="text-body-md text-text-secondary">
-                              {location.city}, {location.province} {location.postalCode}
-                            </Text>
+                        {location.address && (
+                          <View className="flex-row items-start mb-sm">
+                            <MapPin 
+                              color="#737373" 
+                              size={16} 
+                              className="mt-0.5 mr-xs" 
+                            />
+                            <View className="flex-1">
+                              <Text className="text-body-md text-text-secondary">
+                                {location.address}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
+                        )}
 
                         <View className="flex-row items-center">
                           <Clock color="#737373" size={16} className="mr-xs" />

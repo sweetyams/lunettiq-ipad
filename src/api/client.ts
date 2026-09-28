@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { resolveBaseUrl } from '@/src/features/tenant/baseUrl';
+import { resolveEffectiveLocationId } from '@/src/features/tenant/useDeviceLocationStore';
 
 const SURFACE = 'tablet'; // Always — identifies iPad in audit logs
 
@@ -95,6 +96,14 @@ class FoundryAPI {
     const operatorState = useOperatorStore.getState();
     if (operatorState.activeOperator && operatorState.activeOperator.clerkUserId !== operatorState.deviceOwnerId) {
       headers['X-Found-Operator'] = operatorState.activeOperator.clerkUserId;
+    }
+
+    // Location header — the device's pinned branch (device-bound location).
+    // Foundry validates it (400 if not an active location of the tenant) and uses it
+    // for read scoping + write attribution. See docs/multi-project/08-*.md.
+    const effectiveLocation = resolveEffectiveLocationId();
+    if (effectiveLocation) {
+      headers['X-Found-Location'] = effectiveLocation;
     }
 
     const url = `${resolveBaseUrl()}${path}`;

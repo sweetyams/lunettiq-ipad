@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth, useUser } from '@clerk/clerk-expo';
@@ -13,11 +14,15 @@ import {
   Bell,
   Shield,
   Store,
+  MapPin,
 } from 'lucide-react-native';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { SyncIndicator } from '@/src/ui/SyncIndicator';
 import { useTenantStore, type Project } from '@/src/features/tenant/useTenantStore';
 import { switchProject } from '@/src/features/tenant/switchProject';
+import { useDeviceLocationStore, useDeviceLocationId } from '@/src/features/tenant/useDeviceLocationStore';
+import { useLocations, locationName } from '@/src/api/useLocations';
+import { LocationPickerSheet } from '@/src/features/client-profile/LocationPickerSheet';
 import { useInitialSync } from '@/src/sync/useInitialSync';
 import { useSyncStore } from '@/src/sync/useSyncStore';
 
@@ -40,7 +45,29 @@ export default function ProfileScreen() {
   const activeProject = useTenantStore((s) => s.activeProject);
   const knownProjects = useTenantStore((s) => s.knownProjects);
   const { startSync } = useInitialSync();
-  const canChangeStore = knownProjects.length > 1;
+  // Only stores the device can actually use, excluding the current one.
+  const switchableStores = knownProjects.filter(
+    (p) => p.slug !== activeProject?.slug && p.ipadReady !== false
+  );
+  const canChangeStore = switchableStores.length > 0;
+
+  // Device-bound location.
+  const deviceLocationId = useDeviceLocationId();
+  const setDeviceLocation = useDeviceLocationStore((s) => s.setLocation);
+  const { data: locations } = useLocations();
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
+  // Changing the device location is a manager action.
+  const canManageLocation = activeProject?.role === 'admin' || activeProject?.role === 'owner';
+  const currentLocation = locations?.find((l) => l.id === deviceLocationId);
+  const currentLocationLabel = currentLocation
+    ? locationName(currentLocation)
+    : deviceLocationId
+      ? 'Selected location'
+      : 'Not set';
+
+  const handleSelectLocation = (locationId: string): void => {
+    if (activeProject) setDeviceLocation(activeProject.slug, locationId);
+  };
 
   const performChange = async (target: Project): Promise<void> => {
     try {
@@ -59,14 +86,13 @@ export default function ProfileScreen() {
     const pending = pendingWrites + pendingUploads;
 
     const proceed = (): void => {
-      const others = knownProjects.filter((p) => p.slug !== activeProject?.slug);
-      if (others.length === 1) {
+      if (switchableStores.length === 1) {
         Alert.alert(
           'Change store',
-          `Switch to ${others[0]!.name}? This device will reload that store's data.`,
+          `Switch to ${switchableStores[0]!.name}? This device will reload that store's data.`,
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Switch', style: 'destructive', onPress: () => void performChange(others[0]!) },
+            { text: 'Switch', style: 'destructive', onPress: () => void performChange(switchableStores[0]!) },
           ]
         );
       } else {
@@ -160,13 +186,34 @@ export default function ProfileScreen() {
                 label="Change store"
                 description="Switch to another store you have access to"
                 onPress={promptChangeStore}
-                isLast
               />
             ) : (
-              <View className="px-md py-md">
+              <View className="px-md py-md border-b border-border">
                 <Text className="text-text-muted text-caption-md">
                   This is the only store you have access to.
                 </Text>
+              </View>
+            )}
+            {/* Device location — the branch this iPad is at. Manager-gated. */}
+            {canManageLocation ? (
+              <MenuRow
+                icon={<MapPin size={20} color="#737373" />}
+                label="Location"
+                description={`This device: ${currentLocationLabel}`}
+                onPress={() => setLocationSheetOpen(true)}
+                isLast
+              />
+            ) : (
+              <View className="flex-row items-center px-md py-md min-h-[52px]">
+                <View className="w-[36px] h-[36px] rounded-md bg-bg-muted items-center justify-center">
+                  <MapPin size={20} color="#737373" />
+                </View>
+                <View className="flex-1 ml-md">
+                  <Text className="text-text-primary text-body-md font-medium">Location</Text>
+                  <Text className="text-text-muted text-caption-md">
+                    This device: {currentLocationLabel}
+                  </Text>
+                </View>
               </View>
             )}
           </View>
@@ -248,6 +295,14 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
       </View>
+
+      <LocationPickerSheet
+        isOpen={locationSheetOpen}
+        onClose={() => setLocationSheetOpen(false)}
+        onSelect={handleSelectLocation}
+        selectedLocationId={deviceLocationId}
+        title="Set device location"
+      />
     </ScrollView>
   );
 }

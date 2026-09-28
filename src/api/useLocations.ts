@@ -1,38 +1,59 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from './client';
 
-export interface Location {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  phone: string | null;
-  email: string | null;
-  hours: {
-    monday: { open: string; close: string } | null;
-    tuesday: { open: string; close: string } | null;
-    wednesday: { open: string; close: string } | null;
-    thursday: { open: string; close: string } | null;
-    friday: { open: string; close: string } | null;
-    saturday: { open: string; close: string } | null;
-    sunday: { open: string; close: string } | null;
-  };
-  timezone: string;
-  isActive: boolean;
+/** Localized label, e.g. { en: "Old Montreal", fr: "Vieux-Montréal" }. */
+export interface LocalizedLabel {
+  en?: string;
+  fr?: string;
+  [lang: string]: string | undefined;
+}
+
+export interface LocationClosure {
+  label: string;
+  closedFrom: string;
+  closedTo: string;
 }
 
 /**
- * Fetch all active locations from GET /api/storefront/locations (public endpoint)
+ * A store branch, as returned by GET /api/storefront/locations.
+ * Shape confirmed in docs/multi-project/08-foundry-ready-handoff.md §2.
+ * Only active locations are returned (there is no `isActive` field).
+ */
+export interface Location {
+  id: string;
+  /** Localized display name — use publicLabel, NOT a flat `name`. */
+  publicLabel: LocalizedLabel;
+  locationType: string; // "retail" | "warehouse" | ...
+  address: string | null;
+  operatingHours: Record<string, { open: string; close: string } | null> | null;
+  isRetail: boolean;
+  fulfillsOnline: boolean;
+  lat: number | null;
+  lng: number | null;
+  email: string | null;
+  phone: string | null;
+  imageUrl: string | null;
+  description: string | null;
+  closures: LocationClosure[];
+}
+
+/** Resolve a Location's display name from its localized label, preferring EN. */
+export function locationName(loc: Location): string {
+  return loc.publicLabel?.en ?? loc.publicLabel?.fr ?? Object.values(loc.publicLabel ?? {})[0] ?? 'Location';
+}
+
+/**
+ * Fetch all active branches of the active store.
+ * GET /api/storefront/locations — returns every active location for the tenant
+ * resolved by host (unfiltered by user). `id` is the value sent back as
+ * `X-Found-Location` / `locationId`.
  */
 export function useLocations() {
   return useQuery({
     queryKey: ['locations'],
     queryFn: async () => {
-      const result = await api.get<Location[]>('/api/storefront/locations');
-      return result;
+      return api.get<Location[]>('/api/storefront/locations');
     },
-    staleTime: 24 * 60 * 60 * 1000, // 24h - locations don't change often
+    staleTime: 24 * 60 * 60 * 1000, // 24h — locations rarely change
   });
 }

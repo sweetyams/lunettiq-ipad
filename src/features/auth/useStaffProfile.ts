@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import { useTenantStore } from '@/src/features/tenant/useTenantStore';
+import { useEffectiveLocationId } from '@/src/features/tenant/useDeviceLocationStore';
 
 /**
  * Shape of the staff project metadata stored in Clerk publicMetadata.
@@ -44,6 +45,8 @@ export function useStaffProfile(): StaffProfile {
   const { user } = useUser();
   const { userId } = useAuth();
   const activeProject = useTenantStore((s) => s.activeProject);
+  // Device-pinned location wins over the user's default; see useDeviceLocationStore.
+  const effectiveLocationId = useEffectiveLocationId();
 
   return useMemo(() => {
     if (!user || !userId) {
@@ -54,7 +57,7 @@ export function useStaffProfile(): StaffProfile {
     if (activeProject) {
       return {
         staffId: userId,
-        locationId: activeProject.primaryLocationId ?? activeProject.locationIds[0] ?? null,
+        locationId: effectiveLocationId,
         locationIds: activeProject.locationIds ?? [],
         role: activeProject.role ?? null,
         isReady: true,
@@ -67,16 +70,16 @@ export function useStaffProfile(): StaffProfile {
     const projectMeta = slug ? meta?.projects?.[slug] : undefined;
 
     if (!projectMeta) {
-      // 3. Dev / not-yet-selected: use userId as staffId, no location.
-      return { staffId: userId, locationId: null, locationIds: [], role: null, isReady: true };
+      // 3. Dev / not-yet-selected: use userId as staffId, effective location if any.
+      return { staffId: userId, locationId: effectiveLocationId, locationIds: [], role: null, isReady: true };
     }
 
     return {
       staffId: userId,
-      locationId: projectMeta.primary_location_id ?? projectMeta.location_ids[0] ?? null,
+      locationId: effectiveLocationId ?? projectMeta.primary_location_id ?? projectMeta.location_ids[0] ?? null,
       locationIds: projectMeta.location_ids ?? [],
       role: projectMeta.role ?? null,
       isReady: true,
     };
-  }, [user, userId, activeProject]);
+  }, [user, userId, activeProject, effectiveLocationId]);
 }

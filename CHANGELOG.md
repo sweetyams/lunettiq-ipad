@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-09-28] — Device-bound location
+
+### Added
+- Device-bound location: a physical branch is pinned to the iPad (not the user). `useDeviceLocationStore` (MMKV, per tenant slug) + `useEffectiveLocationId()` (device pin → user default → null)
+- `X-Found-Location` header sent on all API requests from the effective location; reads scope and writes attribute to the device's branch (Foundry validates, 400 on a bad id)
+- "Location" row in Profile → Store (reuses `LocationPickerSheet`), gated to admin/owner
+- `DeviceLocationNotice` — first-run prompt when an iPad-ready store has locations but none is pinned
+- `locationName()` helper for localized location labels
+
+### Changed
+- `useStaffProfile().locationId` now resolves through the effective (device-first) location
+- Select-project picker flags `ipadReady: false` stores as "Not available on iPad" (disabled) and drops the misleading per-user location count
+- "Change store" only offers iPad-ready stores
+
+### Fixed
+- `Location` type corrected to the real API shape (`publicLabel`, `operatingHours`, `locationType`; no `name`/`hours`/`isActive`), fixing `LocationPickerSheet` and `EnrichmentPanel`
+
 ## [2026-09-28] — Fix: Change store bounced to Home instead of the picker
 
 ### Fixed

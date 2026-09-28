@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { Glasses, Pencil, Check, X, MapPin } from 'lucide-react-native';
 import { useClientEnrichment, useUpdateEnrichment } from '@/src/api/useClients';
-import { useLocations } from '@/src/api/useLocations';
+import { useLocations, locationName } from '@/src/api/useLocations';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Card, LoadingState } from '@/src/ui';
 import { toast } from '@/src/ui/useToastStore';
@@ -85,7 +85,7 @@ export function EnrichmentPanel({ clientId }: EnrichmentPanelProps) {
     { 
       key: 'homeLocation', 
       label: 'Home location', 
-      value: selectedLocation?.name ?? null, 
+      value: selectedLocation ? locationName(selectedLocation) : null, 
       picker: true 
     },
   ];

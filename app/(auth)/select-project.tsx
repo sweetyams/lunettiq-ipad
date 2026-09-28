@@ -29,6 +29,7 @@ export default function SelectProjectScreen() {
 
   const handleSelect = async (project: Project): Promise<void> => {
     if (isBusy) return;
+    if (project.ipadReady === false) return; // not usable on iPad
     // Selecting the current store is a no-op — just go back.
     if (project.slug === activeProject?.slug) {
       router.replace('/(app)/home');
@@ -99,26 +100,25 @@ interface ProjectCardProps {
 
 function ProjectCard({ project, busy, disabled, onPress }: ProjectCardProps) {
   const isDemo = project.env === 'demo';
-  const locationCount = project.locationIds.length;
-  const locationLabel =
-    locationCount === 0
-      ? 'No locations'
-      : `${locationCount} location${locationCount > 1 ? 's' : ''}`;
+  const notReady = project.ipadReady === false;
+  const subtitle = notReady ? 'Not available on iPad' : project.role;
 
-  const a11yLabel = `${project.name}, role ${project.role}, ${locationLabel}${
+  const a11yLabel = `${project.name}, ${notReady ? 'not available on iPad' : `role ${project.role}`}${
     isDemo ? ', demo store' : ''
   }`;
+
+  const isDisabled = disabled || busy || notReady;
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled || busy}
+      disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
       className={`flex-row items-center gap-md bg-bg-surface rounded-lg border border-border p-md min-h-[44px] ${
-        disabled ? 'opacity-40' : ''
+        disabled || notReady ? 'opacity-40' : ''
       }`}
-      style={({ pressed }) => ({ opacity: pressed && !disabled && !busy ? 0.8 : undefined })}
+      style={({ pressed }) => ({ opacity: pressed && !isDisabled ? 0.8 : undefined })}
     >
       <View className="w-11 h-11 rounded-md bg-brand items-center justify-center">
         {project.brandMark ? (
@@ -140,13 +140,13 @@ function ProjectCard({ project, busy, disabled, onPress }: ProjectCardProps) {
           )}
         </View>
         <Text className="text-body-sm text-text-muted mt-xs capitalize">
-          {project.role} · {locationLabel}
+          {subtitle}
         </Text>
       </View>
 
       {busy ? (
         <ActivityIndicator size="small" color="#1D1F21" />
-      ) : (
+      ) : notReady ? null : (
         <ChevronRight size={20} color="#737373" />
       )}
     </Pressable>
