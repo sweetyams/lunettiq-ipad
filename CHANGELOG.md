@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-09-28] — Use authoritative ipadReady flag for the capability banner
+
+### Fixed
+- The "not set up for the iPad app" banner was driven by a `staff-roster` probe, which conflated two different things: an iPad-ready store that simply has PIN quick-switch disabled returns `"Device quick-switch is not enabled"` and was wrongly flagged as not-set-up (e.g. `lunettiq-demo`, which is `ipadReady: true`). The banner now keys off the authoritative `ipadReady` field from `my-projects`.
+
+### Changed
+- `Project` type gains `ipadReady?: boolean`
+- The device quick-switch probe (`useTenantCapabilities`) is now scoped solely to deciding whether to show the PIN lock — not whether the store is usable
+
 ## [2026-09-28] — Fix: refresh store memberships even when a store is already active
 
 ### Fixed

@@ -3,20 +3,20 @@ import { api, APIError } from '@/src/api/client';
 import { useTenantStore } from './useTenantStore';
 
 /**
- * Per-tenant capability probe.
+ * Per-tenant device quick-switch (PIN) capability probe.
  *
- * `my-projects` does NOT tell the app which modules a project has enabled (see
- * docs/multi-project — flagged to Foundry). So the iPad can only learn a tenant's
- * capabilities by probing an endpoint and seeing whether the module responds.
- *
- * This matters because a user may belong to a project that is NOT set up for the iPad
- * app (no device-management module, no storefront data). Landing there must degrade
- * gracefully instead of trapping the user behind a dead PIN screen.
+ * This tells the app ONLY whether the active store has the device quick-switch / PIN
+ * roster feature enabled — it decides whether to show the PIN lock screen. It does NOT
+ * decide whether the store is "iPad-ready" overall; that is the authoritative `ipadReady`
+ * field from `my-projects` (see TenantCapabilityNotice).
  *
  * We probe `GET /api/admin/device/staff-roster` once per active tenant:
- *  - success           → device-management enabled  → PIN lock is meaningful
- *  - NOT_FOUND / 404   → module not enabled          → solo mode (no PIN lock)
- *  - other error       → unknown (leave null; don't force solo on a transient failure)
+ *  - success                    → quick-switch enabled  → PIN lock is meaningful
+ *  - NOT_FOUND / 404 / disabled → quick-switch off       → skip the PIN lock (no lock)
+ *  - other error                → unknown (leave null; don't drop the lock on a blip)
+ *
+ * A store can be fully `ipadReady` and still have quick-switch off — that's fine; it just
+ * means no PIN lock, not that the store is unusable.
  */
 
 type Capability = boolean | null; // null = not yet probed / unknown

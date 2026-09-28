@@ -34,6 +34,8 @@ export interface Project {
   primaryLocationId: string | null;
   /** Deployment kind — drives the demo indicator strip. */
   env: ProjectEnv;
+  /** Whether this store is set up for the iPad app (authoritative, from my-projects). */
+  ipadReady?: boolean;
   /** Optional brand mark for the picker. */
   brandMark?: string;
 }

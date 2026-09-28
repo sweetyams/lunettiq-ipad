@@ -2,31 +2,33 @@ import { View, Text, Pressable } from 'react-native';
 import { useAuth } from '@clerk/clerk-expo';
 import { AlertTriangle } from 'lucide-react-native';
 import { useTenantStore } from '@/src/features/tenant/useTenantStore';
-import { useActiveTenantDeviceManagement } from '@/src/features/tenant/useTenantCapabilities';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 
 /**
  * Banner shown when the active store is not set up for the iPad app.
  *
- * `my-projects` returns every project a user belongs to — including ones without the
- * modules the iPad needs (device-management, storefront, scheduling). When we detect the
- * device-management module is disabled for the active store, the app can't function
- * normally, so we tell the user plainly and give them a way out (change store / sign out)
- * without needing to hunt through Settings.
+ * Authoritative signal: `my-projects` returns `ipadReady` per project. A store with
+ * `ipadReady === false` (e.g. `bentspline`) can't run the app's core flows, so we tell
+ * the user plainly and give them a way out (change store / sign out).
+ *
+ * NOTE: this is NOT the same as "device quick-switch (PIN) is disabled". A store can be
+ * fully iPad-ready and simply not use PIN quick-switch — that must not trigger this
+ * banner. PIN availability is handled separately in AuthProvider.
  *
  * See docs/multi-project/04-capability-gap.md.
  */
 export function TenantCapabilityNotice() {
   const { signOut } = useAuth();
-  const deviceManagement = useActiveTenantDeviceManagement();
-  const name = useTenantStore((s) => s.activeProject?.name);
+  const activeProject = useTenantStore((s) => s.activeProject);
   const knownProjects = useTenantStore((s) => s.knownProjects);
   const clearActiveProject = useTenantStore((s) => s.clearActiveProject);
   const clearOperator = useOperatorStore((s) => s.clearOperator);
 
-  // Only show when we positively know the store lacks device-management.
-  if (deviceManagement !== false) return null;
+  // Only show when the store explicitly reports it is not iPad-ready.
+  // (undefined = unknown/older backend → don't nag.)
+  if (activeProject?.ipadReady !== false) return null;
 
+  const name = activeProject?.name;
   const canChangeStore = knownProjects.length > 1;
 
   const handleChangeStore = (): void => {
