@@ -28,6 +28,7 @@ export { FitBadge } from './FitBadge';
 export { LoadingState } from './LoadingState';
 export { ModeStrip } from './ModeStrip';
 export { DemoStrip } from './DemoStrip';
+export { TenantCapabilityNotice } from './TenantCapabilityNotice';
 export { PermissionGate } from './PermissionGate';
 export { PrivacyToggle } from './PrivacyToggle';
 export { ProductCard } from './ProductCard';

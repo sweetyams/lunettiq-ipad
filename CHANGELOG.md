@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-09-28] — Multi-tenant lockout fixes
+
+### Added
+- Lock-screen escape hatch: Sign out + Change store on `PinLockScreen`, so a failed/unsupported PIN can never trap the user
+- `useTenantCapabilities` — probes `staff-roster` per tenant; a disabled device-management module is detected and the PIN lock is skipped (solo mode) instead of showing a dead screen
+- `TenantCapabilityNotice` banner when the active store isn't set up for the iPad, with inline Change store / Sign out
+- `docs/multi-project/04-capability-gap.md` — flags the missing capability/module field in `my-projects` to the Foundry team
+
+### Fixed
+- Signing into a tenant without device-management (e.g. a non-iPad project) no longer strands the user on an unusable PIN screen or in an empty shell
+
 ## [2026-09-28] — Multi-project discovery + selection (PRs 3–6)
 
 ### Added

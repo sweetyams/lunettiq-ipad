@@ -6,6 +6,8 @@ import { TouchActivityProvider } from './TouchActivityProvider';
 import { useAutoLock } from './useAutoLock';
 import { useOperatorStore } from './useOperatorStore';
 import { useDeviceSettings } from './useDeviceSettings';
+import { useTenantStore } from '@/src/features/tenant/useTenantStore';
+import { useTenantCapabilities, useActiveTenantDeviceManagement } from '@/src/features/tenant/useTenantCapabilities';
 
 interface AuthContextType {
   isLocked: boolean;
@@ -23,10 +25,28 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isSignedIn, isLoaded, userId } = useAuth();
+  const { isSignedIn, isLoaded, userId, signOut } = useAuth();
   const { locked, unlock: autoUnlock, resetActivity } = useAutoLock();
   const { pinSystemEnabled } = useDeviceSettings();
   const { setDeviceOwner, clearOperator, switchOperator } = useOperatorStore();
+
+  const activeSlug = useTenantStore((s) => s.activeProject?.slug ?? null);
+  const knownProjects = useTenantStore((s) => s.knownProjects);
+  const clearActiveProject = useTenantStore((s) => s.clearActiveProject);
+  const probeCapability = useTenantCapabilities((s) => s.probe);
+  const deviceManagement = useActiveTenantDeviceManagement(); // true | false | null
+
+  // Probe whether the active tenant has the device-management (PIN) module.
+  useEffect(() => {
+    if (isLoaded && isSignedIn && activeSlug) {
+      void probeCapability(activeSlug);
+    }
+  }, [isLoaded, isSignedIn, activeSlug, probeCapability]);
+
+  // Effective PIN mode: the local setting AND the tenant actually supporting it.
+  // If device-management is known-disabled for this tenant, force solo mode (no lock)
+  // so the user is never trapped behind a PIN this tenant can't verify.
+  const effectivePinEnabled = pinSystemEnabled && deviceManagement !== false;
 
   // Track whether this is a fresh Clerk sign-in (user just entered credentials)
   // vs an app relaunch with an existing session
@@ -57,8 +77,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Fresh sign-in (transitioned from not-signed-in to signed-in during this session)
       // OR first app launch with existing Clerk session
 
-      if (!pinSystemEnabled) {
-        // PIN system off (solo mode) — skip lock entirely
+      if (!effectivePinEnabled) {
+        // PIN system off (solo mode, or tenant lacks device-management) — skip lock
         setInitialLock(false);
       } else {
         // PIN system on — show lock screen on app relaunch
@@ -69,7 +89,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     wasSignedInRef.current = true;
-  }, [isLoaded, isSignedIn, pinSystemEnabled, initialLock]);
+  }, [isLoaded, isSignedIn, effectivePinEnabled, initialLock]);
+
+  // If the tenant turns out NOT to support device-management (probe resolves false)
+  // after we already engaged the lock, drop it — this tenant can't verify a PIN.
+  useEffect(() => {
+    if (deviceManagement === false && initialLock === true) {
+      setInitialLock(false);
+    }
+  }, [deviceManagement, initialLock]);
 
   /**
    * Called after a successful Clerk sign-in from the login screen.
@@ -83,7 +111,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // We attach it to the module level for the login screen to import
   authAdmitRef.current = admitAfterLogin;
 
-  const isLocked = (initialLock === true) || locked;
+  const isLocked = ((initialLock === true) || locked) && deviceManagement !== false;
 
   const handleUnlock = useCallback(() => {
     setInitialLock(false);
@@ -96,6 +124,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setInitialLock(true);
   }, [clearOperator]);
 
+  /** Escape hatch from the lock screen: fully sign out of Clerk. */
+  const handleSignOut = useCallback(() => {
+    clearOperator();
+    void signOut();
+  }, [clearOperator, signOut]);
+
+  /**
+   * Escape hatch from the lock screen: leave the current tenant so the root gate
+   * re-runs discovery (picker for >1 store, or re-select). Available only when the
+   * user belongs to more than one store.
+   */
+  const canChangeStore = knownProjects.length > 1;
+  const handleChangeStore = useCallback(() => {
+    clearOperator();
+    clearActiveProject();
+    setInitialLock(false);
+  }, [clearOperator, clearActiveProject]);
+
   // Don't show lock if not signed in or not yet decided
   if (!isSignedIn || initialLock === null) {
     return <>{children}</>;
@@ -105,7 +151,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     <AuthContext.Provider value={{ isLocked, lock }}>
       <TouchActivityProvider onActivity={resetActivity}>
         {children}
-        {isLocked && <PinLockScreen onUnlock={handleUnlock} isAuthReady={isLoaded && isSignedIn} />}
+        {isLocked && (
+          <PinLockScreen
+            onUnlock={handleUnlock}
+            isAuthReady={isLoaded && isSignedIn}
+            onSignOut={handleSignOut}
+            onChangeStore={canChangeStore ? handleChangeStore : undefined}
+          />
+        )}
       </TouchActivityProvider>
     </AuthContext.Provider>
   );

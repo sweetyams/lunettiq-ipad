@@ -21,6 +21,10 @@ const C = {
 interface PinLockScreenProps {
   onUnlock: () => void;
   isAuthReady?: boolean;
+  /** Escape hatch — fully sign out of Clerk. */
+  onSignOut?: () => void;
+  /** Escape hatch — leave this store and re-select (only when >1 store). */
+  onChangeStore?: () => void;
 }
 
 /**
@@ -30,7 +34,7 @@ interface PinLockScreenProps {
  * The server resolves who you are from the PIN alone.
  * Device owner can bypass via Face ID.
  */
-export function PinLockScreen({ onUnlock, isAuthReady = true }: PinLockScreenProps) {
+export function PinLockScreen({ onUnlock, isAuthReady = true, onSignOut, onChangeStore }: PinLockScreenProps) {
   const { switchOperator, clearOperator } = useOperatorStore();
   const { authenticate: authenticateBiometric } = useBiometric();
   const { mutate: authenticate, isPending } = useAuthenticate();
@@ -122,6 +126,33 @@ export function PinLockScreen({ onUnlock, isAuthReady = true }: PinLockScreenPro
           <Fingerprint size={18} color={C.textMuted} />
           <Text style={styles.deviceOwnerText}>Device owner</Text>
         </Pressable>
+
+        {/* Escape hatches — never let the user get trapped behind a PIN */}
+        {(onChangeStore || onSignOut) && (
+          <View style={styles.escapeRow}>
+            {onChangeStore && (
+              <Pressable
+                onPress={onChangeStore}
+                accessibilityRole="button"
+                accessibilityLabel="Change store"
+                style={styles.escapeButton}
+              >
+                <Text style={styles.escapeText}>Change store</Text>
+              </Pressable>
+            )}
+            {onChangeStore && onSignOut && <Text style={styles.escapeDivider}>·</Text>}
+            {onSignOut && (
+              <Pressable
+                onPress={onSignOut}
+                accessibilityRole="button"
+                accessibilityLabel="Sign out"
+                style={styles.escapeButton}
+              >
+                <Text style={styles.escapeText}>Sign out</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -167,5 +198,25 @@ const styles = StyleSheet.create({
   deviceOwnerText: {
     fontSize: 14,
     color: C.textMuted,
+  },
+  escapeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingBottom: 8,
+  },
+  escapeButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  escapeText: {
+    fontSize: 14,
+    color: C.textSubtle,
+  },
+  escapeDivider: {
+    fontSize: 14,
+    color: C.textSubtle,
   },
 });

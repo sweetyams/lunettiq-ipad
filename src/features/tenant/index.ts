@@ -4,3 +4,4 @@ export { resolveBaseUrl, DEFAULT_BASE_URL } from './baseUrl';
 export { switchProject } from './switchProject';
 export { useMyProjects, fetchMyProjects } from './useMyProjects';
 export type { MyProjectsOutcome } from './useMyProjects';
+export { useTenantCapabilities, useActiveTenantDeviceManagement } from './useTenantCapabilities';
