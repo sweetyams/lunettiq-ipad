@@ -4,9 +4,6 @@ import { PhotoUpload } from '@/src/db/models';
 import { api } from '@/src/api/client';
 import { useSyncStore } from './useSyncStore';
 
-const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
-  ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
-
 interface UploadResult {
   success: boolean;
   shouldRetry: boolean;

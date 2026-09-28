@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import { database } from '@/src/db';
 import { SyncQueue } from '@/src/db/models';
 import { api } from '@/src/api/client';
+import { resolveBaseUrl } from '@/src/features/tenant/baseUrl';
 import { useSyncStore } from './useSyncStore';
 
 interface ProcessResult {
@@ -193,8 +194,9 @@ export class SyncEngine {
    * Execute the API request for a queue item
    */
   private async executeRequest(item: SyncQueue): Promise<ProcessResult> {
-    const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
-      ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
+    // Resolve the active project's host at drain time so queued writes go to the
+    // correct tenant.
+    const BASE_URL = resolveBaseUrl();
 
     try {
       // Get a fresh auth token

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useTenantStore } from '@/src/features/tenant/useTenantStore';
 
 /**
  * Shape of the staff project metadata stored in Clerk publicMetadata.
@@ -29,30 +30,44 @@ interface StaffProfile {
 }
 
 /**
- * Reads the current staff member's profile from Clerk publicMetadata.
- * 
- * Foundry stores `projects.{slug}` in Clerk's publicMetadata at invite time with:
- *   - role
- *   - location_ids
- *   - primary_location_id
- * 
- * This hook extracts that data for the 'lunettiq' project slug.
+ * Reads the current staff member's profile for the active project.
+ *
+ * Source of truth (in priority order):
+ *  1. The active project from `useTenantStore` (populated by /api/platform/my-projects) —
+ *     carries role + locations already resolved server-side.
+ *  2. Clerk `publicMetadata.projects[<active slug>]` — offline/fallback when the endpoint
+ *     data isn't available. Foundry writes `projects.{slug}` at invite time with role,
+ *     location_ids, primary_location_id.
+ *  3. Final fallback: userId as staffId, no location (session creation fails gracefully).
  */
 export function useStaffProfile(): StaffProfile {
   const { user } = useUser();
   const { userId } = useAuth();
+  const activeProject = useTenantStore((s) => s.activeProject);
 
   return useMemo(() => {
     if (!user || !userId) {
       return { staffId: '', locationId: null, locationIds: [], role: null, isReady: false };
     }
 
+    // 1. Prefer the active project — role/locations already resolved by Foundry.
+    if (activeProject) {
+      return {
+        staffId: userId,
+        locationId: activeProject.primaryLocationId ?? activeProject.locationIds[0] ?? null,
+        locationIds: activeProject.locationIds ?? [],
+        role: activeProject.role ?? null,
+        isReady: true,
+      };
+    }
+
+    // 2. Fall back to Clerk metadata for the active slug (dynamic key, not hardcoded).
     const meta = user.publicMetadata as StaffPublicMetadata | undefined;
-    const projectMeta = meta?.projects?.lunettiq;
+    const slug = useTenantStore.getState().activeProject?.slug;
+    const projectMeta = slug ? meta?.projects?.[slug] : undefined;
 
     if (!projectMeta) {
-      // Fallback: in dev mode or if metadata isn't set yet, use userId as staffId
-      // and locationId will be null (session creation will fail gracefully)
+      // 3. Dev / not-yet-selected: use userId as staffId, no location.
       return { staffId: userId, locationId: null, locationIds: [], role: null, isReady: true };
     }
 
@@ -63,5 +78,5 @@ export function useStaffProfile(): StaffProfile {
       role: projectMeta.role ?? null,
       isReady: true,
     };
-  }, [user, userId]);
+  }, [user, userId, activeProject]);
 }

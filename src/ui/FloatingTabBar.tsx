@@ -75,9 +75,9 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
       >
         <View
           style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+            backgroundColor: colors.bgElevated,
             borderWidth: 1,
-            borderColor: 'rgba(0, 0, 0, 0.08)',
+            borderColor: colors.border,
             paddingHorizontal: 12,
             paddingVertical: 12,
             gap: 16,
@@ -129,7 +129,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
                       width: 52,
                       height: 52,
                       borderRadius: 26,
-                      backgroundColor: isFocused ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
+                      backgroundColor: isFocused ? colors.brandSoft : 'transparent',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
@@ -145,7 +145,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
                           justifyContent: 'center',
                         }}
                       >
-                        <Text style={{ color: colors.brandText, fontSize: 13, fontWeight: '700' }}>
+                        <Text style={{ color: colors.brandText, fontSize: 14, fontWeight: '700' }}>
                           {initials}
                         </Text>
                       </View>
@@ -167,16 +167,16 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
                         position: 'absolute',
                         top: 2,
                         right: 2,
-                        minWidth: 18,
-                        height: 18,
-                        borderRadius: 9,
+                        minWidth: 20,
+                        height: 20,
+                        borderRadius: 10,
                         backgroundColor: colors.error,
                         alignItems: 'center',
                         justifyContent: 'center',
                         paddingHorizontal: 4,
                       }}
                     >
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#FFFFFF' }}>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textInverse }}>
                         {badge > 99 ? '99+' : badge}
                       </Text>
                     </View>
@@ -194,7 +194,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
           position: 'absolute',
           right: 0,
           bottom: bottomOffset + 14,
-          backgroundColor: 'rgba(0, 0, 0, 0.50)',
+          backgroundColor: colors.bgOverlay,
           borderTopLeftRadius: 12,
           borderBottomLeftRadius: 12,
           width: 44,
@@ -216,7 +216,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
             justifyContent: 'center',
           })}
         >
-          <Lock size={20} color="#FFFFFF" strokeWidth={1.8} />
+          <Lock size={20} color={colors.textInverse} strokeWidth={1.8} />
         </Pressable>
       </View>
     </View>

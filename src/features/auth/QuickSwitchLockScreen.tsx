@@ -319,7 +319,7 @@ function StaffAvatar({ name, imageUrl, size }: { name: string; imageUrl: string 
 
   return (
     <View style={{ width: size, height: size, backgroundColor: bgColor, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: size * 0.36, fontWeight: '600', color: '#FFFFFF' }}>
+      <Text style={{ fontSize: size * 0.36, fontWeight: '600', color: C.text }}>
         {initials}
       </Text>
     </View>
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   captionText: {
-    fontSize: 13,
+    fontSize: 14,
     color: C.textMuted,
     textAlign: 'center',
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   rosterName: {
-    fontSize: 13,
+    fontSize: 14,
     color: C.text,
     textAlign: 'center',
     marginTop: 8,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   deviceOwnerHint: {
-    fontSize: 12,
+    fontSize: 14,
     color: C.textMuted,
   },
 

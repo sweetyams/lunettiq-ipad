@@ -1,8 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
-
-const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
-  ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
+import { resolveBaseUrl } from '@/src/features/tenant/baseUrl';
 
 const SURFACE = 'tablet'; // Always — identifies iPad in audit logs
 
@@ -48,9 +46,10 @@ export const queryClient = new QueryClient({
 class FoundryAPI {
   private getToken: (() => Promise<string | null>) | null = null;
 
-  /** Exposed for multipart uploads that bypass the standard request() method */
+  /** Exposed for multipart uploads that bypass the standard request() method.
+   *  Resolved at call time so it always reflects the active project's host. */
   get baseUrl(): string {
-    return BASE_URL;
+    return resolveBaseUrl();
   }
 
   setTokenGetter(fn: () => Promise<string | null>): void {
@@ -96,7 +95,7 @@ class FoundryAPI {
       headers['X-Found-Operator'] = operatorState.activeOperator.clerkUserId;
     }
 
-    const url = `${BASE_URL}${path}`;
+    const url = `${resolveBaseUrl()}${path}`;
     const response = await fetch(url, {
       method,
       headers,

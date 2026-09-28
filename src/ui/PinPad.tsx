@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   attemptsText: {
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
   },
   numpad: {

@@ -20,13 +20,13 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import { MMKV } from 'react-native-mmkv';
 import { FALLBACK_DESIGN_TOKENS } from './design-tokens.fallback';
 import type { NativeDesignTokens } from './design-tokens.types';
+import { resolveBaseUrl } from '@/src/features/tenant/baseUrl';
+import { useTenantStore } from '@/src/features/tenant/useTenantStore';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.EXPO_PUBLIC_FOUNDRY_BASE_URL
-  ?? (__DEV__ ? 'http://lunettiq.localhost:4000' : 'https://lunettiq.bentspline.com');
-
-const ENDPOINT = `${BASE_URL}/api/design/native`;
+/** Path only — host is resolved at fetch time from the active project. */
+const DESIGN_PATH = '/api/design/native';
 
 /** MMKV storage instance — separate from main app storage to isolate design concerns */
 const storage = new MMKV({ id: 'design-tokens' });
@@ -91,6 +91,9 @@ export function DesignTokenProvider({ children }: DesignTokenProviderProps): Rea
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Re-fetch design tokens when the active project changes (brand may differ per project).
+  const activeBaseUrl = useTenantStore((s) => s.activeProject?.baseUrl ?? null);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -99,7 +102,7 @@ export function DesignTokenProvider({ children }: DesignTokenProviderProps): Rea
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(ENDPOINT, {
+        const response = await fetch(`${resolveBaseUrl()}${DESIGN_PATH}`, {
           method: 'GET',
           // No Authorization header — /api/design/native is public
           // No X-Found-Surface — not an authenticated call
@@ -148,7 +151,7 @@ export function DesignTokenProvider({ children }: DesignTokenProviderProps): Rea
 
     fetchTokens();
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, activeBaseUrl]);
 
   const refresh = (): void => setRefreshKey(k => k + 1);
 

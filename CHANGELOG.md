@@ -1,5 +1,35 @@
 # Changelog
 
+## [2026-09-28] — Multi-project DB isolation (PR 2)
+
+### Added
+- Per-project WatermelonDB factory: `getDatabaseFor(slug)` opens an isolated SQLite store named `lunettiq-<slug>`
+- `switchProject()` orchestrator — stops sync workers, repoints DB + base URL, opens the target store, clears query cache + operator + resets privacy to staff
+
+### Changed
+- `src/db/index.ts`: `database` export is now a live proxy that forwards to the active project's Database, so existing consumers switch transparently
+- `getDatabase()` resolves the active project's store (falls back to a `default` store when no project is selected — preserves current single-project behaviour)
+- `getCollections(db?)` accepts an optional database, defaulting to the active project's
+- The `default` store keeps the legacy `watermelon` SQLite file name, so existing installs retain data (no forced re-sync)
+
+## [2026-09-28] — Multi-project foundations (PR 1)
+
+### Added
+- `useTenantStore` (MMKV) holding the active project + known projects for login-driven multi-project support
+- `resolveBaseUrl()` / `DEFAULT_BASE_URL` — single source of truth for the active Foundry host
+- `EXPO_PUBLIC_PLATFORM_BOOTSTRAP_URL` env var for the `/api/platform/my-projects` discovery call
+- Planning docs under `docs/multi-project/` (shared plan, iPad plan, Foundry agent prompt)
+
+### Changed
+- API client (`src/api/client.ts`) resolves the base URL at request time from the active project
+- DesignTokenProvider fetches tokens from the active project's host and re-fetches on project switch
+- `useStaffProfile` reads role/locations from the active project, falling back to Clerk metadata by dynamic slug
+- SyncEngine drains queued writes to the active project's host
+
+### Fixed
+- Removed unused build-time `BASE_URL` constant in PhotoUploadWorker (uploads already use `api.baseUrl`)
+- Design-drift debt blocking the pre-commit gate: replaced hardcoded colors in `FloatingTabBar` with design tokens; raised sub-14px font sizes to the 14px accessibility floor in `FloatingTabBar`, `QuickSwitchLockScreen`, and `PinPad`
+
 ## [2026-07-29] — Client Profile Sheet Wiring
 
 ### Added
