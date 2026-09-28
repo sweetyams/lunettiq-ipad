@@ -48,7 +48,9 @@ export function TenantCapabilityNotice() {
             {name ?? 'This store'} isn't set up for the iPad app
           </Text>
           <Text className="text-caption-md text-text-muted mt-xs">
-            Some features are unavailable here. Switch to another store or sign out.
+            {canChangeStore
+              ? 'Some features are unavailable here. Switch to another store or sign out.'
+              : 'Some features are unavailable here. Contact your manager, or sign out.'}
           </Text>
           <View className="flex-row gap-md mt-sm">
             {canChangeStore && (

@@ -1,5 +1,14 @@
 # Changelog
 
+## [2026-09-28] — Change-store UX moved to the reachable Profile tab
+
+### Fixed
+- The "Change store" / active-store section was built into `more/index.tsx`, which is hidden from the tab bar (`href: null`) and not linked from Profile — so it was unreachable. Moved the Store section (active-store card + "Change store" with unsynced-changes guard) into `app/(app)/profile/index.tsx`, the actual settings tab.
+- `TenantCapabilityNotice`: banner copy no longer offers "Switch to another store" when the user has only one store — it now says to contact your manager or sign out.
+
+### Removed
+- Duplicated Store section and switch logic from `more/index.tsx` (single source of truth is now Profile).
+
 ## [2026-09-28] — Multi-tenant lockout fixes
 
 ### Added

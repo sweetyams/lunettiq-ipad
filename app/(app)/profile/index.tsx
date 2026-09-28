@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import {
@@ -12,9 +12,14 @@ import {
   ChevronRight,
   Bell,
   Shield,
+  Store,
 } from 'lucide-react-native';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { SyncIndicator } from '@/src/ui/SyncIndicator';
+import { useTenantStore, type Project } from '@/src/features/tenant/useTenantStore';
+import { switchProject } from '@/src/features/tenant/switchProject';
+import { useInitialSync } from '@/src/sync/useInitialSync';
+import { useSyncStore } from '@/src/sync/useSyncStore';
 
 /**
  * Profile screen — User identity, settings, and secondary navigation.
@@ -31,6 +36,58 @@ export default function ProfileScreen() {
   const { signOut } = useAuth();
   const { user } = useUser();
   const { activeOperator } = useOperatorStore();
+
+  const activeProject = useTenantStore((s) => s.activeProject);
+  const knownProjects = useTenantStore((s) => s.knownProjects);
+  const { startSync } = useInitialSync();
+  const canChangeStore = knownProjects.length > 1;
+
+  const performChange = async (target: Project): Promise<void> => {
+    try {
+      await switchProject(target);
+      await startSync();
+      router.replace('/(app)/home');
+    } catch {
+      Alert.alert('Could not change store', 'Something went wrong. Please try again.');
+    }
+  };
+
+  const promptChangeStore = (): void => {
+    if (!canChangeStore) return;
+
+    const { pendingWrites, pendingUploads } = useSyncStore.getState();
+    const pending = pendingWrites + pendingUploads;
+
+    const proceed = (): void => {
+      const others = knownProjects.filter((p) => p.slug !== activeProject?.slug);
+      if (others.length === 1) {
+        Alert.alert(
+          'Change store',
+          `Switch to ${others[0]!.name}? This device will reload that store's data.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Switch', style: 'destructive', onPress: () => void performChange(others[0]!) },
+          ]
+        );
+      } else {
+        router.push('/select-project');
+      }
+    };
+
+    if (pending > 0) {
+      Alert.alert(
+        'Unsynced changes',
+        `You have ${pending} change${pending > 1 ? 's' : ''} that haven't synced yet. ` +
+          'Changing store now may delay syncing them until you return. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Change anyway', style: 'destructive', onPress: proceed },
+        ]
+      );
+    } else {
+      proceed();
+    }
+  };
 
   const displayName = activeOperator?.name ?? user?.fullName ?? 'Staff Member';
   const email = user?.primaryEmailAddress?.emailAddress ?? '';
@@ -69,6 +126,52 @@ export default function ProfileScreen() {
       <View className="mx-lg mt-lg">
         <SyncIndicator />
       </View>
+
+      {/* Store */}
+      {activeProject && (
+        <View className="mx-lg mt-lg">
+          <Text className="text-text-muted text-caption-md uppercase tracking-wider mb-sm px-sm">
+            Store
+          </Text>
+          <View className="bg-bg-surface rounded-lg border border-border overflow-hidden">
+            <View className="flex-row items-center px-md py-md min-h-[52px] border-b border-border">
+              <View className="w-[36px] h-[36px] rounded-md bg-brand items-center justify-center">
+                {activeProject.brandMark ? (
+                  <Text className="text-brand-text text-body-md font-bold">
+                    {activeProject.brandMark}
+                  </Text>
+                ) : (
+                  <Store size={20} color="#FFFFFF" />
+                )}
+              </View>
+              <View className="flex-1 ml-md">
+                <Text className="text-text-primary text-body-md font-medium">
+                  {activeProject.name}
+                </Text>
+                <Text className="text-text-muted text-caption-md capitalize">
+                  {activeProject.env === 'demo' ? 'Demo store · ' : ''}
+                  {activeProject.role}
+                </Text>
+              </View>
+            </View>
+            {canChangeStore ? (
+              <MenuRow
+                icon={<ArrowUpDown size={20} color="#737373" />}
+                label="Change store"
+                description="Switch to another store you have access to"
+                onPress={promptChangeStore}
+                isLast
+              />
+            ) : (
+              <View className="px-md py-md">
+                <Text className="text-text-muted text-caption-md">
+                  This is the only store you have access to.
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Navigation sections */}
       <View className="mx-lg mt-lg">
