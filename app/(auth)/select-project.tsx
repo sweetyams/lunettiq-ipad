@@ -19,13 +19,21 @@ import { useInitialSync } from '@/src/sync/useInitialSync';
 export default function SelectProjectScreen() {
   const router = useRouter();
   const knownProjects = useTenantStore((s) => s.knownProjects);
+  const activeProject = useTenantStore((s) => s.activeProject);
   const { startSync, status, message } = useInitialSync();
   const [selectingSlug, setSelectingSlug] = useState<string | null>(null);
 
   const isBusy = selectingSlug !== null;
+  // Reached via "Change store" (a store is already active) → allow backing out.
+  const canCancel = activeProject != null;
 
   const handleSelect = async (project: Project): Promise<void> => {
     if (isBusy) return;
+    // Selecting the current store is a no-op — just go back.
+    if (project.slug === activeProject?.slug) {
+      router.replace('/(app)/home');
+      return;
+    }
     setSelectingSlug(project.slug);
     try {
       await switchProject(project);
@@ -64,6 +72,17 @@ export default function SelectProjectScreen() {
             <Text className="text-body-sm text-text-muted mt-lg text-center">
               {status === 'syncing' && message ? message : 'Opening store…'}
             </Text>
+          )}
+
+          {canCancel && !isBusy && (
+            <Pressable
+              onPress={() => router.replace('/(app)/home')}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              className="mt-lg min-h-[44px] items-center justify-center"
+            >
+              <Text className="text-body-md text-text-secondary font-medium">Cancel</Text>
+            </Pressable>
           )}
         </View>
       </ScrollView>

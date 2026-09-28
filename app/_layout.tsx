@@ -109,8 +109,10 @@ function InitialLayout() {
     }
 
     // Signed in, project already chosen → into the app.
+    // EXCEPT the select-project screen, which is a legitimate destination even with an
+    // active project (the "Change store" flow routes here to pick a different store).
     if (activeProject) {
-      if (inAuthGroup) router.replace('/(app)/home');
+      if (inAuthGroup && !onSelectProject) router.replace('/(app)/home');
       return;
     }
 

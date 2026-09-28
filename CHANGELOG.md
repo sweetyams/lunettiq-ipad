@@ -1,5 +1,12 @@
 # Changelog
 
+## [2026-09-28] — Fix: Change store bounced to Home instead of the picker
+
+### Fixed
+- Tapping "Change store" (with 3+ stores) routed to `/select-project`, but the root gate's "signed in + active project + in auth group → go Home" rule immediately bounced the user out to Home/appointments. The gate now allows the `select-project` route even when a store is active (that's the change-store path).
+- Selecting the already-active store in the picker is now a no-op that returns Home.
+- Added a Cancel button to the picker when it's reached via Change store (a store is already active).
+
 ## [2026-09-28] — Use authoritative ipadReady flag for the capability banner
 
 ### Fixed
