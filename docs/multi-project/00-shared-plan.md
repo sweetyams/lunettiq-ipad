@@ -71,8 +71,26 @@ open WatermelonDB for slug  →  fetch /api/design/native (that host)  →  init
 
 ## 4. The discovery endpoint (Foundry owns)
 
+> **AS-BUILT (locked 2026-09-28).** The endpoint is built + committed on Foundry branch
+> `feat/my-projects-endpoint` (commit `f246c978b`), verified against the live DB, **not yet
+> deployed**. Deltas from the original proposal below:
+>
+> - **Path is `/api/account/my-projects`** (not `/api/platform/...`). `/api/platform/*` is
+>   hard-gated to Foundry platform staff; opticians aren't platform users. This is per-user
+>   self-service identity, so it lives under `/api/account/*`.
+> - **Call it on a project host the user belongs to**, not a neutral host. The mobile-JWT
+>   middleware resolves a tenant from the host and 403s if the user isn't a member. Bootstrap
+>   from the last-known/default project baseUrl (see §4a).
+> - **No `NOT_A_MEMBER` code** — gate on HTTP status: `200 + []` = no access, `401` = re-auth,
+>   `403` = wrong project (fall back to a host the user belongs to).
+> - **Shared Clerk instance: confirmed yes** (one user pool). Resolves §9 Q1.
+> - **`env` vocab: `production | demo | staging`.** Resolves §9 Q3.
+> - Ordering: production projects first, then alphabetical by name. `brandMark` optional.
+> - Test account: `benjamin@lunettiq.com` (`user_3GJcIVjU0f7GwuzgAfEOdll9I2c`), member of
+>   `lunettiq` (owner) + `lunettiq-demo` (admin).
+
 ```
-GET /api/platform/my-projects
+GET /api/account/my-projects
 Auth: mobile-jwt (Authorization: Bearer <Clerk token>)
 Headers: X-Found-Surface: tablet
 ```
@@ -168,7 +186,7 @@ The full agent-ready brief for this is in `02-foundry-agent-prompt.md`.
 
 | Item | Owner |
 |---|---|
-| `GET /api/platform/my-projects` (data + host mapping) | Foundry |
+| `GET /api/account/my-projects` (data + host mapping) | Foundry |
 | `lunettiq-demo` project + `project_members` seeding | Foundry |
 | Shared Clerk instance across projects (verify) | Foundry |
 | Platform bootstrap host | Foundry |
@@ -195,10 +213,30 @@ The full agent-ready brief for this is in `02-foundry-agent-prompt.md`.
 
 ---
 
-## 9. Open questions (resolve before coding)
+## 9. Open questions — RESOLVED (2026-09-28)
 
-1. Is the Clerk instance genuinely shared across `lunettiq` and `lunettiq-demo` (one `pk_`)?
-   If not, the bootstrap approach changes.
-2. Is there a stable platform bootstrap host the app can call `my-projects` on before it
-   knows any project host? This decides the iPad `PLATFORM_BOOTSTRAP_URL`.
-3. Exact `env` value vocabulary (`production` | `demo` | `staging` | other?).
+1. **Shared Clerk instance?** ✅ **Yes.** One Clerk instance across all projects (single
+   `CLERK_SECRET_KEY`, one global user pool). One login sees every project it's a member of.
+2. **Bootstrap host?** **Not a neutral host — call `my-projects` on a project host the user
+   belongs to.** The mobile-JWT middleware resolves a tenant from the host and returns `403`
+   if the JWT user isn't a member of that tenant. Booting from a project the user already
+   belongs to passes the gate; the handler then returns *all* their memberships.
+   - iPad rule: persist the last-selected `baseUrl` (MMKV). First launch / no stored host →
+     default to `https://lunettiq.bentspline.com` (primary project). Call
+     `{storedOrDefault}/api/account/my-projects`.
+   - Host mapping (Foundry): `custom_domain` if set, else `{slug}.bentspline.com`; dev
+     `{slug}.localhost:4000`. `lunettiq` → `lunettiq.bentspline.com`, `lunettiq-demo` →
+     `lunettiq-demo.bentspline.com`.
+   - A neutral platform host would need a Foundry proxy carve-out (protected-file edit) —
+     not done; avoid.
+3. **`env` vocabulary?** `production | demo | staging`. Derived from `settings.env` or slug
+   suffix. Use `env === 'demo'` to drive the demo indicator strip.
+
+## 10. Foundry outstanding (before production-usable)
+
+1. **Deploy:** branch `feat/my-projects-endpoint` needs push → PR → merge → deploy. Not yet
+   on any live host.
+2. **HTTP e2e unproven:** verified via direct DB query + mocked route tests; the full
+   middleware→handler path over real HTTP with a real JWT hasn't been run. First real curl
+   from the iPad closes this.
+

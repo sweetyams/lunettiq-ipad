@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026-09-28] — Multi-project discovery + selection (PRs 3–6)
+
+### Added
+- `useMyProjects` / `fetchMyProjects` — calls `GET /api/account/my-projects` on the last-known/default project host, with status-based handling (200-empty = no access, 401 = re-auth, 403 = wrong project)
+- Post-login gate in `app/_layout.tsx`: discovers memberships, shows a no-access screen for 0, auto-selects for 1, routes to the picker for N
+- `app/(auth)/select-project.tsx` — store picker (name, role, demo badge, location count); selecting opens that store's isolated DB, runs initial sync, enters the app
+- Store section in More: active-store card + "Change store" row (when >1 store) with an unsynced-changes guard, wrapping `switchProject`
+- `DemoStrip` — persistent top indicator when the active store's `env` is `demo`/`staging`
+
+### Changed
+- Login screen no longer force-navigates after Clerk sign-in; the root gate routes after project discovery
+- Regenerated Expo Router types for the new `select-project` route
+
 ## [2026-09-28] — Multi-project DB isolation (PR 2)
 
 ### Added

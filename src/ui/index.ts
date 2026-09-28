@@ -27,6 +27,7 @@ export { FilterSheet } from './FilterSheet';
 export { FitBadge } from './FitBadge';
 export { LoadingState } from './LoadingState';
 export { ModeStrip } from './ModeStrip';
+export { DemoStrip } from './DemoStrip';
 export { PermissionGate } from './PermissionGate';
 export { PrivacyToggle } from './PrivacyToggle';
 export { ProductCard } from './ProductCard';

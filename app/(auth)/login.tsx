@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useSignIn, useSSO } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { admitAfterClerkLogin } from '@/src/features/auth/AuthProvider';
@@ -25,7 +24,6 @@ export default function LoginScreen() {
   useWarmUpBrowser();
   const { signIn, setActive, isLoaded } = useSignIn();
   const { startSSOFlow } = useSSO();
-  const router = useRouter();
 
   const [stage, setStage] = useState<Stage>('main');
   const [email, setEmail] = useState('');
@@ -56,7 +54,7 @@ export default function LoginScreen() {
       if (createdSessionId && ssoSetActive) {
         await ssoSetActive({ session: createdSessionId });
         admitAfterClerkLogin();
-        router.replace('/(app)/home');
+        // Navigation is handled by the root gate once project discovery completes.
       }
     } catch (err: any) {
       Alert.alert('Sign In Error', err?.errors?.[0]?.longMessage || err?.errors?.[0]?.message || err?.message || 'Google sign-in failed');
@@ -75,7 +73,7 @@ export default function LoginScreen() {
         if (attempt.status === 'complete') {
           await setActive({ session: attempt.createdSessionId });
           admitAfterClerkLogin();
-          router.replace('/(app)/home');
+          // Navigation handled by the root gate after project discovery.
         } else {
           Alert.alert('Sign In', `Status: ${attempt.status}`);
         }
@@ -85,7 +83,7 @@ export default function LoginScreen() {
         if (attempt.status === 'complete') {
           await setActive({ session: attempt.createdSessionId });
           admitAfterClerkLogin();
-          router.replace('/(app)/home');
+          // Navigation handled by the root gate after project discovery.
         } else {
           Alert.alert('Check your email', 'A sign-in link or code was sent to your email.');
         }

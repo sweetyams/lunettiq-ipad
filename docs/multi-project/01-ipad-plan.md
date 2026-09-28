@@ -1,8 +1,8 @@
 # iPad-side execution plan — multi-project support
 
-Status: ready to execute (pending Foundry `my-projects` contract lock)
+Status: contract LOCKED (Foundry branch `feat/my-projects-endpoint`, not yet deployed)
 Owner: Lunettiq iPad team
-Depends on: `00-shared-plan.md`, Foundry `GET /api/platform/my-projects`
+Depends on: `00-shared-plan.md`, Foundry `GET /api/account/my-projects`
 
 This is the concrete, file-by-file plan for the iPad app. Steps are ordered so each is
 shippable and testable on its own.
@@ -48,7 +48,7 @@ export interface Project {
 
 interface TenantState {
   activeProject: Project | null;
-  knownProjects: Project[];      // from /api/platform/my-projects
+  knownProjects: Project[];      // from /api/account/my-projects
   fetchedAt: number | null;
 }
 
@@ -72,9 +72,16 @@ Persist `activeProject` + `knownProjects` (offline relaunch must remember the la
   (not a module const), falling back to env default. Add a `refresh()` trigger on project
   change so brand tokens re-fetch when switching.
 
-**New env:** `EXPO_PUBLIC_PLATFORM_BOOTSTRAP_URL` — the host used to call `my-projects`
-before any project is active. Add to `.env.example`, `.env.dev`, `.env.prod`. (Do not touch
-secrets; this is a plain URL.)
+**Bootstrap host (LOCKED):** `my-projects` is **not** called on a neutral host — the
+mobile-JWT middleware 403s if the user isn't a member of the host's tenant. Call it on a
+project host the user belongs to:
+- Persist the last-selected `baseUrl` in `useTenantStore`.
+- First launch / no stored host → default to `EXPO_PUBLIC_FOUNDRY_BASE_URL` (primary
+  project, `https://lunettiq.bentspline.com`).
+- Call `{storedOrDefault}/api/account/my-projects`.
+
+The separate `EXPO_PUBLIC_PLATFORM_BOOTSTRAP_URL` idea is dropped — the primary project host
+*is* the bootstrap host. `resolveBaseUrl()` already provides exactly this fallback chain.
 
 **Risk:** low. Behaviour-preserving when exactly one project resolves.
 
@@ -129,7 +136,7 @@ with today, then enable switching.
 **New route:** `app/(auth)/select-project.tsx`.
 
 Flow, driven from `app/_layout.tsx` `InitialLayout` (or a dedicated gate component):
-1. Clerk sign-in completes → call `GET /api/platform/my-projects` (bootstrap URL, Bearer
+1. Clerk sign-in completes → call `GET /api/account/my-projects` (bootstrap URL, Bearer
    JWT, `X-Found-Surface: tablet`). Store into `useTenantStore.setKnownProjects`.
 2. **0 projects** → error state: "Your account isn't a member of any store. Contact your
    manager." No route into `(app)`.
