@@ -24,6 +24,14 @@ Plans for letting one Clerk login use the Lunettiq iPad app across multiple proj
 - [x] Plans written
 - [x] Foundry: `my-projects` endpoint + demo seeding + shared-Clerk verification (built + DB-verified; **not yet deployed**)
 - [ ] Foundry: deploy (`feat/my-projects-endpoint` → PR → merge) + real-HTTP curl proof
-- [x] iPad: runtime base URL + retire hardcoded slug
-- [x] iPad: per-project DB isolation
-- [ ] iPad: select-project + switch-store UX + demo strip
+- [x] iPad P1: runtime base URL + retire hardcoded slug
+- [x] iPad P2: per-project DB isolation
+- [x] iPad P3: discovery gate + select-project screen
+- [x] iPad P4: PIN unlock scoped to the set tenant (401/423 handling)
+- [x] iPad P5: change-store in More (unsynced-changes guard)
+- [x] iPad P6: demo/staging indicator strip
+- [ ] End-to-end: two-membership test on-device (needs Foundry deploy)
+
+All iPad phases (P1–P6) are implemented and pass the verify gate. Remaining work is on the
+Foundry side (deploy + real-HTTP proof), after which the two-membership flow can be tested
+on a device.

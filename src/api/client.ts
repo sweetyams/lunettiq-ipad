@@ -27,7 +27,9 @@ export class APIError extends Error {
   constructor(
     public code: string,
     message: string,
-    public details?: unknown
+    public details?: unknown,
+    /** HTTP status code, when the error originated from an HTTP response. */
+    public status?: number
   ) {
     super(message);
     this.name = 'APIError';
@@ -131,7 +133,13 @@ class FoundryAPI {
     }
     
     if (json.error) {
-      throw new APIError(json.error.code, json.error.message, json.error.details);
+      throw new APIError(json.error.code, json.error.message, json.error.details, response.status);
+    }
+
+    // Defensive: a non-2xx response without a standard error envelope should still fail,
+    // carrying the HTTP status so callers (e.g. PIN unlock) can branch on 401/423.
+    if (!response.ok) {
+      throw new APIError('HTTP_ERROR', `HTTP ${response.status}`, undefined, response.status);
     }
     
     return json.data as T;

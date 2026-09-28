@@ -59,15 +59,20 @@ export function PinLockScreen({ onUnlock, isAuthReady = true }: PinLockScreenPro
         },
         onError: (error) => {
           if (error instanceof APIError) {
-            if (error.code === 'INVALID_PIN') {
-              setPinError('Incorrect PIN');
-              if (error.details && typeof error.details === 'object' && 'remainingAttempts' in error.details) {
-                setRemainingAttempts((error.details as { remainingAttempts: number }).remainingAttempts);
-              }
-            } else if (error.code === 'LOCKED') {
+            // Prefer HTTP status (handoff §4: 401 = wrong PIN, 423 = locked), then
+            // fall back to the body error code (INVALID_PIN / LOCKED).
+            const isLocked = error.status === 423 || error.code === 'LOCKED';
+            const isWrongPin = error.status === 401 || error.code === 'INVALID_PIN';
+
+            if (isLocked) {
               setPinError('Too many attempts');
               if (error.details && typeof error.details === 'object' && 'lockedUntil' in error.details) {
                 setLockedUntil((error.details as { lockedUntil: string }).lockedUntil);
+              }
+            } else if (isWrongPin) {
+              setPinError('Incorrect PIN');
+              if (error.details && typeof error.details === 'object' && 'remainingAttempts' in error.details) {
+                setRemainingAttempts((error.details as { remainingAttempts: number }).remainingAttempts);
               }
             } else {
               setPinError(error.message);

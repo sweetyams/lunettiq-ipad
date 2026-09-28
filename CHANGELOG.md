@@ -12,6 +12,7 @@
 ### Changed
 - Login screen no longer force-navigates after Clerk sign-in; the root gate routes after project discovery
 - Regenerated Expo Router types for the new `select-project` route
+- PIN unlock now branches on HTTP status (401 wrong PIN, 423 locked) in addition to body error codes; `APIError` carries the HTTP `status`. PIN/roster calls are already scoped to the active store's host, and changing store clears the active operator.
 
 ## [2026-09-28] — Multi-project DB isolation (PR 2)
 
