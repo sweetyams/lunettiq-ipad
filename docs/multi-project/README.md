@@ -10,6 +10,7 @@ Plans for letting one Clerk login use the Lunettiq iPad app across multiple proj
 | `02-foundry-agent-prompt.md` | Copy-paste prompt for the Foundry agent to build the platform side. |
 | `03-foundry-handoff.md` | Foundry → iPad report-back: final endpoint contract, device-per-tenant model, PIN scoping, phases (F1–F5 / P1–P6). **Lock the client contract against this.** |
 | `04-capability-gap.md` | Contract gap: `my-projects` has no module/capability field, so the iPad can't pre-filter tenants that aren't set up for the app. Client-side workaround shipped; proposes adding `capabilities`/`ipadEnabled`. |
+| `05-founder-seed-request.md` | Seed request for the Foundry agent: give a founder (`willem@sweetyams.com`) multi-store access by adding `project_members` rows (Option A — no contract change). |
 
 ## The short version
 
