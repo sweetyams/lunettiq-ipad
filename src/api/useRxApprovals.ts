@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { toApprovalSummary } from './rxMapping';
 import type {
   RxApproval,
   ApprovalStatus,
@@ -26,8 +27,9 @@ export function useRxApprovalQueue(status?: ApprovalStatus) {
 
 export function useRxApprovalSummary() {
   return useQuery({
-    queryKey: ['rx-approvals', 'summary'],
-    queryFn: () => api.get<ApprovalSummary>('/api/admin/rx-approvals/summary'),
+    // 'mapped' keeps raw pre-mapping responses cached by older builds from being read
+    queryKey: ['rx-approvals', 'summary', 'mapped'],
+    queryFn: async (): Promise<ApprovalSummary> => toApprovalSummary(await api.get<unknown>('/api/admin/rx-approvals/summary')),
     staleTime: 30 * 1000, // 30 seconds
   });
 }

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { fetchAppointments, toInventoryHold, type FoundryProtectionRow } from './appointmentsMapping';
 import {
   Appointment,
   AppointmentListParams,
@@ -22,27 +23,13 @@ function formatDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function buildParams(params?: AppointmentListParams): Record<string, string> | undefined {
-  if (!params) return undefined;
-  const result: Record<string, string> = {};
-  if (params.date) result.date = params.date;
-  if (params.from) result.from = params.from;
-  if (params.to) result.to = params.to;
-  if (params.locationId) result.locationId = params.locationId;
-  if (params.staffId) result.staffId = params.staffId;
-  return Object.keys(result).length > 0 ? result : undefined;
-}
-
 // --- Queries ---
 
 /** Fetch appointments with flexible params (date, range, filters) */
 export function useAppointments(params?: AppointmentListParams) {
   return useQuery({
     queryKey: ['appointments', params],
-    queryFn: () =>
-      api.get<Appointment[]>('/api/scheduling', {
-        params: buildParams(params),
-      }),
+    queryFn: () => fetchAppointments(params),
     staleTime: 2 * 60 * 1000, // 2 min — appointments change frequently
   });
 }
@@ -54,10 +41,7 @@ export function useTodayAppointments(locationId?: string) {
 
   return useQuery({
     queryKey: ['appointments', 'today', locationId],
-    queryFn: () =>
-      api.get<Appointment[]>('/api/scheduling', {
-        params: buildParams(params),
-      }),
+    queryFn: () => fetchAppointments(params),
     staleTime: 2 * 60 * 1000,
     // Refetch every 5 min to stay in sync
     refetchInterval: 5 * 60 * 1000,
@@ -72,10 +56,7 @@ export function useWeekAppointments(weekStart: Date, locationId?: string) {
 
   return useQuery({
     queryKey: ['appointments', 'week', from, locationId],
-    queryFn: () =>
-      api.get<Appointment[]>('/api/scheduling', {
-        params: buildParams(params),
-      }),
+    queryFn: () => fetchAppointments(params),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -109,12 +90,13 @@ export function useAppointmentHolds(appointmentId: string | null) {
 /** All active try-on holds (not scoped to a single appointment) */
 export function useActiveHolds() {
   return useQuery({
-    queryKey: ['inventory-holds', 'active'],
+    queryKey: ['inventory-holds', 'active', 'mapped'],
     queryFn: async () => {
       try {
-        return await api.get<InventoryHold[]>('/api/inventory/protections', {
+        const rows = await api.get<FoundryProtectionRow[]>('/api/inventory/protections', {
           params: { reason: 'try_on_hold' },
         });
+        return (Array.isArray(rows) ? rows : []).map(toInventoryHold);
       } catch (error) {
         // Gracefully handle 404 (module not enabled for this tenant)
         if (error instanceof Error && 'code' in error && (error as any).code === 'NOT_FOUND') {
@@ -327,10 +309,7 @@ export function useSendReminder() {
 export function useClientAppointments(clientId: string | null) {
   return useQuery({
     queryKey: ['appointments', 'client', clientId],
-    queryFn: () =>
-      api.get<Appointment[]>('/api/scheduling', {
-        params: { clientId: clientId! },
-      }),
+    queryFn: () => fetchAppointments({ clientId: clientId! }),
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
   });

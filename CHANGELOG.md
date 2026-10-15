@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-10-15] — V2 S0: Home shows the real demo day
+
+### Fixed
+- Appointments had no client name, type or duration: Foundry's `/api/scheduling` returns raw rows (`customerId`, `title`), but the iPad read `clientId`/`clientName`/`type`/`duration`. New `appointmentsMapping.ts` maps rows and looks client names up (cached 5 min). "Start session" from an appointment now has its client.
+- Week view sent `from`/`to`, which Foundry ignores (it reads `dateFrom`/`dateTo`), so it loaded every appointment up to the page limit.
+- Home Rx card always said "No active orders" and the Rx Pipeline screen crashed on real data: Foundry returns per-state `{ count, totalCents, depositCents }` across 12 states. New `rxMapping.ts` groups them into the iPad's counts; the approval summary (`pending`/`inReview`) is mapped too.
+- Active holds had no label and tapping one opened a product page that can't load. Holds show the staff note (frame + client) and open the client.
+
+### Notes
+- Demo data now comes from Foundry `scripts/seed-lunettiq-demo-today.ts` (branch `feat/lunettiq-demo-today-seed`). Re-run it before a demo.
+
 ## [2026-10-15] — V2 S0: visits and try-ons reach Foundry again
 
 ### Fixed

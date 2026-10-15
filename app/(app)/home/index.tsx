@@ -103,8 +103,9 @@ export default function HomeScreen() {
     );
   }, [markNoShow, router]);
 
+  // A hold is placed for a client during a visit; open that client.
   const handleHoldPress = useCallback((hold: InventoryHold) => {
-    router.push(`/products/${hold.productId}`);
+    if (hold.clientId) router.push(`/clients/${hold.clientId}`);
   }, [router]);
 
   const handleClientPress = useCallback((clientId: string) => {

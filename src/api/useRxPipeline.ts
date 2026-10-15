@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { toRxPipelineCounts } from './rxMapping';
 import type { RxOrder, RxPipelineCounts, CreateRxOrderPayload, UpdateRxOrderPayload } from './rx-pipeline.types';
 
 export function useRxPipelineOrders(params?: { state?: string; clientId?: string; limit?: number; offset?: number }) {
@@ -30,8 +31,9 @@ export function useRxPipelineOrder(id: string) {
 
 export function useRxPipelineCounts() {
   return useQuery({
-    queryKey: ['rx-pipeline', 'counts'],
-    queryFn: () => api.get<RxPipelineCounts>('/api/admin/rx-pipeline/counts'),
+    // 'mapped' keeps raw pre-mapping responses cached by older builds from being read
+    queryKey: ['rx-pipeline', 'counts', 'mapped'],
+    queryFn: async (): Promise<RxPipelineCounts> => toRxPipelineCounts(await api.get<unknown>('/api/admin/rx-pipeline/counts')),
     staleTime: 30 * 1000, // 30 seconds
   });
 }

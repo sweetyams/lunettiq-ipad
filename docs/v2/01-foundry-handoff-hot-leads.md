@@ -66,3 +66,9 @@ Note: the end-session endpoint receives `sendSummary`, `summaryLanguage`, `tags`
 ## Also seen in the live test
 
 - `crm_interactions.staff_id` is `null` on tablet-created sessions. `handleCreateTryOnSession` reads `(session as any).staffId`, which isn't set for tablet JWTs. The PIN-authenticated operator should be attributed, so hot leads (`assignedStaffId`) route to the stylist who saw the client.
+
+## Also found while seeding the demo (2026-10-15)
+
+- **`GET /api/scheduling` has no client name.** It returns raw rows (`customerId`, `title` = service name). The iPad now looks names up per client (`src/api/appointmentsMapping.ts`). A left join on `customers` returning `clientName` would remove N extra requests per refresh; the iPad already prefers `clientName` when present.
+- **Approval status drift in the demo seed** (fixed on Foundry branch `feat/lunettiq-demo-today-seed`): `pending_review` isn't a remote-approval status, so seeded requests never appeared in queues.
+- **New seed:** `scripts/seed-lunettiq-demo-today.ts --tenant=lunettiq-demo --force` refreshes the demo's time-sensitive layer around today (also step 8/8 of `seed-lunettiq-demo-all.ts`). Run it before each demo. Branch `feat/lunettiq-demo-today-seed` (worktree `../foundry-demo-today`), not merged.
