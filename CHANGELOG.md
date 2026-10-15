@@ -13,6 +13,11 @@
 - Duplicate React keys in the client profile's "Avoid" chips (red dev error on profile open).
 - Session product grid froze the app: Foundry storefront products carry `shopifyId` but no `id`, so every grid row key was `":::"` and the per-second session timer triggered a duplicate-key warning flood. Frames added in a visit were also saved with an empty product id, and "Best match" never matched suggestions. New `productKey()` (shopifyId first) is used for list keys, frames tried, and suggestion scoring; `Product.id` is now optional to match the API.
 
+- Session tray "Set verdict" always recorded "Loved" via a tiny text target. Replaced with **Love · Maybe · No** buttons (44 pt targets, tap again to clear).
+
+### Verified (live, `lunettiq-demo`)
+- iPad visit → Foundry try-on session (frames + verdicts) → `tried_on`/`liked`/`disliked` interactions → **hot lead created** (`289d800b-…`, open, cold, 15%, day-14 expiry).
+
 ### Added
 - Profile → Store → **Auto-lock** (admins): tap to cycle 2 / 5 / 10 min / Never. The setting already existed in `useDeviceSettings` but had no screen.
 

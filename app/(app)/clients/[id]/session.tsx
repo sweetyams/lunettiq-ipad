@@ -8,7 +8,7 @@ import { useSuggestions } from '@/src/api/useSuggestions';
 import { useClient, useClientEnrichment, useClientPreferences } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import type { FrameTried } from '@/src/features/session/useSessionStore';
-import { Avatar, Button, Chip, Tag, RowKV, ProductCard, LoadingState, ErrorState, EmptyState } from '@/src/ui';
+import { Avatar, Button, Chip, RowKV, ProductCard, LoadingState, ErrorState, EmptyState } from '@/src/ui';
 import { FilterSheet } from '@/src/ui/FilterSheet';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { useFilters } from '@/src/api/useFilters';
@@ -361,26 +361,36 @@ export default function SessionWorkspaceScreen() {
 
 // --- Tray Entry ---
 function TrayEntry({ frame, onVerdictChange }: { frame: FrameTried; onVerdictChange: (id: string, v: FrameTried['verdict']) => void }) {
-  const verdictLabel: Record<string, { text: string; variant: 'ok' | 'warn' | 'err' | 'default' }> = {
-    loved: { text: 'Loved', variant: 'ok' },
-    liked: { text: 'Liked', variant: 'default' },
-    unsure: { text: 'Unsure', variant: 'warn' },
-    rejected: { text: 'No', variant: 'err' },
-  };
-
-  const v = frame.verdict ? verdictLabel[frame.verdict] : null;
+  // One tap records the client's reaction; tapping the active choice clears it.
+  const choices: Array<{ verdict: NonNullable<FrameTried['verdict']>; label: string }> = [
+    { verdict: 'loved', label: 'Love' },
+    { verdict: 'unsure', label: 'Maybe' },
+    { verdict: 'rejected', label: 'No' },
+  ];
 
   return (
     <View className="flex-row items-center gap-[10px] py-sm border-b border-bg-muted">
       <View className="w-[48px] h-[32px] rounded-sm bg-bg-muted" />
       <Text className="text-body-sm text-text-primary flex-1" numberOfLines={1}>{frame.productName}</Text>
-      {v ? (
-        <Tag label={v.text} variant={v.variant} />
-      ) : (
-        <Pressable onPress={() => onVerdictChange(frame.id, 'loved')} hitSlop={8}>
-          <Text className="text-caption-md text-text-muted">Set verdict</Text>
-        </Pressable>
-      )}
+      <View className="flex-row gap-[4px]" accessibilityRole="radiogroup" accessibilityLabel={`Verdict for ${frame.productName}`}>
+        {choices.map(({ verdict, label }) => {
+          const selected = frame.verdict === verdict;
+          return (
+            <Pressable
+              key={verdict}
+              onPress={() => onVerdictChange(frame.id, selected ? undefined : verdict)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              accessibilityLabel={label}
+              className={`min-h-[44px] min-w-[52px] px-[10px] rounded-sm items-center justify-center border ${
+                selected ? 'bg-accent border-accent' : 'border-border'
+              }`}
+            >
+              <Text className={`text-body-sm font-medium ${selected ? 'text-accent-text' : 'text-text-primary'}`}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }

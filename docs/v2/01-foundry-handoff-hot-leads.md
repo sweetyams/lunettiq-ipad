@@ -32,7 +32,9 @@ The hot-leads job (`src/lib/modules/hot-leads/jobs.ts`) then treats that as `cus
 - resolve email: `eq(customers.id, customerId)` → no row → returns `{ skipped: true, reason: 'customer_email_not_found' }`
 - insert: `customerId` (would also violate the uuid FK)
 
-So every qualifying interaction is silently skipped.
+So every qualifying interaction for a client whose route id is **not** the canonical `customers.id` is silently skipped.
+
+**Verified 2026-10-15 on `lunettiq-demo`:** an iPad visit for Camille Tremblay (route id = canonical uuid `9353ffa0-…`) created hot lead `289d800b-…` (open, cold, 15%, expires Oct 29). The seeded `demo-5d715705`-style refs never do. In production most clients are Shopify-imported, so their route id is the Shopify customer id and **production is still fully affected**.
 
 ## Fix requested
 
@@ -60,3 +62,7 @@ Please also:
 - At close: `PATCH /api/clients/{id}/tryon-sessions/{sessionId}` with `framesTried` (verdicts), then `POST …/end` with the outcome, then `liked` / `disliked` interactions for each verdict.
 
 Note: the end-session endpoint receives `sendSummary`, `summaryLanguage`, `tags` and `orderRef`, but `handleEndTryOnSession` only reads `outcome` and `notes`. If any of those should persist (e.g. `orderRef` for attribution), the handler needs to accept them.
+
+## Also seen in the live test
+
+- `crm_interactions.staff_id` is `null` on tablet-created sessions. `handleCreateTryOnSession` reads `(session as any).staffId`, which isn't set for tablet JWTs. The PIN-authenticated operator should be attributed, so hot leads (`assignedStaffId`) route to the stylist who saw the client.
