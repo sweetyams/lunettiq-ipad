@@ -65,8 +65,8 @@ export function OverviewTab({ clientId, client, onOpenSheet, onEditSection }: Ov
           <View>
             <Text className="text-caption-md tracking-widest uppercase text-color-text-muted mb-sm">Avoid</Text>
             <View className="flex-row flex-wrap gap-[6px]">
-              {avoid.map((item: string) => (
-                <Chip key={item} label={item} variant="neg" />
+              {avoid.map((item: string, i: number) => (
+                <Chip key={`${item}-${i}`} label={item} variant="neg" />
               ))}
             </View>
           </View>

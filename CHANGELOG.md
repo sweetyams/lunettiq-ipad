@@ -9,6 +9,8 @@
 - Verdicts were sent as `loved`/`rejected`, which Foundry doesn't recognise. They now map to `liked`/`disliked`.
 - The session screen's "End session" button cleared the visit without recording an outcome. It now opens the outcome sheet.
 - Starting a visit from a Home appointment dropped the client's name and the appointment link.
+- The app always thought it was offline: the connectivity check pinged `httpstat.us`, which no longer responds, so queued sync and photo uploads never drained. It now probes the active store's Foundry `/api/health`.
+- Duplicate React keys in the client profile's "Avoid" chips (red dev error on profile open).
 
 ### Changed
 - `useEndSession` creates the server session first if the visit only exists locally, and saves frames + verdicts on the session before ending it.

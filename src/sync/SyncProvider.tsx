@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, ReactNode } from 'react';
+import { resolveBaseUrl } from '@/src/features/tenant/baseUrl';
 import { AppState, AppStateStatus } from 'react-native';
 import { syncEngine } from './SyncEngine';
 import { PhotoUploadWorker } from './PhotoUploadWorker';
@@ -13,7 +14,9 @@ async function checkConnectivity(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch('https://httpstat.us/200', {
+    // Probe the active store's Foundry host: it's the server the app actually
+    // needs, and avoids depending on a third-party echo service.
+    const response = await fetch(`${resolveBaseUrl()}/api/health`, {
       method: 'HEAD',
       signal: controller.signal,
       cache: 'no-cache',
