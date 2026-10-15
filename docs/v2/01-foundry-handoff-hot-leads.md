@@ -1,0 +1,62 @@
+# Foundry handoff — in-store try-ons never become hot leads
+
+**From:** iPad team (V2 Sprint 0, task 0.2)
+**To:** Foundry agent (`/Users/yann/Development/Foundry/foundry/`)
+**Date:** 2026-10-15
+**Severity:** High. This blocks the whole Smart Discounts (day 3/7/14) module for every in-store and iPad try-on.
+
+## Symptom
+
+`lunettiq-demo` has `crm_product_interactions` rows with `type='tried_on'`, `source='in_store'` (seeded 2026-09-28), and hot-leads settings are at defaults (`enabled: true`, `sources.inStoreTryOn: true`). Yet `hot_lead_opportunities` is empty. Production `lunettiq` is empty too.
+
+## Root cause
+
+`src/lib/modules/crm/product-interactions/handlers.ts` resolves the canonical customer:
+
+```ts
+const { customerId: canonicalId } = await resolveOrCreateCustomer(db, ctx.id, {
+  email: null, source: 'shopify', sourceRef: customerId,   // customerId = route param
+});
+```
+
+It stores `canonicalId` on the row, but emits the **raw route param** in the event:
+
+```ts
+inngest.send({ name: 'product_interaction.created', data: { ..., customerId, ... } })
+//                                                                ^^^^^^^^^^ e.g. 'demo-5d715705'
+```
+
+The hot-leads job (`src/lib/modules/hot-leads/jobs.ts`) then treats that as `customers.id` (a uuid):
+
+- dedup: `eq(hotLeadOpportunities.customerId, customerId)`
+- resolve email: `eq(customers.id, customerId)` → no row → returns `{ skipped: true, reason: 'customer_email_not_found' }`
+- insert: `customerId` (would also violate the uuid FK)
+
+So every qualifying interaction is silently skipped.
+
+## Fix requested
+
+In `handlers.ts`, emit the canonical id, and keep the raw ref for anything that needs it:
+
+```ts
+data: {
+  ...,
+  customerId: canonicalId,
+  shopifyCustomerId: customerId,
+  ...
+}
+```
+
+Please also:
+
+1. **Event map:** `hot-leads/events.ts` maps `'product_interaction.created': 'onProductInteractionCreated'`, but no function by that name exists. The real consumer is the Inngest function in `jobs.ts`. Fix or remove the dangling name so the manifest doesn't mislead.
+2. **Regression test:** a `tried_on` interaction with `source: 'tablet'` for a customer with an email creates one `hot_lead_opportunities` row with the canonical `customer_id`, and a second one within 30 days is deduped.
+3. **Backfill (optional):** replay the existing `tried_on` / `liked` interactions in `lunettiq-demo` so the demo has leads at day 3/7/14.
+
+## What the iPad now sends (V2 branch `feat/v2-s0-visit-persistence`)
+
+- `POST /api/clients/{id}/tryon-sessions` when a visit starts (`locationId` from the device pin or `X-Found-Location`, plus `appointmentId` when the visit comes from an appointment).
+- `POST /api/clients/{id}/product-interactions` with `type: 'tried_on'`, **`source: 'tablet'`** (previously only `surface: 'tablet'`, which the handler ignores), `sessionId`, `locationId`, for each frame **as it is added**.
+- At close: `PATCH /api/clients/{id}/tryon-sessions/{sessionId}` with `framesTried` (verdicts), then `POST …/end` with the outcome, then `liked` / `disliked` interactions for each verdict.
+
+Note: the end-session endpoint receives `sendSummary`, `summaryLanguage`, `tags` and `orderRef`, but `handleEndTryOnSession` only reads `outcome` and `notes`. If any of those should persist (e.g. `orderRef` for attribution), the handler needs to accept them.

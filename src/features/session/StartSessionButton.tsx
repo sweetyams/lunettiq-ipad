@@ -7,7 +7,7 @@ interface StartSessionButtonProps {
 }
 
 export function StartSessionButton({ clientId, clientName }: StartSessionButtonProps) {
-  const { activeClientId, mode, setClient } = useSessionStore();
+  const { activeClientId, mode, startSession } = useSessionStore();
   
   const isSessionActive = mode === 'session' || mode === 'fitting';
   const isThisClientSession = activeClientId === clientId;
@@ -15,7 +15,7 @@ export function StartSessionButton({ clientId, clientName }: StartSessionButtonP
 
   const handlePress = () => {
     if (!isSessionActive) {
-      setClient(clientId);
+      startSession(clientId, clientName);
     }
   };
 

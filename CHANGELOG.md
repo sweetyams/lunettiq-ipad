@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-10-15] — V2 S0: visits and try-ons reach Foundry again
+
+### Fixed
+- Visits never reached Foundry: commit `594aaf6` removed server session creation, so every session kept a local `ses_` id and end-session skipped the API. New `SessionServerBridge` (mounted in the app layout) creates the try-on session on Foundry as soon as a visit starts, retrying with backoff while offline, and swaps in the server id.
+- Try-ons were only sent at session end, and only for frames with a verdict. Each frame now sends a `tried_on` interaction as it is added, with `sessionId` and `locationId`.
+- Product interactions sent `surface: 'tablet'` but Foundry reads `source`, so iPad try-ons were treated as storefront try-ons. They now send `source: 'tablet'`.
+- Verdicts were sent as `loved`/`rejected`, which Foundry doesn't recognise. They now map to `liked`/`disliked`.
+- The session screen's "End session" button cleared the visit without recording an outcome. It now opens the outcome sheet.
+- Starting a visit from a Home appointment dropped the client's name and the appointment link.
+
+### Changed
+- `useEndSession` creates the server session first if the visit only exists locally, and saves frames + verdicts on the session before ending it.
+- The session store tracks `appointmentId`, per-frame `syncedAt`, and `replaceLocalSessionId` (race-safe id swap).
+
+### Added
+- `src/features/session/sessionSync.ts` + tests.
+- `docs/v2/V2-PLAN.md` and `docs/v2/01-foundry-handoff-hot-leads.md` (Foundry emits the wrong customer id, so in-store try-ons never create hot leads).
+
 ## [2026-09-28] — Fix: initial sync crash + location-picker navigation crash
 
 ### Fixed

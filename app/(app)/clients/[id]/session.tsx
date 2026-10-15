@@ -10,6 +10,7 @@ import { useSessionStore } from '@/src/features/session/useSessionStore';
 import type { FrameTried } from '@/src/features/session/useSessionStore';
 import { Avatar, Button, Chip, Tag, RowKV, ProductCard, LoadingState, ErrorState, EmptyState } from '@/src/ui';
 import { FilterSheet } from '@/src/ui/FilterSheet';
+import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { useFilters } from '@/src/api/useFilters';
 import type { Product, ProductListParams } from '@/src/api/products.types';
 
@@ -27,7 +28,6 @@ export default function SessionWorkspaceScreen() {
     framesTried,
     sessionNotes,
     setSessionNotes,
-    endSession,
     addFrameTried,
     updateFrameVerdict,
     startFitting,
@@ -99,10 +99,17 @@ export default function SessionWorkspaceScreen() {
     });
   }, [products, addFrameTried]);
 
+  const [showEndSession, setShowEndSession] = useState(false);
+
+  // Ending always goes through the outcome sheet so the visit is saved to Foundry
   const handleEndSession = useCallback(() => {
-    endSession();
+    setShowEndSession(true);
+  }, []);
+
+  const handleEndSessionComplete = useCallback(() => {
+    setShowEndSession(false);
     router.replace('/home');
-  }, [endSession, router]);
+  }, [router]);
 
   const handleCaptureFitting = useCallback(() => {
     startFitting();
@@ -342,6 +349,12 @@ export default function SessionWorkspaceScreen() {
           activeCount={0}
         />
       )}
+
+      <EndSessionSheet
+        visible={showEndSession}
+        onDismiss={() => setShowEndSession(false)}
+        onComplete={handleEndSessionComplete}
+      />
     </View>
   );
 }

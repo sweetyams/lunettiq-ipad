@@ -32,6 +32,8 @@ import {
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useEndSession } from '@/src/api/useSessions';
+import { useEffectiveLocationId } from '@/src/features/tenant/useDeviceLocationStore';
+import { toServerFramesTried, unsyncedFrames, verdictToInteractionType } from './sessionSync';
 import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
 import { CreateAppointmentSheet } from '@/src/features/appointments/CreateAppointmentSheet';
 import { toast } from '@/src/ui/useToastStore';
@@ -114,9 +116,11 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     activeClientId,
     activeClientName,
     sessionId,
+    appointmentId,
     framesTried,
     endSession: resetSession,
   } = useSessionStore();
+  const locationId = useEffectiveLocationId();
 
   const { photos, consentStatus, reset: resetFitting } = useFittingStore();
   const endSessionMutation = useEndSession();
@@ -159,6 +163,9 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       await endSessionMutation.mutateAsync({
         sessionId,
         clientId: activeClientId,
+        locationId,
+        appointmentId,
+        framesTried: toServerFramesTried(framesTried),
         outcomeTag: 'left_empty_handed',
         sendSummary: false,
         summaryLanguage: 'en',
@@ -174,7 +181,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       console.error('Failed to quick-end session:', error);
       toast.error('Failed', 'Could not end session. Try again.');
     }
-  }, [activeClientId, sessionId, endSessionMutation, resetSession, resetFitting, onComplete]);
+  }, [activeClientId, sessionId, appointmentId, locationId, framesTried, endSessionMutation, resetSession, resetFitting, onComplete]);
 
   const handleOutcomeSelect = useCallback((selected: OutcomeTag) => {
     setOutcome(selected);
@@ -198,33 +205,14 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     savedSessionIdRef.current = sessionId;
 
     try {
-      // 1. Batch product interactions
-      const interactions = framesTried
-        .filter((f) => f.verdict)
-        .map((f) => ({
-          clientId: activeClientId,
-          productId: f.productId,
-          variantId: f.variantId,
-          type: f.verdict === 'loved'
-            ? ('loved' as const)
-            : f.verdict === 'liked'
-            ? ('liked' as const)
-            : f.verdict === 'rejected'
-            ? ('rejected' as const)
-            : ('tried_on' as const),
-          sessionId,
-          notes: f.notes || undefined,
-          metadata: { capturedAt: f.triedAt, photoCount: f.photoIds.length },
-        }));
-
-      if (interactions.length > 0) {
-        await batchInteractionsMutation.mutateAsync(interactions);
-      }
-
-      // 2. End session API call
-      await endSessionMutation.mutateAsync({
+      // 1. End the session (creates it first if it never reached Foundry,
+      //    and saves frames + verdicts on it)
+      const ended = await endSessionMutation.mutateAsync({
         sessionId,
         clientId: activeClientId,
+        locationId,
+        appointmentId,
+        framesTried: toServerFramesTried(framesTried),
         outcomeTag: outcome,
         sendSummary: sendSummary && consentCaptured,
         summaryLanguage: language,
@@ -232,6 +220,44 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
         tags: selectedTags,
         orderRef: orderRef.trim() || undefined,
       });
+
+      // 2. Product interactions: any try-on the bridge hasn't sent yet, plus
+      //    each verdict as liked/disliked (what Foundry's feedback + hot leads read)
+      const interactions = [
+        ...unsyncedFrames(framesTried).map((f) => ({
+          clientId: activeClientId,
+          productId: f.productId,
+          variantId: f.variantId,
+          type: 'tried_on' as const,
+          sessionId: ended.id,
+          locationId,
+          metadata: { triedAt: f.triedAt },
+        })),
+        ...framesTried.flatMap((f) => {
+          const type = verdictToInteractionType(f.verdict);
+          return type
+            ? [{
+                clientId: activeClientId,
+                productId: f.productId,
+                variantId: f.variantId,
+                type,
+                sessionId: ended.id,
+                locationId,
+                notes: f.notes || undefined,
+                metadata: { verdict: f.verdict, photoCount: f.photoIds.length },
+              }]
+            : [];
+        }),
+      ];
+      if (interactions.length > 0) {
+        try {
+          await batchInteractionsMutation.mutateAsync(interactions);
+        } catch (error) {
+          // The visit itself is saved; don't make the stylist redo it.
+          console.warn('Visit saved, but some frame feedback failed to send:', error);
+          toast.warning('Visit saved', 'Some frame feedback didn’t reach Foundry.');
+        }
+      }
 
       // 3. Reset stores (after saving the data)
       resetSession();
@@ -247,10 +273,10 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       }
     } catch (error) {
       console.error('Failed to end session:', error);
-      toast.error('Save failed', 'Failed to save session. Please try again.');
+      toast.error('Visit not saved', 'Couldn’t reach Foundry. Check the connection and try again.');
     }
   }, [
-    activeClientId, sessionId, outcome, framesTried, sendSummary,
+    activeClientId, sessionId, appointmentId, locationId, outcome, framesTried, sendSummary,
     consentCaptured, language, internalNotes, selectedTags, orderRef,
     batchInteractionsMutation, endSessionMutation, resetSession,
     resetFitting, onComplete,

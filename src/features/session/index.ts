@@ -8,3 +8,4 @@ export { ClientTimeline } from './ClientTimeline';
 export { ProductBrowserPanel } from './ProductBrowserPanel';
 export { EndSessionFlow } from './EndSessionFlow';
 export { EndSessionSheet } from './EndSessionSheet';
+export { SessionServerBridge } from './SessionServerBridge';

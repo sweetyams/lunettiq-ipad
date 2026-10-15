@@ -1,15 +1,24 @@
+import type { ServerFrameTried } from '@/src/features/session/sessionSync';
+
 // Session API Types for Foundry integration
 
 export interface CreateSessionParams {
   clientId: string;
   staffId?: string;
-  /** Required by Foundry — session creation fails without it */
-  locationId: string;
+  /** Foundry requires a branch: this, or the X-Found-Location header the client sends. */
+  locationId?: string | null;
+  appointmentId?: string | null;
+  mode?: 'discovery' | 'session' | 'fitting';
 }
 
 export interface EndSessionParams {
   sessionId: string;
   clientId: string;
+  /** Used to create the server session first if it never got created (local `ses_` id). */
+  locationId?: string | null;
+  appointmentId?: string | null;
+  /** Saved on the server session before it is ended. */
+  framesTried?: ServerFrameTried[];
   outcomeTag: 'purchased' | 'booked_next_visit' | 'shortlist_emailed' | 'left_empty_handed';
   sendSummary: boolean;
   summaryLanguage: 'en' | 'fr';

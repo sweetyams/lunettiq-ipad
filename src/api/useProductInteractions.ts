@@ -6,8 +6,10 @@ export interface CreateProductInteractionParams {
   clientId: string;
   productId: string;
   variantId?: string;
-  type: 'tried_on' | 'liked' | 'loved' | 'rejected' | 'shortlisted' | 'purchased' | 'viewed';
+  type: 'tried_on' | 'liked' | 'disliked' | 'loved' | 'rejected' | 'shortlisted' | 'purchased' | 'viewed';
   sessionId?: string | null;
+  /** Device branch; Foundry also falls back to the X-Found-Location header. */
+  locationId?: string | null;
   notes?: string;
   metadata?: Record<string, unknown>;
 }
@@ -36,6 +38,7 @@ export function useCreateProductInteraction() {
       return api.post(`/api/clients/${clientId}/product-interactions`, {
         ...interactionData,
         surface: 'tablet',
+        source: 'tablet',
       });
     },
     onSuccess: (_, params) => {
@@ -61,7 +64,7 @@ export function useCreateBatchProductInteractions() {
         const { clientId, ...interactionData } = params;
         return api.post<ProductInteractionResponse>(
           `/api/clients/${clientId}/product-interactions`, 
-          { ...interactionData, surface: 'tablet' }
+          { ...interactionData, surface: 'tablet', source: 'tablet' }
         );
       });
       

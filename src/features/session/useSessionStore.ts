@@ -15,6 +15,13 @@ export interface FrameTried {
   notes?: string;
   photoIds: string[];
   triedAt: number;
+  /** When the `tried_on` interaction reached Foundry. Unset = still to send. */
+  syncedAt?: number;
+}
+
+export interface StartSessionOptions {
+  /** Links the visit to the appointment it came from. */
+  appointmentId?: string;
 }
 
 export interface SessionState {
@@ -22,7 +29,9 @@ export interface SessionState {
   activeClientId: string | null;
   activeClientName: string | null;
   mode: WorkContext;
+  /** Local `ses_` placeholder until SessionServerBridge swaps in Foundry's id. */
   sessionId: string | null;
+  appointmentId: string | null;
   sessionStartedAt: number | null;
   framesTried: FrameTried[];
   sessionNotes: string;
@@ -31,8 +40,10 @@ export interface SessionState {
 
 interface SessionActions {
   // Lifecycle
-  startSession: (clientId: string, clientName: string) => void;
+  startSession: (clientId: string, clientName: string, options?: StartSessionOptions) => void;
   setSessionId: (id: string) => void;
+  /** Swap a local placeholder for the server id, only if that session is still the active one. */
+  replaceLocalSessionId: (localId: string, serverId: string) => void;
   endSession: () => void;
   startFitting: () => void;
   endFitting: () => void;
@@ -41,11 +52,12 @@ interface SessionActions {
   addFrameTried: (frame: FrameTried) => void;
   removeFrameTried: (id: string) => void;
   updateFrameVerdict: (id: string, verdict: FrameTried['verdict']) => void;
+  markFrameSynced: (id: string) => void;
   setSessionNotes: (notes: string) => void;
   markNotesSaved: () => void;
 
   // Legacy compat
-  setClient: (id: string | null) => void;
+  setClient: (id: string | null, options?: StartSessionOptions) => void;
   setMode: (mode: WorkContext) => void;
   reset: () => void;
 }
@@ -82,6 +94,7 @@ const INITIAL_STATE: SessionState = {
   activeClientName: null,
   mode: 'idle',
   sessionId: null,
+  appointmentId: null,
   sessionStartedAt: null,
   framesTried: [],
   sessionNotes: '',
@@ -93,7 +106,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
     (set, get) => ({
       ...INITIAL_STATE,
 
-      startSession: (clientId: string, clientName: string) => {
+      startSession: (clientId: string, clientName: string, options?: StartSessionOptions) => {
         const current = get();
         // Prevent starting a new session if one is already active
         if (current.mode !== 'idle') return;
@@ -103,6 +116,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           activeClientName: clientName,
           mode: 'session',
           sessionId: generateSessionId(), // local placeholder — replaced by server ID
+          appointmentId: options?.appointmentId ?? null,
           sessionStartedAt: Date.now(),
           framesTried: [],
           sessionNotes: '',
@@ -112,6 +126,11 @@ export const useSessionStore = create<SessionState & SessionActions>()(
 
       setSessionId: (id: string) => {
         set({ sessionId: id });
+      },
+
+      replaceLocalSessionId: (localId: string, serverId: string) => {
+        if (get().sessionId !== localId) return;
+        set({ sessionId: serverId });
       },
 
       endSession: () => {
@@ -152,6 +171,14 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         }));
       },
 
+      markFrameSynced: (id: string) => {
+        set((state) => ({
+          framesTried: state.framesTried.map((f) =>
+            f.id === id ? { ...f, syncedAt: Date.now() } : f
+          ),
+        }));
+      },
+
       setSessionNotes: (notes: string) => {
         set({ sessionNotes: notes });
       },
@@ -161,13 +188,14 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       },
 
       // Legacy compat — used by StartSessionButton and other existing code
-      setClient: (id: string | null) => {
+      setClient: (id: string | null, options?: StartSessionOptions) => {
         if (id) {
           // startSession should be preferred, but this maintains backward compat
           set({
             activeClientId: id,
             mode: 'session',
             sessionId: generateSessionId(),
+            appointmentId: options?.appointmentId ?? null,
             sessionStartedAt: Date.now(),
           });
         } else {
@@ -188,6 +216,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         activeClientName: state.activeClientName,
         mode: state.mode,
         sessionId: state.sessionId,
+        appointmentId: state.appointmentId,
         sessionStartedAt: state.sessionStartedAt,
         framesTried: state.framesTried,
         sessionNotes: state.sessionNotes,

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { isLocalSessionId } from '@/src/features/session/sessionSync';
 import type {
   CreateSessionParams,
   EndSessionParams,
@@ -19,10 +20,7 @@ export function useCreateSession() {
   
   return useMutation({
     mutationFn: async (params: CreateSessionParams): Promise<SessionResponse> => {
-      return api.post(`/api/clients/${params.clientId}/tryon-sessions`, {
-        staffId: params.staffId,
-        locationId: params.locationId,
-      });
+      return createServerSession(params);
     },
     onSuccess: (session, params) => {
       // Invalidate client sessions cache
@@ -37,44 +35,47 @@ export function useCreateSession() {
 }
 
 /**
+ * POST /api/clients/{clientId}/tryon-sessions
+ * Foundry resolves the branch from `locationId` or the X-Found-Location header.
+ */
+function createServerSession(params: CreateSessionParams): Promise<SessionResponse> {
+  return api.post(`/api/clients/${params.clientId}/tryon-sessions`, {
+    ...(params.locationId ? { locationId: params.locationId } : {}),
+    ...(params.appointmentId ? { appointmentId: params.appointmentId } : {}),
+    mode: params.mode ?? 'session',
+  });
+}
+
+/**
  * End a try-on session with outcome and notes.
  * POST /api/clients/{clientId}/tryon-sessions/{sessionId}/end
  *
  * The handler sets status='completed', records the outcome, and fires
  * a Klaviyo event for the summary email asynchronously.
  *
- * If the sessionId is a local placeholder (starts with "ses_"), it means
- * the server session was never created (e.g. locationId was missing).
- * In that case, we skip the API call and just reset locally.
+ * If the session still has a local placeholder id (it was started offline
+ * and SessionServerBridge hasn't created it yet), it is created first so the
+ * visit is never lost. Frames tried are saved on the session before ending.
  */
 export function useEndSession() {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (params: EndSessionParams): Promise<SessionResponse> => {
-      const { sessionId, clientId, outcomeTag, sendSummary, summaryLanguage, internalNotes, tags, orderRef } = params;
-      
-      // Guard: if sessionId is a local placeholder, the server session was never created.
-      // This happens when createSession failed (e.g. no locationId).
-      // Skip the API call — the session only existed locally.
-      if (sessionId.startsWith('ses_')) {
-        if (__DEV__) {
-          console.warn('[EndSession] Local-only session (no server ID) — skipping API call. Session was never persisted server-side.');
-        }
-        return {
-          id: sessionId,
+      const { clientId, outcomeTag, sendSummary, summaryLanguage, internalNotes, tags, orderRef, framesTried } = params;
+
+      let sessionId = params.sessionId;
+      if (isLocalSessionId(sessionId)) {
+        const created = await createServerSession({
           clientId,
-          staffId: '',
-          locationId: '',
-          startedAt: new Date().toISOString(),
-          endedAt: new Date().toISOString(),
-          framesTried: [],
-          outcomeTag,
-          internalNotes: internalNotes || null,
-          summaryEmailed: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+          locationId: params.locationId,
+          appointmentId: params.appointmentId,
+        });
+        sessionId = created.id;
+      }
+
+      if (framesTried && framesTried.length > 0) {
+        await api.patch(`/api/clients/${clientId}/tryon-sessions/${sessionId}`, { framesTried });
       }
 
       // Map iPad outcome tags to Foundry's outcome enum

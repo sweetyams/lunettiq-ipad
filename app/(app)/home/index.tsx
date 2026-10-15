@@ -28,7 +28,7 @@ export default function HomeScreen() {
   const markArrived = useMarkArrived();
   const startAppointment = useStartAppointment();
   const markNoShow = useMarkNoShow();
-  const { setClient } = useSessionStore();
+  const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
 
   // Sort appointments: in_progress first, arrived second, then by startsAt, past at bottom
   const sortedAppointments = [...(appointments ?? [])].sort((a, b) => {
@@ -61,11 +61,16 @@ export default function HomeScreen() {
       toast.warning('No Client', 'This appointment has no linked client.');
       return;
     }
-    // Set client in session store (starts session mode + timer)
-    setClient(appointment.clientId);
-    // Navigate to session workspace
+    if (sessionMode !== 'idle' && activeClientId !== appointment.clientId) {
+      toast.warning('Visit in progress', 'End the current visit before starting another.');
+      return;
+    }
+    // Starts the visit (local id now; SessionServerBridge creates it on Foundry)
+    startSession(appointment.clientId, appointment.clientName || 'Client', {
+      appointmentId: appointment.id,
+    });
     router.push(`/clients/${appointment.clientId}/session`);
-  }, [appointments, setClient, router]);
+  }, [appointments, sessionMode, activeClientId, startSession, router]);
 
   const handleAppointmentPress = useCallback((appointmentId: string) => {
     // Could show detail popover in future; for now do nothing
