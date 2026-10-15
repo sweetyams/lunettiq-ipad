@@ -7,7 +7,7 @@ import { useSuggestions } from '@/src/api/useSuggestions';
 import { useFilters } from '@/src/api/useFilters';
 import { ProductCard, SearchBar, FilterPillRow, LoadingState, EmptyState, Button } from '@/src/ui';
 import { FilterSheet } from '@/src/ui/FilterSheet';
-import type { Product, ProductListParams } from '@/src/api/products.types';
+import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
 
 // --- Sort options ---
 
@@ -125,8 +125,8 @@ export function ProductBrowserPanel({
 
     if (selectedSort === 'best-match' && scoreMap.size > 0) {
       sorted.sort((a, b) => {
-        const scoreA = scoreMap.get(a.id)?.score ?? 0;
-        const scoreB = scoreMap.get(b.id)?.score ?? 0;
+        const scoreA = scoreMap.get(productKey(a))?.score ?? 0;
+        const scoreB = scoreMap.get(productKey(b))?.score ?? 0;
         return scoreB - scoreA;
       });
     } else if (selectedSort === 'price-asc') {
@@ -186,7 +186,7 @@ export function ProductBrowserPanel({
 
   // Render product card
   const renderProduct = useCallback(({ item }: { item: Product }) => {
-    const scoreData = scoreMap.get(item.id);
+    const scoreData = scoreMap.get(productKey(item));
     return (
       <View className="flex-1 p-xs">
         <ProductCard
@@ -200,7 +200,7 @@ export function ProductBrowserPanel({
     );
   }, [scoreMap, handleProductPress]);
 
-  const keyExtractor = useCallback((item: Product) => item.id ?? item.shopifyId, []);
+  const keyExtractor = useCallback((item: Product) => productKey(item), []);
 
   // Active filter count for badge
   const activeFilterCount = useMemo(() => {

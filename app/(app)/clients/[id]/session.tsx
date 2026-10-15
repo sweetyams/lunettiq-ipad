@@ -12,7 +12,7 @@ import { Avatar, Button, Chip, Tag, RowKV, ProductCard, LoadingState, ErrorState
 import { FilterSheet } from '@/src/ui/FilterSheet';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { useFilters } from '@/src/api/useFilters';
-import type { Product, ProductListParams } from '@/src/api/products.types';
+import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
 
 type SortOption = 'best-match' | 'newest' | 'price-asc' | 'price-desc';
 
@@ -75,8 +75,8 @@ export default function SessionWorkspaceScreen() {
         return (parseFloat(b.priceMax ?? '0')) - (parseFloat(a.priceMax ?? '0'));
       case 'best-match':
       default:
-        const aS = sugs.some((s: { productId: string }) => s.productId === a.id);
-        const bS = sugs.some((s: { productId: string }) => s.productId === b.id);
+        const aS = sugs.some((s: { productId: string }) => s.productId === productKey(a));
+        const bS = sugs.some((s: { productId: string }) => s.productId === productKey(b));
         if (aS && !bS) return -1;
         if (!aS && bS) return 1;
         return 0;
@@ -85,12 +85,12 @@ export default function SessionWorkspaceScreen() {
 
   // Handlers
   const handleAddFrame = useCallback((productId: string) => {
-    const product = products.find((p: Product) => p.id === productId || p.shopifyId === productId);
+    const product = products.find((p: Product) => productKey(p) === productId || p.id === productId);
     if (!product) return;
     const title = typeof product.title === 'string' ? product.title : product.title?.en ?? '';
     addFrameTried({
-      id: `${product.id}-${Date.now()}`,
-      productId: product.id,
+      id: `${productKey(product)}-${Date.now()}`,
+      productId: productKey(product),
       productName: title,
       verdict: undefined,
       notes: '',
@@ -234,7 +234,7 @@ export default function SessionWorkspaceScreen() {
                   <ProductCard product={item} onPress={handleAddFrame} />
                 </View>
               )}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => productKey(item)}
               numColumns={4}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingTop: 16 }}

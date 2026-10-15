@@ -35,7 +35,9 @@ export interface ProductOption {
 }
 
 export interface Product {
-  id: string;
+  /** Not returned by /api/storefront/products — use productKey() for identity. */
+  id?: string;
+  /** Shopify product id for Shopify-origin products, canonical id otherwise. */
   shopifyId: string;
   handle: string;
   title: Record<string, string> | string;
@@ -139,4 +141,12 @@ export interface ProductInteraction {
   locationId: string | null;
   staffId: string | null;
   occurredAt: string;
+}
+
+/**
+ * Stable product identity across the app (list keys, try-ons, interactions).
+ * Foundry's storefront products carry `shopifyId`; existing interactions use it.
+ */
+export function productKey(product: Pick<Product, 'id' | 'shopifyId'>): string {
+  return product.shopifyId || product.id || '';
 }

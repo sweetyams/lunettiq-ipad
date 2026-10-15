@@ -11,6 +11,10 @@
 - Starting a visit from a Home appointment dropped the client's name and the appointment link.
 - The app always thought it was offline: the connectivity check pinged `httpstat.us`, which no longer responds, so queued sync and photo uploads never drained. It now probes the active store's Foundry `/api/health`.
 - Duplicate React keys in the client profile's "Avoid" chips (red dev error on profile open).
+- Session product grid froze the app: Foundry storefront products carry `shopifyId` but no `id`, so every grid row key was `":::"` and the per-second session timer triggered a duplicate-key warning flood. Frames added in a visit were also saved with an empty product id, and "Best match" never matched suggestions. New `productKey()` (shopifyId first) is used for list keys, frames tried, and suggestion scoring; `Product.id` is now optional to match the API.
+
+### Added
+- Profile → Store → **Auto-lock** (admins): tap to cycle 2 / 5 / 10 min / Never. The setting already existed in `useDeviceSettings` but had no screen.
 
 ### Changed
 - `useEndSession` creates the server session first if the visit only exists locally, and saves frames + verdicts on the session before ending it.

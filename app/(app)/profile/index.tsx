@@ -15,6 +15,7 @@ import {
   Shield,
   Store,
   MapPin,
+  Lock,
 } from 'lucide-react-native';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { SyncIndicator } from '@/src/ui/SyncIndicator';
@@ -23,6 +24,21 @@ import { switchProject } from '@/src/features/tenant/switchProject';
 import { useDeviceLocationStore, useDeviceLocationId } from '@/src/features/tenant/useDeviceLocationStore';
 import { useLocations, locationName } from '@/src/api/useLocations';
 import { LocationPickerSheet } from '@/src/features/client-profile/LocationPickerSheet';
+import { useDeviceSettings, type LockTimeout } from '@/src/features/auth/useDeviceSettings';
+
+const LOCK_TIMEOUTS: LockTimeout[] = [2, 5, 10, 'never'];
+
+/** Tap cycles through the options: 2 → 5 → 10 min → Never → 2. */
+function nextLockTimeout(current: LockTimeout): LockTimeout {
+  const i = LOCK_TIMEOUTS.indexOf(current);
+  return LOCK_TIMEOUTS[(i + 1) % LOCK_TIMEOUTS.length] ?? 2;
+}
+
+function lockTimeoutLabel(timeout: LockTimeout): string {
+  return timeout === 'never'
+    ? 'Never locks. Use only on test devices'
+    : `Locks after ${timeout} min idle. Tap to change`;
+}
 import { useInitialSync } from '@/src/sync/useInitialSync';
 import { useSyncStore } from '@/src/sync/useSyncStore';
 
@@ -58,6 +74,8 @@ export default function ProfileScreen() {
   const [locationSheetOpen, setLocationSheetOpen] = useState(false);
   // Changing the device location is a manager action.
   const canManageLocation = activeProject?.role === 'admin' || activeProject?.role === 'owner';
+  const lockTimeout = useDeviceSettings((s) => s.lockTimeout);
+  const setLockTimeout = useDeviceSettings((s) => s.setLockTimeout);
   const currentLocation = locations?.find((l) => l.id === deviceLocationId);
   const currentLocationLabel = currentLocation
     ? locationName(currentLocation)
@@ -201,7 +219,6 @@ export default function ProfileScreen() {
                 label="Location"
                 description={`This device: ${currentLocationLabel}`}
                 onPress={() => setLocationSheetOpen(true)}
-                isLast
               />
             ) : (
               <View className="flex-row items-center px-md py-md min-h-[52px]">
@@ -215,6 +232,16 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
+            )}
+            {/* Auto-lock — how long this iPad stays unlocked when idle. Manager-gated. */}
+            {canManageLocation && (
+              <MenuRow
+                icon={<Lock size={20} color="#737373" />}
+                label="Auto-lock"
+                description={lockTimeoutLabel(lockTimeout)}
+                onPress={() => setLockTimeout(nextLockTimeout(lockTimeout))}
+                isLast
+              />
             )}
           </View>
         </View>
