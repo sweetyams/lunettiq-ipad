@@ -1,4 +1,4 @@
-import { View, Text, FlatList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
@@ -9,7 +9,8 @@ import {
   useApprovalHeartbeat,
 } from '@/src/api/useRxApprovals';
 import { formatWaiting, type ReviewItem } from '@/src/api/rxMapping';
-import { Avatar } from '@/src/ui';
+import { Avatar } from '@/src/ui/Avatar';
+import { Badge, Button, FilterChips, ListRow, PageHeader, Section } from '@/src/ui/kit';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
@@ -23,46 +24,47 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'completed', label: 'Done' },
 ];
 
-function ReviewRow({ item, tab, busy, onClaim, onRelease, onOpen }: {
+function ReviewRow({ item, tab, first, busy, onClaim, onRelease, onOpen }: {
   item: ReviewItem;
   tab: Tab;
+  first: boolean;
   busy: boolean;
   onClaim: () => void;
   onRelease: () => void;
   onOpen: () => void;
 }) {
-  const [first, ...rest] = item.clientName.split(' ');
+  const [firstName, ...rest] = item.clientName.split(' ');
   return (
-    <View className={`flex-row items-center gap-lg bg-bg-surface border border-border border-l-4 ${item.anomaly ? 'border-l-error' : 'border-l-border'} rounded-lg px-lg py-md mb-sm min-h-[96px]`}>
-      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${item.clientName}`} className="flex-row items-center gap-lg flex-1">
-        <Avatar firstName={first ?? ''} lastName={rest.join(' ')} size="md" />
-        <View className="flex-1">
-          <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{item.clientName}</Text>
-          <Text className="text-body-sm text-text-secondary mt-xs" numberOfLines={1}>
+    <ListRow
+      divider={!first}
+      onPress={onOpen}
+      accessibilityLabel={`${item.clientName}, ${item.description}${item.anomaly ? ', flagged' : ''}`}
+      leading={<Avatar firstName={firstName ?? ''} lastName={rest.join(' ')} size="md" />}
+      title={item.clientName}
+      subtitle={
+        <View className="gap-[6px] mt-[2px]">
+          <Text className="text-body-sm text-text-tertiary" numberOfLines={1}>
             {item.description}{item.pd ? ` · PD ${item.pd}` : ''}
           </Text>
-          {item.anomaly ? (
-            <Text className="text-body-sm font-medium text-error mt-xs" numberOfLines={1}>{item.anomaly}</Text>
-          ) : null}
+          {item.anomaly ? <View className="flex-row"><Badge tone="danger" dot>{item.anomaly}</Badge></View> : null}
         </View>
-      </Pressable>
-      <View className="items-end gap-sm">
-        <Text className="text-body-sm text-text-muted">
-          {item.priority === 'high' ? 'High priority · ' : ''}{formatWaiting(item.minutesWaiting)} ago
-        </Text>
-        {tab === 'submitted' ? (
-          <Pressable onPress={onClaim} disabled={busy} accessibilityRole="button" className="bg-accent rounded-md px-lg min-h-[44px] items-center justify-center">
-            <Text className="text-body-md font-medium text-accent-text">Claim</Text>
-          </Pressable>
-        ) : tab === 'in_review' ? (
-          <Pressable onPress={onRelease} disabled={busy} accessibilityRole="button" className="border border-border rounded-md px-lg min-h-[44px] items-center justify-center">
-            <Text className="text-body-md font-medium text-text-primary">Release</Text>
-          </Pressable>
-        ) : (
-          <Text className="text-body-sm text-text-muted capitalize">{item.status}</Text>
-        )}
-      </View>
-    </View>
+      }
+      trailing={
+        <View className="flex-row items-center gap-[12px]">
+          <View className="items-end gap-[4px]">
+            {item.priority === 'high' ? <Badge tone="warning">High priority</Badge> : null}
+            <Text className="text-body-sm text-text-tertiary">{formatWaiting(item.minutesWaiting)} waiting</Text>
+          </View>
+          {tab === 'submitted' ? (
+            <Button label="Claim" size="sm" onPress={onClaim} disabled={busy} />
+          ) : tab === 'in_review' ? (
+            <Button label="Release" size="sm" variant="ghost" onPress={onRelease} disabled={busy} />
+          ) : (
+            <Badge tone={item.status === 'approved' ? 'success' : item.status === 'rejected' ? 'danger' : 'neutral'}>{item.status}</Badge>
+          )}
+        </View>
+      }
+    />
   );
 }
 
@@ -109,52 +111,39 @@ function ReviewContent() {
 
   return (
     <View className="flex-1 bg-bg-page">
-      <View className="px-xl pt-2xl pb-md border-b border-border">
-        <View className="flex-row items-end justify-between">
-          <View>
-            <Text className="text-display-lg text-text-primary">Review</Text>
-            <Text className="text-body-md text-text-muted mt-xs">
-              {summary?.submitted ?? 0} waiting · {summary?.in_review ?? 0} in review · {summary?.approved ?? 0} signed off today
-            </Text>
-          </View>
-          {next ? (
-            <Pressable onPress={() => doClaim(next.id)} disabled={claim.isPending} accessibilityRole="button" className="bg-accent rounded-md px-xl min-h-[48px] items-center justify-center">
-              <Text className="text-body-md font-medium text-accent-text">Claim next: {next.clientName}</Text>
-            </Pressable>
-          ) : null}
-        </View>
-        <View className="flex-row gap-sm mt-lg">
-          {TABS.map((t) => {
-            const on = t.key === tab;
-            return (
-              <Pressable key={t.key} onPress={() => setTab(t.key)} accessibilityRole="button" accessibilityState={{ selected: on }}
-                className={`px-lg min-h-[44px] rounded-full border items-center justify-center ${on ? 'bg-accent border-accent' : 'border-border'}`}>
-                <Text className={`text-body-md font-medium ${on ? 'text-accent-text' : 'text-text-primary'}`}>{t.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
+      <PageHeader
+        title="Review"
+        subtitle={`${summary?.submitted ?? 0} waiting · ${summary?.in_review ?? 0} in review · ${summary?.approved ?? 0} signed off today`}
+        actions={next ? (
+          <Button label={`Claim next · ${next.clientName}`} variant="primary" onPress={() => doClaim(next.id)} disabled={claim.isPending} />
+        ) : undefined}
+      />
+      <View className="px-[32px] pt-[20px] pb-[4px]">
+        <FilterChips<Tab> value={tab} onChange={setTab} options={TABS} />
       </View>
 
       {isLoading ? <LoadingState /> : error ? <ErrorState error={error} onRetry={refetch} /> : list.length === 0 ? (
         <EmptyState message={tab === 'submitted' ? 'Nothing waiting for review.' : tab === 'in_review' ? 'Nothing claimed right now.' : 'No completed reviews yet.'} />
       ) : (
-        <FlatList
-          data={list}
-          keyExtractor={(i) => i.id}
-          renderItem={({ item }) => (
-            <ReviewRow
-              item={item}
-              tab={tab}
-              busy={claim.isPending || release.isPending}
-              onClaim={() => doClaim(item.id)}
-              onRelease={() => doRelease(item.id)}
-              onOpen={() => router.push(`/clients/${item.clientId}`)}
-            />
-          )}
-          contentContainerStyle={{ padding: 24, paddingBottom: 120 }}
+        <ScrollView
+          contentContainerStyle={{ padding: 32, paddingTop: 20, paddingBottom: 140 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-        />
+        >
+          <Section padded={false}>
+            {list.map((item, i) => (
+              <ReviewRow
+                key={item.id}
+                item={item}
+                tab={tab}
+                first={i === 0}
+                busy={claim.isPending || release.isPending}
+                onClaim={() => doClaim(item.id)}
+                onRelease={() => doRelease(item.id)}
+                onOpen={() => router.push(`/clients/${item.clientId}`)}
+              />
+            ))}
+          </Section>
+        </ScrollView>
       )}
     </View>
   );

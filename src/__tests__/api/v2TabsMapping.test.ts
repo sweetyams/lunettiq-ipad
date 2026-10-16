@@ -55,7 +55,7 @@ describe('review inbox', () => {
       submittedAt: new Date(NOW - 14 * 60_000).toISOString(), createdAt: '',
       snapshot: { clientName: 'Liam Bergeron', frame: 'JUNE © BLUE', lens: 'single_vision 1.59', measurements: { pd: 58 }, flags: [{ message: 'PD difference' }] },
     }, new Map(), NOW);
-    expect(r).toMatchObject({ clientName: 'Liam Bergeron', priority: 'high', pd: 58, anomaly: 'PD difference', minutesWaiting: 14 });
+    expect(r).toMatchObject({ clientName: 'Liam Bergeron', priority: 'high', pd: 58, anomaly: 'PD difference', minutesWaiting: 14, description: 'June © Blue · Single vision 1.59' });
     expect(toReviewItem({ id: 'r2', orderId: 'o', clientId: 'c2', status: 'in_review', createdAt: '' }, new Map([['c2', 'Noah Fortin']]), NOW).clientName).toBe('Noah Fortin');
   });
 

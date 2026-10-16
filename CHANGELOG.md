@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-10-16] — Phase D8: Orders, Follow-ups, Review on the kit
+
+### Changed
+- **Orders:** white cards with hairline and soft elevation; age as a badge (neutral → warning → danger), stage as a micro-label, "$X to collect" for pickups; filters as `FilterChips`.
+- **Follow-ups:** grouped into *Call today* and *In the sequence*; list rows with avatar, frame, signals, due badge (Call now = warning, Last chance = danger), formatted phone. No grey rows or coloured edges.
+- **Review:** list rows; anomaly as a danger badge; priority as a warning badge; Claim / Release as compact buttons; "Claim next · client" is the screen's single primary action; frame and lens text tidied ("June © Blue · Single vision 1.59").
+
+### Added
+- Kit: `FilterChips`, `formatPhone`. Lens code `sv` labelled "Single vision".
+
 ## [2026-10-16] — Fix: iPad locking with Auto-lock set to Never
 
 ### Fixed

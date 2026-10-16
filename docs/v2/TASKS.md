@@ -44,7 +44,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D5 | Visit: workspace, fitting, handed mode, end visit | ⬜ | |
 | D6 | Schedule + appointment sheets | ⬜ | |
 | D7 | Products + configurator | ⬜ | |
-| D8 | Orders, Follow-ups, Review | ⬜ | |
+| D8 | Orders, Follow-ups, Review | ✅ | Kit: PageHeader, FilterChips, Section, ListRow, Badge. Follow-ups grouped Call today / In the sequence; Review anomalies as danger badges, Claim next as the primary |
 | D9 | Profile, settings, auth, store picker, side paths | ⬜ | |
 | D10 | States, toasts, confirmations; no `Alert.alert` | ⬜ | Absorbs 0.5 |
 | D11 | Enforcement in `audit:design` + before/after QA | ⬜ | |

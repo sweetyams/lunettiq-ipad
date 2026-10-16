@@ -9,3 +9,5 @@ export { PageHeader } from './PageHeader';
 export { ListRow } from './ListRow';
 export { elevation } from './elevation';
 export { kitColors } from './colors';
+export { FilterChips } from './FilterChips';
+export { formatPhone } from './format';

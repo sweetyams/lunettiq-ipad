@@ -77,6 +77,7 @@ export function frameLabel(sku: string | null | undefined): string | null {
 const LENS_LABELS: Record<string, string> = {
   progressive: 'Progressive',
   single_vision: 'Single vision',
+  sv: 'Single vision',
   bifocal: 'Bifocal',
   tint: 'Tint',
 };

@@ -100,10 +100,23 @@ export interface ReviewItem {
   minutesWaiting: number;
 }
 
+/** "JUNE © BLUE" → "June © Blue" */
+function tidy(text: string | null): string | null {
+  if (!text) return null;
+  return text.toLowerCase().replace(/(^|[\s-])\S/g, (m) => m.toUpperCase());
+}
+
+/** "single_vision 1.59" → "Single vision 1.59" */
+function lensLabel(text: string | null): string | null {
+  if (!text) return null;
+  const t = text.replace(/_/g, ' ').trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export function toReviewItem(row: FoundryApprovalRow, names: ReadonlyMap<string, string> = new Map(), now = Date.now()): ReviewItem {
   const snap = row.snapshot ?? {};
-  const frame = snap.frame ?? snap.product?.name ?? null;
-  const lens = snap.lens ?? snap.lensType ?? null;
+  const frame = tidy(snap.frame ?? snap.product?.name ?? null);
+  const lens = lensLabel(snap.lens ?? snap.lensType ?? null);
   const submitted = Date.parse(row.submittedAt ?? row.createdAt);
   const flag = snap.flags?.find((f) => f?.message)?.message ?? null;
   return {
