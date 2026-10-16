@@ -1,20 +1,17 @@
-import { View, Text, FlatList, ScrollView, Alert, RefreshControl, Pressable } from 'react-native';
+import { View, Text, ScrollView, Alert, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDesignTokens } from '@/src/features/design';
 import { useCallback, useState } from 'react';
-import { Calendar } from 'lucide-react-native';
+import { Calendar, UserPlus } from 'lucide-react-native';
 import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow } from '@/src/api/useAppointments';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
-import { AppointmentCard } from '@/src/ui/AppointmentCard';
-import { ActiveHoldsCard } from '@/src/ui/ActiveHoldsCard';
-import { RecentClientsCard } from '@/src/ui/RecentClientsCard';
-import { QuickActionsGrid } from '@/src/ui/QuickActionsGrid';
-import { RxStatusCard } from '@/src/ui/RxStatusCard';
+import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
+import { HoldsSection, RecentClientsSection, RxSection } from '@/src/features/floor/FloorRail';
+import { Button, PageHeader, Section } from '@/src/ui/kit';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { toast } from '@/src/ui/useToastStore';
-import type { Appointment, InventoryHold } from '@/src/api/appointments.types';
+import type { Appointment } from '@/src/api/appointments.types';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -32,7 +29,6 @@ export default function HomeScreen() {
   const markNoShow = useMarkNoShow();
   const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
   const queryClient = useQueryClient();
-  const { colors } = useDesignTokens();
 
   // Home is the floor's dashboard: refresh it every time staff come back to it,
   // so arrivals, holds and Rx changes made elsewhere show immediately.
@@ -44,20 +40,11 @@ export default function HomeScreen() {
     }, [queryClient]),
   );
 
-  // Sort appointments: in_progress first, arrived second, then by startsAt, past at bottom
+  // Chronological day list; finished or missed visits sink to the bottom.
   const sortedAppointments = [...(appointments ?? [])].sort((a, b) => {
-    // in_progress always at top
-    if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
-    if (b.status === 'in_progress' && a.status !== 'in_progress') return 1;
-    // arrived next
-    if (a.status === 'arrived' && b.status !== 'arrived') return -1;
-    if (b.status === 'arrived' && a.status !== 'arrived') return 1;
-    // completed/no_show at bottom
-    const aDone = a.status === 'completed' || a.status === 'no_show';
-    const bDone = b.status === 'completed' || b.status === 'no_show';
-    if (aDone && !bDone) return 1;
-    if (bDone && !aDone) return -1;
-    // Sort by start time
+    const aDone = a.status === 'completed' || a.status === 'no_show' || a.status === 'cancelled';
+    const bDone = b.status === 'completed' || b.status === 'no_show' || b.status === 'cancelled';
+    if (aDone !== bDone) return aDone ? 1 : -1;
     return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
   });
 
@@ -117,14 +104,11 @@ export default function HomeScreen() {
     );
   }, [markNoShow, router]);
 
-  // A hold is placed for a client during a visit; open that client.
-  const handleHoldPress = useCallback((hold: InventoryHold) => {
-    if (hold.clientId) router.push(`/clients/${hold.clientId}`);
-  }, [router]);
-
-  const handleClientPress = useCallback((clientId: string) => {
-    router.push(`/clients/${clientId}`);
-  }, [router]);
+  // Arrived → start the appointment and open the visit in one tap.
+  const handleStartVisit = useCallback((appointmentId: string) => {
+    startAppointment.mutate(appointmentId);
+    handleStartSession(appointmentId);
+  }, [startAppointment, handleStartSession]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -132,135 +116,76 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  const formatDate = () => {
-    const date = new Date();
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const list = sortedAppointments;
+  const upcoming = list.filter((a) => a.status === 'scheduled' || a.status === 'confirmed').length;
+  const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const subtitle = list.length
+    ? `${dateLabel} · ${list.length} appointment${list.length === 1 ? '' : 's'}${upcoming ? ` · ${upcoming} still to come` : ''}`
+    : dateLabel;
 
-  const renderAppointmentCard = useCallback(({ item }: { item: Appointment }) => (
-    <AppointmentCard
-      appointment={item}
-      onMarkArrived={handleMarkArrived}
-      onStartAppointment={handleStartAppointment}
-      onStartSession={handleStartSession}
-      onPress={handleAppointmentPress}
-      onLongPress={() => handleAppointmentLongPress(item)}
-    />
-  ), [handleMarkArrived, handleStartAppointment, handleStartSession, handleAppointmentPress, handleAppointmentLongPress]);
-
-  // Full loading state
-  if (isLoading) {
-    return (
-      <View className="flex-1 bg-bg-page">
-        <View className="px-xl pt-2xl pb-lg border-b border-border">
-          <Text className="text-display-lg text-text-primary">Today</Text>
-          <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
-        </View>
-        <View className="flex-1 flex-row">
-          <View className="flex-[3] p-xl">
-            <LoadingState />
-          </View>
-          <View className="flex-[2] border-l border-border p-lg">
-            <LoadingState />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  // Error state — show as empty if network/auth error (offline-first), real error otherwise
-  if (error) {
-    const isRecoverableError = error instanceof Error && (
-      error.message.includes('Network request failed') ||
-      error.message.includes('fetch') ||
-      error.message.includes('ECONNREFUSED') ||
-      error.message.includes('Not authenticated') ||
-      error.message.includes('UNAUTHORIZED') ||
-      error.name === 'TypeError' ||
-      (error as any).code === 'UNAUTHORIZED'
-    );
-
-    if (!isRecoverableError) {
-      return (
-        <View className="flex-1 bg-bg-page">
-          <View className="px-xl pt-2xl pb-lg border-b border-border">
-            <Text className="text-display-lg text-text-primary">Today</Text>
-            <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
-          </View>
-          <View className="flex-1 items-center justify-center p-xl">
-            <ErrorState error="Failed to load appointments" onRetry={refetch} />
-          </View>
-        </View>
-      );
-    }
-    // Network errors fall through to render the main view with empty data
-  }
+  // Network/auth errors fall back to the normal layout (offline-first); real errors show a retry.
+  const isRecoverableError = !!error && error instanceof Error && (
+    error.message.includes('Network request failed') ||
+    error.message.includes('fetch') ||
+    error.message.includes('Not authenticated') ||
+    error.name === 'TypeError'
+  );
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Header */}
-      <View className="px-xl pt-2xl pb-lg border-b border-border flex-row items-end justify-between">
-        <View>
-          <Text className="text-display-lg text-text-primary">Today</Text>
-          <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
-        </View>
-        <Pressable
-          onPress={() => router.push('/appointments')}
-          accessibilityRole="button"
-          accessibilityLabel="Open the week schedule"
-          className="flex-row items-center gap-sm border border-border rounded-md px-lg min-h-[44px]"
-        >
-          <Calendar color={colors.textPrimary} size={18} />
-          <Text className="text-body-md font-medium text-text-primary">Week schedule</Text>
-        </Pressable>
-      </View>
+      <PageHeader
+        title="Today"
+        subtitle={subtitle}
+        actions={
+          <>
+            <Button label="Week schedule" icon={Calendar} onPress={() => router.push('/appointments')} />
+            <Button label="New client" icon={UserPlus} variant="primary" onPress={() => router.push('/clients/new')} />
+          </>
+        }
+      />
 
-      <View className="flex-1 flex-row">
-        {/* Left Panel — Appointments */}
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 32, paddingBottom: 140, gap: 24, flexDirection: 'row', alignItems: 'flex-start' }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Appointments */}
         <View className="flex-[3]">
-          {sortedAppointments.length === 0 ? (
-            <View className="flex-1 items-center justify-center p-xl">
-              <Calendar color="#A3A3A3" size={40} />
-              <Text className="text-heading-xl text-text-primary mt-lg">
-                No appointments today
-              </Text>
-              <Text className="text-body-md text-text-muted mt-sm text-center">
-                Walk-in clients can be started from the Clients tab
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={sortedAppointments}
-              renderItem={renderAppointmentCard}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 24 }}
-              ItemSeparatorComponent={() => <View className="h-sm" />}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-              }
-            />
-          )}
+          <Section title="Appointments" count={list.length} padded={false}>
+            {isLoading ? (
+              <LoadingState />
+            ) : error && !isRecoverableError ? (
+              <View className="p-[20px]"><ErrorState error="Couldn’t load today’s appointments" onRetry={refetch} /></View>
+            ) : list.length === 0 ? (
+              <View className="px-[20px] pb-[28px] pt-[8px] items-start gap-[12px]">
+                <Text className="text-body-md text-text-secondary">No appointments today. Walk-ins start from Clients.</Text>
+                <Button label="Find a client" size="sm" onPress={() => router.push('/clients')} />
+              </View>
+            ) : (
+              list.map((a, i) => (
+                <AppointmentRow
+                  key={a.id}
+                  first={i === 0}
+                  appointment={a}
+                  onMarkArrived={handleMarkArrived}
+                  onStartVisit={handleStartVisit}
+                  onOpenVisit={handleStartSession}
+                  onPress={a.clientId ? () => router.push(`/clients/${a.clientId}`) : undefined}
+                  onLongPress={() => handleAppointmentLongPress(a)}
+                />
+              ))
+            )}
+          </Section>
         </View>
 
-        {/* Right Panel — Sidebar */}
-        <View className="flex-[2] border-l border-border">
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ padding: 24 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <ActiveHoldsCard onHoldPress={handleHoldPress} />
-            <RxStatusCard />
-            <RecentClientsCard onClientPress={handleClientPress} />
-            <QuickActionsGrid />
-          </ScrollView>
+        {/* Rail */}
+        <View className="flex-[2] gap-[24px]">
+          <RxSection />
+          <HoldsSection />
+          <RecentClientsSection />
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }

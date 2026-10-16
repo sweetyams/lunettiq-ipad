@@ -21,20 +21,15 @@ export function Avatar({ firstName, lastName, size = 'md' }: AvatarProps) {
     lg: 'w-[88px] h-[88px]',
   };
 
-  const bgClasses: Record<AvatarSize, string> = {
-    sm: 'bg-bg-muted',
-    md: 'bg-bg-muted',
-    lg: 'bg-bg-inverse',
-  };
-
+  // Found UI: white disc with a hairline, quiet initials. No black or grey slabs.
   const textClasses: Record<AvatarSize, string> = {
-    sm: 'text-[12px] font-medium text-text-muted',
-    md: 'text-[14px] font-medium text-text-muted',
-    lg: 'text-[26px] text-text-inverse',
+    sm: 'text-[13px] font-medium text-text-secondary',
+    md: 'text-[15px] font-medium text-text-secondary',
+    lg: 'text-[28px] font-medium text-text-secondary',
   };
 
   return (
-    <View className={`rounded-full items-center justify-center ${sizeClasses[size]} ${bgClasses[size]}`}>
+    <View className={`rounded-full items-center justify-center bg-bg-page border border-border ${sizeClasses[size]}`}>
       <Text className={textClasses[size]}>
         {getInitials(firstName, lastName)}
       </Text>

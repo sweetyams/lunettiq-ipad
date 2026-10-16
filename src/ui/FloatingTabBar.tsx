@@ -11,6 +11,7 @@ import {
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { useDesignTokens } from '@/src/features/design';
+import { kitColors } from '@/src/ui/kit/colors';
 
 /**
  * FloatingTabBar — Instagram-style floating bottom tab bar.
@@ -175,13 +176,16 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
                         minWidth: 20,
                         height: 20,
                         borderRadius: 10,
-                        backgroundColor: colors.error,
+                        // Found UI: counts are quiet near-black pills; red is for problems only.
+                        backgroundColor: kitColors.primary,
+                        borderWidth: 2,
+                        borderColor: kitColors.inverse,
                         alignItems: 'center',
                         justifyContent: 'center',
                         paddingHorizontal: 4,
                       }}
                     >
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.textInverse }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: kitColors.inverse }}>
                         {badge > 99 ? '99+' : badge}
                       </Text>
                     </View>

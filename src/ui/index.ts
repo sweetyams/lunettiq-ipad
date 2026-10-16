@@ -11,7 +11,6 @@ export { ProfileGapChips } from './ProfileGapChips';
 export { Sheet } from './Sheet';
 
 // Foundation Components (alphabetical)
-export { ActiveHoldsCard } from './ActiveHoldsCard';
 export { AppointmentCard } from './AppointmentCard';
 export { Button } from './Button';
 export { Card, CardHead, CardBody, CardFoot } from './Card';
@@ -33,9 +32,6 @@ export { DeviceLocationNotice } from './DeviceLocationNotice';
 export { PermissionGate } from './PermissionGate';
 export { PrivacyToggle } from './PrivacyToggle';
 export { ProductCard } from './ProductCard';
-export { QuickActionsGrid } from './QuickActionsGrid';
-export { RecentClientsCard } from './RecentClientsCard';
-export { RxStatusCard } from './RxStatusCard';
 export { ScreenHeader } from './ScreenHeader';
 export { SearchBar } from './SearchBar';
 export { SessionBar } from './SessionBar';
