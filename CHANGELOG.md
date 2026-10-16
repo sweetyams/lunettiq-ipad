@@ -9,6 +9,11 @@
 - PIN lock uses the shared `Wordmark` component.
 - Brand decision: keep the live storefront brand from Foundry tokens. The charter's navy/green/off-white palette was never the shipped brand; charter, V2 plan, house rules and design summary corrected.
 
+### Fixed
+- Appointment status badges were unreadable (dark text on near-black): the colour class sat on the `View`, which React Native doesn't pass to `Text`. Badges now set background and text separately, with tinted states; `completed` used a non-existent token.
+- Home didn't refresh when you came back to it, so arrivals, holds and Rx changes made elsewhere stayed stale for up to 5 minutes. It now refreshes on focus.
+- "Arrived" button on confirmed appointments renamed "Mark arrived" (it's an action, not a status).
+
 ### Added
 - `src/ui/Wordmark.tsx`
 

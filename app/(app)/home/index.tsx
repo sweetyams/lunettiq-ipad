@@ -1,5 +1,6 @@
 import { View, Text, FlatList, ScrollView, Alert, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { Calendar } from 'lucide-react-native';
 import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow } from '@/src/api/useAppointments';
@@ -29,6 +30,17 @@ export default function HomeScreen() {
   const startAppointment = useStartAppointment();
   const markNoShow = useMarkNoShow();
   const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
+  const queryClient = useQueryClient();
+
+  // Home is the floor's dashboard: refresh it every time staff come back to it,
+  // so arrivals, holds and Rx changes made elsewhere show immediately.
+  useFocusEffect(
+    useCallback(() => {
+      for (const queryKey of [['appointments', 'today'], ['inventory-holds'], ['rx-pipeline', 'counts'], ['rx-approvals', 'summary']]) {
+        queryClient.invalidateQueries({ queryKey });
+      }
+    }, [queryClient]),
+  );
 
   // Sort appointments: in_progress first, arrived second, then by startsAt, past at bottom
   const sortedAppointments = [...(appointments ?? [])].sort((a, b) => {

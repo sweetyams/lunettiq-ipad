@@ -72,21 +72,22 @@ export function AppointmentCard({
   };
 
   const getStatusBadge = () => {
+    // Text colour must be set on the Text: React Native doesn't inherit it from the View.
     const badges = {
-      scheduled: { text: 'Scheduled', style: 'bg-bg-surface text-text-primary' },
-      confirmed: { text: 'Confirmed', style: 'bg-accent text-text-inverse' },
-      arrived: { text: 'Arrived', style: 'bg-warning text-text-inverse' },
-      in_progress: { text: 'In Progress', style: 'bg-accent text-text-inverse' },
-      completed: { text: 'Completed', style: 'bg-muted text-text-inverse' },
-      no_show: { text: 'No Show', style: 'bg-error text-text-inverse' },
+      scheduled: { text: 'Scheduled', bg: 'bg-bg-page border border-border', fg: 'text-text-secondary' },
+      confirmed: { text: 'Confirmed', bg: 'bg-brand-soft', fg: 'text-brand' },
+      arrived: { text: 'Arrived', bg: 'bg-warning', fg: 'text-text-inverse' },
+      in_progress: { text: 'In progress', bg: 'bg-accent', fg: 'text-accent-text' },
+      completed: { text: 'Completed', bg: 'bg-bg-muted', fg: 'text-text-muted' },
+      no_show: { text: 'No-show', bg: 'bg-error-soft', fg: 'text-error' },
     };
-    
+
     const badge = badges[appointment.status as keyof typeof badges];
     if (!badge) return null;
-    
+
     return (
-      <View className={`px-2 py-1 rounded-sm ${badge.style}`}>
-        <Text className="text-caption-md font-medium">{badge.text}</Text>
+      <View className={`px-2 py-1 rounded-sm ${badge.bg}`}>
+        <Text className={`text-caption-md font-medium ${badge.fg}`}>{badge.text}</Text>
       </View>
     );
   };
@@ -137,7 +138,7 @@ export function AppointmentCard({
               accessibilityLabel={`Mark ${appointment.clientName} as arrived`}
               className="bg-brand px-lg py-sm rounded-md min-h-[44px] flex-1 items-center justify-center"
             >
-              <Text className="text-body-md font-medium text-text-inverse">Arrived</Text>
+              <Text className="text-body-md font-medium text-text-inverse">Mark arrived</Text>
             </Pressable>
           )}
 
