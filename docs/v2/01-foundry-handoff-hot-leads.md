@@ -72,3 +72,9 @@ Note: the end-session endpoint receives `sendSummary`, `summaryLanguage`, `tags`
 - **`GET /api/scheduling` has no client name.** It returns raw rows (`customerId`, `title` = service name). The iPad now looks names up per client (`src/api/appointmentsMapping.ts`). A left join on `customers` returning `clientName` would remove N extra requests per refresh; the iPad already prefers `clientName` when present.
 - **Approval status drift in the demo seed** (fixed on Foundry branch `feat/lunettiq-demo-today-seed`): `pending_review` isn't a remote-approval status, so seeded requests never appeared in queues.
 - **New seed:** `scripts/seed-lunettiq-demo-today.ts --tenant=lunettiq-demo --force` refreshes the demo's time-sensitive layer around today (also step 8/8 of `seed-lunettiq-demo-all.ts`). Run it before each demo. Branch `feat/lunettiq-demo-today-seed` (worktree `../foundry-demo-today`), not merged.
+
+## Suspected: duplicate "shell" customers from tablet writes (2026-10-16)
+
+The Clients list in `lunettiq-demo` shows two nameless, email-less clients ("No name yet") created on Oct 15, the day of the first iPad visit test. Likely cause: `tryon-sessions` and `product-interactions` call `resolveOrCreateCustomer(..., { source: 'shopify', sourceRef: clientId })`. The iPad passes the **canonical** customer id, not a Shopify id, so no `shopify` identity matches and a new empty customer is created each time.
+
+Couldn't confirm by SQL: the Foundry MCP now refuses tenant queries (`DATABASE_TENANT_URL` not configured). To verify, check `customer_identities` for `source_type='shopify'` rows whose `source_ref` is a uuid. Fix: resolve by canonical id first, and only fall back to the Shopify ref when the id isn't a known `customers.id`.
