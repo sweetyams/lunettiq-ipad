@@ -78,3 +78,11 @@ Note: the end-session endpoint receives `sendSummary`, `summaryLanguage`, `tags`
 The Clients list in `lunettiq-demo` shows two nameless, email-less clients ("No name yet") created on Oct 15, the day of the first iPad visit test. Likely cause: `tryon-sessions` and `product-interactions` call `resolveOrCreateCustomer(..., { source: 'shopify', sourceRef: clientId })`. The iPad passes the **canonical** customer id, not a Shopify id, so no `shopify` identity matches and a new empty customer is created each time.
 
 Couldn't confirm by SQL: the Foundry MCP now refuses tenant queries (`DATABASE_TENANT_URL` not configured). To verify, check `customer_identities` for `source_type='shopify'` rows whose `source_ref` is a uuid. Fix: resolve by canonical id first, and only fall back to the Shopify ref when the id isn't a known `customers.id`.
+
+## Privacy: `/api/admin/prescriptions` ignores `clientId` (2026-10-16)
+
+`GET /api/admin/prescriptions?clientId=…` goes through the generic CRUD factory (`prescriptionHandlers.list`), which only reads `limit`/`offset`/`sort`/`order`. It returns **every prescription in the tenant**. The iPad sent `clientId` and showed 8 prescriptions (other clients' optics, prescriber names) on Camille Tremblay's profile, and offered them in the order summary's Rx picker.
+
+- **iPad fix (done):** `usePrescriptions({ clientId })` now calls the scoped `GET /api/clients/:id/prescriptions` and maps Foundry's row shape (`prescriptionDate`, `prescriberName`, text optics, `status`) in `src/api/prescriptionsMapping.ts`.
+- **Foundry ask:** either support `customerId` filtering on the admin list or drop the unscoped list for tablet tokens. Any other client that passes `clientId` there has the same leak.
+- Also: the scoped route caps at 10 rows and has no lens type or expiry; the iPad shows "Exam <date>" and the review status instead.

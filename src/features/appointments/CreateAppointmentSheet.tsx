@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Modal, Platform } from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Platform } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { X, Check, User, Clock, Calendar as CalendarIcon, Search } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 

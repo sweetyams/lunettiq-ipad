@@ -1,8 +1,11 @@
 export interface Prescription {
   id: string;
   clientId: string;
-  clientName: string;
-  type: 'single_vision' | 'progressive' | 'bifocal' | 'reading' | 'other';
+  clientName?: string;
+  /** Lens type, when the record carries one (Foundry's Rx rows do not). */
+  type?: 'single_vision' | 'progressive' | 'bifocal' | 'reading' | 'other';
+  /** Foundry review status. */
+  status?: 'submitted' | 'verified' | 'discrepancy' | 'expired';
   sphereOd?: number;
   cylinderOd?: number;
   axisOd?: number;
@@ -14,6 +17,7 @@ export interface Prescription {
   pdRight?: number;
   pdLeft?: number;
   prescribedBy?: string;
+  clinicName?: string;
   prescribedAt?: string;
   expiresAt?: string;
   verified: boolean;

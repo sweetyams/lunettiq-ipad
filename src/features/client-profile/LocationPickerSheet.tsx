@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, Modal } from 'react-native'; import { Dimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Dimensions } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { MapPin, Clock, X } from 'lucide-react-native';
 import { useLocations, locationName, type Location } from '@/src/api/useLocations';
 import { Card, LoadingState, ErrorState } from '@/src/ui';

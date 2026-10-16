@@ -10,14 +10,8 @@
  *
  * Design: Native modal sheet, progress bar, choice cards, single green CTA per step.
  */
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  Modal,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { useState, useMemo, useCallback } from 'react';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react-native';
 import {

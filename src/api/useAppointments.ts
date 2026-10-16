@@ -61,6 +61,25 @@ export function useWeekAppointments(weekStart: Date, locationId?: string) {
   });
 }
 
+/** A client's next booked visits (next 90 days), soonest first. */
+export function useClientUpcoming(clientId: string) {
+  const now = new Date();
+  const from = formatDate(now);
+  const to = formatDate(new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000));
+  return useQuery({
+    queryKey: ['appointments', 'client-upcoming', clientId, from],
+    queryFn: async () => {
+      const list = await fetchAppointments({ from, to, clientId });
+      // Filter here too: the scheduling route may ignore clientId.
+      return list
+        .filter((a) => a.clientId === clientId && a.status !== 'cancelled' && a.status !== 'no_show' && Date.parse(a.endsAt) >= now.getTime())
+        .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    },
+    enabled: !!clientId,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
 /** Staff schedules for a given date (who's working) */
 export function useStaffSchedules(date: string, locationId?: string) {
   const params: Record<string, string> = { date };

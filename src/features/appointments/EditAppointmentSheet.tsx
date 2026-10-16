@@ -1,13 +1,5 @@
-import {
-  Modal,
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  useWindowDimensions,
-  Alert,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, useWindowDimensions, Alert } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { useState, useCallback, useEffect } from 'react';
 import { X, Clock, User, Calendar, FileText } from 'lucide-react-native';
 import { Appointment, StaffMember, TimeSlot } from '@/src/api/appointments.types';

@@ -40,7 +40,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D1 | Kit components + preview screen | ⬜ | Screen, PageHeader, Section, Badge, StatusDot, Button, SegmentedControl, ListRow, KeyValue, StatTile, Avatar, Sheet, EmptyState, Confirm |
 | D2 | App shell (status pill, tab badges, session bar, lock) | ⬜ | |
 | D3 | Floor (reference screen, review before going wide) | ⬜ | |
-| D4 | Clients: list, profile + tabs, new client, profile sheets | 🔄 | List + preview done (`D4.1`). Next: profile shell + tabs, new client, sheets |
+| D4 | Clients: list, profile + tabs, new client, profile sheets | 🔄 | List + preview (`D4.1`) and profile + 4 tabs (`D4.2`) done. Next: new client (`D4.3`), sheets on one `Sheet` pattern (`D4.4`) |
 | D5 | Visit: workspace, fitting, handed mode, end visit | ⬜ | |
 | D6 | Schedule + appointment sheets | ⬜ | |
 | D7 | Products + configurator | ⬜ | |

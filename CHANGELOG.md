@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-10-16] — Phase D4.2: Client profile on the kit; Rx privacy and landscape-modal fixes
+
+### Fixed
+- **Prescriptions leaked across clients.** The profile and the order summary's Rx picker asked `/api/admin/prescriptions?clientId=…`, which ignores `clientId` and returns the whole store (Camille showed 8 prescriptions, not her 1). Now uses the client-scoped route with a mapper for Foundry's shape (exam date, prescriber, clinic, review status, text optics). Flagged for Foundry in the handoff doc.
+- **Modals crashed release builds in landscape.** React Native's `Modal` is portrait-only by default; all 13 sheets/popovers now use `src/ui/Modal`, which allows every orientation. The design-drift audit now fails on `Modal` imported from `react-native`.
+- Duplicate-key error on the profile's tags (red badge in dev).
+
+### Changed
+- **Client profile:** back link, avatar + name + tier/Active badges + contact line, Book (ghost) and Start visit (the one primary). Builder underline `Tabs`. Inspector rail: Summary (key-values, real dates and money), latest Prescription with status badge, Next visit (new `useClientUpcoming`).
+- **Overview:** Contact, Frame preferences (badges; Avoid in red), Wishlist, Tags and segments (deduped, tier excluded), Multi-pair readiness checklist from real insurance/lifestyle/preferences data, Insurance, Lifestyle, Internal notes (shows the note). Preferences, Tags and Link client now open their sheets (they did nothing before).
+- **Clinical:** prescriptions newest first with a real OD/OS table (signed diopters, tabular figures), Fit key-values, sizing guidance; the "LiDAR coming soon" alert is a quiet note.
+- **History:** FilterChips with counts, day-grouped timeline with type badges; removed the dead "Rx pipeline →" button.
+- **Relationships:** linked clients as list rows that open the client; segments as badges; removed the hard-coded Referrals card.
+- Second Sight and Custom design buttons removed from the profile (V3/V4 side paths).
+
+### Removed
+- Unused profile components: ProfileHeader, EnrichmentPanel, PreferencesPanel, DerivedPreferencesCard, InteractionsTimeline, InlineEditField, SupportingPanels, ClientProfileSidebar, ProfileSectionCard, ProfileEditModal (~3,000 lines).
+
+### Added
+- Kit: `KeyValue`, `Tabs`, `formatDate`, `formatDollars`.
+
 ## [2026-10-16] — Phase D4.1: Clients list on the kit
 
 ### Changed

@@ -140,6 +140,22 @@ const CHECKS = [
     },
   },
   {
+    id: 'no-rn-modal',
+    severity: 'error' as const,
+    description: "Modal imported from 'react-native' (portrait-only: crashes release builds in landscape) — import from '@/src/ui/Modal'",
+    excludeFiles: ['src/ui/Modal.tsx', 'audit-'],
+    test(line: string, lines: string[], i: number): string | null {
+      if (isComment(line) || !/(^|[{,\s])Modal\s*(,|}|$)/.test(line)) return null;
+      // Walk to the end of this import statement and check its source.
+      for (let j = i; j < Math.min(lines.length, i + 30); j++) {
+        const m = lines[j]!.match(/from\s+['"]([^'"]+)['"]/);
+        if (m) return m[1] === 'react-native' ? 'Modal' : null;
+        if (j > i && /^\s*(import|export|const|function)\b/.test(lines[j]!)) return null;
+      }
+      return null;
+    },
+  },
+  {
     id: 'warn-hex-in-code',
     severity: 'warn' as const,
     description: 'Hex color literal in code (verify it\'s not a hardcoded color)',

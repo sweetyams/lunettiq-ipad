@@ -10,16 +10,8 @@
  * No transparent overlay — a real system-presented modal.
  */
 import { useState, useCallback, useMemo, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Switch,
-  Modal,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import {
   X,
   ShoppingBag,

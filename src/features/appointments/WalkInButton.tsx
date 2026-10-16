@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Modal } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { UserPlus, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 

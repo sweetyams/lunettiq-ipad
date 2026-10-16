@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable, Modal, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { useState } from 'react';
 import { Star, X } from 'lucide-react-native';
 import { useFittingStore } from './useFittingStore';

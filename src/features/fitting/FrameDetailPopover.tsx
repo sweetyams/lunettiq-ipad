@@ -1,14 +1,5 @@
-import { 
-  View, 
-  Text, 
-  Modal, 
-  Pressable, 
-  TextInput, 
-  Alert, 
-  ScrollView, 
-  Image,
-  Vibration,
-} from 'react-native';
+import { View, Text, Pressable, TextInput, Alert, ScrollView, Image, Vibration } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { useState, useEffect } from 'react';
 import { X, Link, Star, Trash2, BarChart3 } from 'lucide-react-native';
 import { VerdictControl } from './VerdictControl';

@@ -1,143 +1,64 @@
-import { View, Text, Pressable } from 'react-native';
-import { Card, CardHead, CardBody, CardFoot, RowKV, Chip, Tag, Avatar, Button } from '@/src/ui';
+import { View, Text } from 'react-native';
 import { useClientLinks, useClientSegments } from '@/src/api/useClients';
-import type { ClientLink, ClientSegment, RelationshipType } from '@/src/api/clients.types';
+import { Avatar } from '@/src/ui/Avatar';
+import { Badge, ListRow, Section, formatDate } from '@/src/ui/kit';
+import type { ClientLink } from '@/src/api/clients.types';
 
 interface RelationshipsTabProps {
   clientId: string;
+  onLinkClient: () => void;
+  onOpenClient: (clientId: string) => void;
 }
 
-// Utility function to capitalize relationship type for display
-function capitalizeRelationship(type: RelationshipType): string {
-  return type.charAt(0).toUpperCase() + type.slice(1);
+function linkedName(c: ClientLink['linkedClient']): string {
+  return [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'No name yet';
 }
 
-// Format client name from linked client data
-function formatClientName(linkedClient: ClientLink['linkedClient']): string {
-  const firstName = linkedClient.firstName || '';
-  const lastName = linkedClient.lastName || '';
-  return `${firstName} ${lastName}`.trim() || linkedClient.email || 'Unknown';
-}
-
-export function RelationshipsTab({ clientId }: RelationshipsTabProps) {
-  const { data: links, isLoading: isLoadingLinks } = useClientLinks(clientId);
-  const { data: segments, isLoading: isLoadingSegments } = useClientSegments(clientId);
-
-  // Placeholder for referral data - would need proper API endpoint
-  const referralData = {
-    referredBy: null, // Would come from client data or separate endpoint
-    hasReferred: { count: 0, names: [] }, // Would be computed from links/referrals
-    creditsEarned: 0, // Would come from loyalty credits with type 'referral'
-  };
+export function RelationshipsTab({ clientId, onLinkClient, onOpenClient }: RelationshipsTabProps) {
+  const { data: links, isLoading: linksLoading } = useClientLinks(clientId);
+  const { data: segments, isLoading: segmentsLoading } = useClientSegments(clientId);
+  const list = links ?? [];
 
   return (
-    <View className="flex-row gap-lg">
-      {/* Left Column - Linked Clients */}
-      <View className="flex-1">
-        <Card>
-          <CardHead>
-            <Text className="text-heading-sm text-color-text-primary">Linked clients</Text>
-            <Pressable>
-              <Text className="text-color-brand text-body-sm">+ Link a client</Text>
-            </Pressable>
-          </CardHead>
-          <CardBody noPadding>
-            {isLoadingLinks ? (
-              <View className="p-md">
-                <Text className="text-color-text-muted text-body-sm">Loading...</Text>
-              </View>
-            ) : !links || links.length === 0 ? (
-              <View className="p-md">
-                <Text className="text-color-text-muted text-body-sm">
-                  No linked clients. Link family members or colleagues to keep relationships organized.
-                </Text>
-              </View>
-            ) : (
-              links.map((link, index) => (
-                <View
-                  key={link.id}
-                  className={`flex-row items-center gap-[12px] p-md ${
-                    index < links.length - 1 ? 'border-b border-color-border' : ''
-                  }`}
-                >
-                  <Avatar 
-                    size="md" 
-                    firstName={link.linkedClient.firstName}
-                    lastName={link.linkedClient.lastName}
-                  />
-                  <View className="flex-1">
-                    <Text className="text-body-md font-medium text-color-text-primary">
-                      {formatClientName(link.linkedClient)}
-                    </Text>
-                    <Text className="text-body-sm text-color-text-muted">
-                      Connected on {new Date(link.createdAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <Tag label={capitalizeRelationship(link.relationshipType)} />
-                </View>
-              ))
-            )}
-          </CardBody>
-        </Card>
+    <View className="flex-row gap-[20px] items-start">
+      <View className="flex-[3]">
+        <Section title="Linked clients" count={list.length || undefined} padded={list.length === 0} action={{ label: 'Link a client', onPress: onLinkClient }}>
+          {linksLoading ? (
+            <Text className="text-body-sm text-text-tertiary">Loading…</Text>
+          ) : list.length === 0 ? (
+            <Text className="text-body-sm text-text-tertiary">
+              Link family members or partners to see who shops together.
+            </Text>
+          ) : (
+            list.map((link, i) => (
+              <ListRow
+                key={link.id}
+                divider={i > 0}
+                onPress={() => onOpenClient(link.linkedClient.id)}
+                chevron
+                leading={<Avatar size="md" firstName={link.linkedClient.firstName ?? ''} lastName={link.linkedClient.lastName ?? ''} />}
+                title={linkedName(link.linkedClient)}
+                subtitle={`Linked ${formatDate(link.createdAt) ?? ''}`}
+                trailing={<Badge>{link.relationshipType.charAt(0).toUpperCase() + link.relationshipType.slice(1)}</Badge>}
+                accessibilityLabel={`${linkedName(link.linkedClient)}, ${link.relationshipType}`}
+              />
+            ))
+          )}
+        </Section>
       </View>
 
-      {/* Right Column - Segments & Referrals */}
-      <View className="flex-1 gap-lg">
-        {/* Segments Card */}
-        <Card>
-          <CardHead>
-            <Text className="text-heading-sm text-color-text-primary">Segments</Text>
-            <Pressable>
-              <Text className="text-color-brand text-body-sm">Manage</Text>
-            </Pressable>
-          </CardHead>
-          <CardBody>
-            {isLoadingSegments ? (
-              <Text className="text-color-text-muted text-body-sm">Loading segments...</Text>
-            ) : !segments || segments.length === 0 ? (
-              <Text className="text-color-text-muted text-body-sm">Not in any segments</Text>
-            ) : (
-              <View className="flex-row flex-wrap gap-sm">
-                {segments.map((segment) => (
-                  <Chip 
-                    key={segment.id} 
-                    label={segment.name.en}
-                    variant="default"
-                  />
-                ))}
-              </View>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Referrals Card */}
-        <Card>
-          <CardHead>
-            <Text className="text-heading-sm text-color-text-primary">Referrals</Text>
-          </CardHead>
-          <CardBody>
-            <View className="gap-sm">
-              <RowKV
-                label="Referred by"
-                value={referralData.referredBy || '—'}
-              />
-              <RowKV
-                label="Has referred"
-                value={
-                  referralData.hasReferred.count > 0
-                    ? `${referralData.hasReferred.count} ${
-                        referralData.hasReferred.count === 1 ? 'person' : 'people'
-                      }`
-                    : '—'
-                }
-              />
-              <RowKV
-                label="Credits earned"
-                value={referralData.creditsEarned > 0 ? `$${referralData.creditsEarned}` : '—'}
-              />
+      <View className="flex-[2]">
+        <Section title="Segments" count={segments?.length || undefined}>
+          {segmentsLoading ? (
+            <Text className="text-body-sm text-text-tertiary">Loading…</Text>
+          ) : !segments?.length ? (
+            <Text className="text-body-sm text-text-tertiary">Not in any segments.</Text>
+          ) : (
+            <View className="flex-row flex-wrap gap-[6px]">
+              {[...new Set(segments.map((s) => s.name.en))].map((name) => <Badge key={name} tone="outline">{name}</Badge>)}
             </View>
-          </CardBody>
-        </Card>
+          )}
+        </Section>
       </View>
     </View>
   );

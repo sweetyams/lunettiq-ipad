@@ -4,7 +4,8 @@
  * Lets the SA review the configured product + pricing,
  * optionally link a prescription, and create an Rx pipeline order.
  */
-import { View, Text, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { useState, useCallback } from 'react';
 import { X, FileText, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useCreateRxOrder } from '@/src/api/useRxPipeline';
@@ -201,12 +202,12 @@ export function OrderSummarySheet({
                       }`}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: selectedPrescriptionId === rx.id }}
-                      accessibilityLabel={`${rx.type.replace('_', ' ')} prescription from ${rx.prescribedAt
+                      accessibilityLabel={`${rx.type ? rx.type.replace('_', ' ') + ' ' : ''}prescription from ${rx.prescribedAt
                         ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                         : 'unknown date'}${rx.prescribedBy ? ` by ${rx.prescribedBy}` : ''}`}
                     >
                       <Text className="text-body-md text-text-primary">
-                        {rx.type.replace('_', ' ')} — {rx.prescribedAt
+                        {rx.type ? rx.type.replace('_', ' ') : 'Prescription'} — {rx.prescribedAt
                           ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                           : 'No date'}
                       </Text>

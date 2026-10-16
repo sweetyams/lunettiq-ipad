@@ -1,4 +1,5 @@
-import { View, Text, Modal, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { Button } from '@/src/ui/Button';
 
 interface ConsentModalProps {
