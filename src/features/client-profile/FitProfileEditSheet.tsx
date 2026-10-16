@@ -1,7 +1,8 @@
+import { View } from 'react-native';
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Sheet, TextField, Field, ChoiceChips } from '@/src/ui/kit';
 import { useClientEnrichment, useUpdateEnrichment } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
 
 interface FitProfileEditSheetProps {
   clientId: string;
@@ -9,148 +10,63 @@ interface FitProfileEditSheetProps {
   onClose: () => void;
 }
 
+const FACE_SHAPES = ['Oval', 'Round', 'Square', 'Heart', 'Oblong', 'Diamond'] as const;
+
+function mm(v: string, min: number, max: number): string | null {
+  if (!v.trim()) return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= min && n <= max ? null : `Expected ${min}–${max} mm.`;
+}
+
 export function FitProfileEditSheet({ clientId, visible, onClose }: FitProfileEditSheetProps) {
   const { data: enrichment, isLoading } = useClientEnrichment(clientId);
   const updateEnrichment = useUpdateEnrichment();
+  const [faceShape, setFaceShape] = useState<string | null>(null);
+  const [lens, setLens] = useState('');
+  const [bridge, setBridge] = useState('');
 
-  const [faceShape, setFaceShape] = useState<string>('');
-  const [frameWidth, setFrameWidth] = useState('');
-  const [bridgeWidth, setBridgeWidth] = useState('');
-  const [templeLength, setTempleLength] = useState('');
-  const [ipd, setIpd] = useState('');
-
-  const faceShapes = ['Oval', 'Round', 'Square', 'Heart', 'Oblong', 'Diamond'];
-
-  // Pre-fill form when enrichment data loads
   useEffect(() => {
-    if (enrichment) {
-      setFaceShape(enrichment.faceShape || '');
-      setFrameWidth(enrichment.frameWidthMm ? enrichment.frameWidthMm.toString() : '');
-      setBridgeWidth(enrichment.bridgeWidthMm ? enrichment.bridgeWidthMm.toString() : '');
-      // Temple length and IPD don't exist in API yet - keep as empty for now
-      setTempleLength('');
-      setIpd('');
-    }
+    if (!enrichment) return;
+    setFaceShape(enrichment.faceShape || null);
+    setLens(enrichment.frameWidthMm ? String(enrichment.frameWidthMm) : '');
+    setBridge(enrichment.bridgeWidthMm ? String(enrichment.bridgeWidthMm) : '');
   }, [enrichment]);
 
-  const handleSave = async () => {
+  const lensError = mm(lens, 38, 62);
+  const bridgeError = mm(bridge, 12, 26);
+
+  const save = async () => {
     try {
       await updateEnrichment.mutateAsync({
         clientId,
         data: {
           faceShape: faceShape || null,
-          frameWidthMm: frameWidth.trim() ? Number(frameWidth) : null,
-          bridgeWidthMm: bridgeWidth.trim() ? Number(bridgeWidth) : null,
-          // Note: Temple length and IPD not saved yet (API gap documented)
+          frameWidthMm: lens.trim() ? Number(lens) : null,
+          bridgeWidthMm: bridge.trim() ? Number(bridge) : null,
         },
       });
+      toast.success('Fit saved');
       onClose();
-    } catch (error) {
-      console.error('Failed to update fit profile:', error);
+    } catch {
+      toast.error('Couldn’t save fit', 'Check the connection and try again.');
     }
   };
-
-  const handleCancel = () => {
-    // Reset to original values
-    if (enrichment) {
-      setFaceShape(enrichment.faceShape || '');
-      setFrameWidth(enrichment.frameWidthMm ? enrichment.frameWidthMm.toString() : '');
-      setBridgeWidth(enrichment.bridgeWidthMm ? enrichment.bridgeWidthMm.toString() : '');
-    }
-    setTempleLength('');
-    setIpd('');
-    onClose();
-  };
-
-  const footer = (
-    <View className="flex-row gap-md">
-      <Button variant="quiet" onPress={handleCancel}>
-        Cancel
-      </Button>
-      <Button variant="primary" onPress={handleSave} disabled={updateEnrichment.isPending || isLoading}>
-        {updateEnrichment.isPending ? 'Saving...' : 'Save fit profile'}
-      </Button>
-    </View>
-  );
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleCancel}
-      title="Fit profile"
-      footer={footer}
+      onClose={onClose}
+      title="Fit"
+      subtitle="From a frame that fits them well: the numbers printed inside the temple."
+      primary={{ label: 'Save fit', onPress: save, disabled: isLoading || !!(lensError || bridgeError), loading: updateEnrichment.isPending }}
     >
-      <View className="gap-lg">
-        {/* Face shape */}
-        <View>
-          <FieldLabel>Face shape</FieldLabel>
-          <View className="flex-row flex-wrap gap-sm">
-            {faceShapes.map((shape) => (
-              <Chip
-                key={shape}
-                label={shape}
-                variant={faceShape === shape ? 'on' : 'default'}
-                onPress={() => setFaceShape(shape)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Frame width + Bridge width */}
-        <View className="flex-row gap-md">
-          <View className="flex-1">
-            <FieldLabel>Frame width (mm)</FieldLabel>
-            <TextInput
-              value={frameWidth}
-              onChangeText={setFrameWidth}
-              placeholder="140"
-              keyboardType="numeric"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary font-mono"
-            />
-          </View>
-          <View className="flex-1">
-            <FieldLabel>Bridge width (mm)</FieldLabel>
-            <TextInput
-              value={bridgeWidth}
-              onChangeText={setBridgeWidth}
-              placeholder="18"
-              keyboardType="numeric"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary font-mono"
-            />
-          </View>
-        </View>
-
-        {/* Temple length + IPD (not saved yet) */}
-        <View className="flex-row gap-md">
-          <View className="flex-1">
-            <FieldLabel>Temple length (mm)</FieldLabel>
-            <TextInput
-              value={templeLength}
-              onChangeText={setTempleLength}
-              placeholder="145"
-              keyboardType="numeric"
-              editable={false}
-              className="border border-color-border rounded-sm bg-color-bg-muted px-[12px] min-h-[44px] text-body-md text-color-text-secondary font-mono"
-            />
-          </View>
-          <View className="flex-1">
-            <FieldLabel>IPD (mm)</FieldLabel>
-            <TextInput
-              value={ipd}
-              onChangeText={setIpd}
-              placeholder="64"
-              keyboardType="numeric"
-              editable={false}
-              className="border border-color-border rounded-sm bg-color-bg-muted px-[12px] min-h-[44px] text-body-md text-color-text-secondary font-mono"
-            />
-          </View>
-        </View>
-
-        {/* Source info */}
-        <View className="bg-color-bg-muted p-md rounded-sm">
-          <Text className="text-body-sm text-color-text-secondary">
-            Measurements from Second Sight or manual entry. Temple length and IPD coming soon.
-          </Text>
+      <View className="gap-[20px]">
+        <Field label="Face shape">
+          <ChoiceChips options={FACE_SHAPES} value={faceShape as (typeof FACE_SHAPES)[number] | null} onChange={setFaceShape} />
+        </Field>
+        <View className="flex-row gap-[16px]">
+          <TextField className="flex-1" label="Lens width (mm)" hint="First number, e.g. 52 in 52□18." value={lens} onChangeText={setLens} error={lensError} placeholder="52" keyboardType="number-pad" />
+          <TextField className="flex-1" label="Bridge (mm)" hint="Second number, e.g. 18." value={bridge} onChangeText={setBridge} error={bridgeError} placeholder="18" keyboardType="number-pad" />
         </View>
       </View>
     </Sheet>

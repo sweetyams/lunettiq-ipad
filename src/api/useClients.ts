@@ -7,6 +7,8 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { lookupClientNames } from './clientNames';
+import { toClientLink, type FoundryClientLinkRow } from './clientLinksMapping';
 import type {
   Client,
   ClientProfile,
@@ -29,6 +31,7 @@ import type {
   TryonSession,
   ClientSuggestion,
   ClientLink,
+  RelationshipType,
   FieldConfig,
 } from './clients.types';
 
@@ -292,10 +295,32 @@ export function useClientSuggestions(clientId: string, limit = 12) {
 
 export function useClientLinks(clientId: string) {
   return useQuery({
-    queryKey: ['clients', clientId, 'links'],
-    queryFn: () => api.get<ClientLink[]>(`/api/clients/${clientId}/links`),
+    queryKey: ['clients', clientId, 'links', 'mapped'],
+    queryFn: async (): Promise<ClientLink[]> => {
+      // Foundry returns raw link rows (no joined client); resolve the other side's name.
+      const rows = await api.get<FoundryClientLinkRow[]>(`/api/clients/${clientId}/links`);
+      const list = Array.isArray(rows) ? rows : [];
+      const names = await lookupClientNames(list.map((r) => (r.clientAId === clientId ? r.clientBId : r.clientAId)));
+      return list.map((r) => toClientLink(r, clientId, names));
+    },
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateClientLink() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (p: { clientId: string; linkedClientId: string; relationshipType: RelationshipType }) =>
+      api.post(`/api/clients/${p.clientId}/links`, {
+        clientAId: p.clientId,
+        clientBId: p.linkedClientId,
+        relationshipType: p.relationshipType,
+      }),
+    onSuccess: (_, p) => {
+      qc.invalidateQueries({ queryKey: ['clients', p.clientId, 'links'] });
+      qc.invalidateQueries({ queryKey: ['clients', p.linkedClientId, 'links'] });
+    },
   });
 }
 

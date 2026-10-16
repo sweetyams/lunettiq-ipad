@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button, Tag } from '@/src/ui';
+import { View, Text, TextInput } from 'react-native';
+import { useState } from 'react';
+import { Sheet, TextField, Field, ChoiceChips, kitColors } from '@/src/ui/kit';
 import { useCreatePrescription } from '@/src/api/usePrescriptions';
+import { toast } from '@/src/ui/useToastStore';
 import type { CreatePrescriptionPayload } from '@/src/api/prescriptions.types';
 
 interface PrescriptionSheetProps {
@@ -10,352 +11,143 @@ interface PrescriptionSheetProps {
   onClose: () => void;
 }
 
+type Col = 'sph' | 'cyl' | 'axis' | 'add';
+type Eye = 'od' | 'os';
+const COLS: Array<{ key: Col; label: string; placeholder: string }> = [
+  { key: 'sph', label: 'SPH', placeholder: '-1.25' },
+  { key: 'cyl', label: 'CYL', placeholder: '-0.50' },
+  { key: 'axis', label: 'Axis', placeholder: '90' },
+  { key: 'add', label: 'Add', placeholder: '+2.00' },
+];
+const RANGE: Record<Col, [number, number]> = { sph: [-20, 20], cyl: [-10, 10], axis: [1, 180], add: [0.25, 4] };
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function parse(v: string): number | undefined {
+  const t = v.trim().replace(',', '.').replace('−', '-');
+  if (!t) return undefined;
+  if (/^pl(ano)?$/i.test(t)) return 0;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function cellError(col: Col, v: string): boolean {
+  const n = parse(v);
+  if (n === undefined) return false;
+  if (Number.isNaN(n)) return true;
+  const [min, max] = RANGE[col];
+  if (n < min || n > max) return true;
+  if (col === 'axis') return !Number.isInteger(n);
+  return Math.round(n * 4) !== n * 4; // quarter-diopter steps
+}
+
 export function PrescriptionSheet({ clientId, visible, onClose }: PrescriptionSheetProps) {
-  const createPrescription = useCreatePrescription();
+  const create = useCreatePrescription();
+  const [grid, setGrid] = useState<Record<Eye, Record<Col, string>>>({
+    od: { sph: '', cyl: '', axis: '', add: '' },
+    os: { sph: '', cyl: '', axis: '', add: '' },
+  });
+  const [pdMode, setPdMode] = useState<'single' | 'dual'>('single');
+  const [pd, setPd] = useState('');
+  const [pdR, setPdR] = useState('');
+  const [pdL, setPdL] = useState('');
+  const [date, setDate] = useState('');
+  const [prescriber, setPrescriber] = useState('');
+  const [clinic, setClinic] = useState('');
 
-  // Form state
-  const [source, setSource] = useState<'manual' | 'photo' | 'import'>('manual');
-  const [type, setType] = useState<CreatePrescriptionPayload['type']>('single_vision');
-  const [prescribedBy, setPrescribedBy] = useState('');
-  const [prescribedAt, setPrescribedAt] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  
-  // OD values (right eye)
-  const [sphereOd, setSphereOd] = useState('');
-  const [cylinderOd, setCylinderOd] = useState('');
-  const [axisOd, setAxisOd] = useState('');
-  const [addOd, setAddOd] = useState('');
-  
-  // OS values (left eye)
-  const [sphereOs, setSphereOs] = useState('');
-  const [cylinderOs, setCylinderOs] = useState('');
-  const [axisOs, setAxisOs] = useState('');
-  const [addOs, setAddOs] = useState('');
-  
-  // PD values
-  const [pdBinocular, setPdBinocular] = useState('');
-  const [pdRight, setPdRight] = useState('');
-  const [pdLeft, setPdLeft] = useState('');
-  const [segHeight, setSegHeight] = useState('');
-  
-  const [notes, setNotes] = useState('');
+  const set = (eye: Eye, col: Col) => (v: string) => setGrid((g) => ({ ...g, [eye]: { ...g[eye], [col]: v } }));
 
-  const handleSave = async () => {
+  const badCells = (['od', 'os'] as Eye[]).flatMap((e) => COLS.filter((c) => cellError(c.key, grid[e][c.key])).map((c) => `${e.toUpperCase()} ${c.label}`));
+  const missingAxis = (['od', 'os'] as Eye[]).filter((e) => grid[e].cyl.trim() && parse(grid[e].cyl) !== 0 && !grid[e].axis.trim()).map((e) => e.toUpperCase());
+  const hasSphere = !!(grid.od.sph.trim() || grid.os.sph.trim());
+  const dateError = date.trim() && (!ISO_DATE.test(date.trim()) || Number.isNaN(Date.parse(date.trim())) || Date.parse(date.trim()) > Date.now()) ? 'Use YYYY-MM-DD, not in the future.' : null;
+  const gridError = badCells.length
+    ? `Check ${badCells.join(', ')}: SPH ±20, CYL ±10 in 0.25 steps, axis 1–180, add 0.25–4.`
+    : missingAxis.length ? `${missingAxis.join(' and ')}: cylinder needs an axis.` : null;
+  const canSave = hasSphere && !gridError && !dateError;
+
+  const save = async () => {
+    const n = (v: string) => { const x = parse(v); return x === undefined || Number.isNaN(x) ? undefined : x; };
+    const payload: CreatePrescriptionPayload = {
+      clientId,
+      sphereOd: n(grid.od.sph), cylinderOd: n(grid.od.cyl), axisOd: n(grid.od.axis), addOd: n(grid.od.add),
+      sphereOs: n(grid.os.sph), cylinderOs: n(grid.os.cyl), axisOs: n(grid.os.axis), addOs: n(grid.os.add),
+      ...(pdMode === 'single' ? { pdSingle: n(pd) } : { pdRight: n(pdR), pdLeft: n(pdL) }),
+      prescribedAt: date.trim() || undefined,
+      prescribedBy: prescriber,
+      clinicName: clinic,
+    };
     try {
-      const payload: CreatePrescriptionPayload = {
-        clientId,
-        type,
-        prescribedBy: prescribedBy || undefined,
-        prescribedAt: prescribedAt || undefined,
-        expiresAt: expiresAt || undefined,
-        notes: notes || undefined,
-      };
-
-      // Add numeric values only if they exist
-      if (sphereOd) payload.sphereOd = parseFloat(sphereOd);
-      if (cylinderOd) payload.cylinderOd = parseFloat(cylinderOd);
-      if (axisOd) payload.axisOd = parseInt(axisOd);
-      if (addOd) payload.addOd = parseFloat(addOd);
-      if (sphereOs) payload.sphereOs = parseFloat(sphereOs);
-      if (cylinderOs) payload.cylinderOs = parseFloat(cylinderOs);
-      if (axisOs) payload.axisOs = parseInt(axisOs);
-      if (addOs) payload.addOs = parseFloat(addOs);
-      if (pdRight) payload.pdRight = parseFloat(pdRight);
-      if (pdLeft) payload.pdLeft = parseFloat(pdLeft);
-
-      await createPrescription.mutateAsync(payload);
+      await create.mutateAsync(payload);
+      toast.success('Prescription added', 'It’s waiting for an optician to verify.');
       onClose();
-    } catch (error) {
-      // Error handling is managed by the mutation hook
-      console.error('Failed to create prescription:', error);
+    } catch {
+      toast.error('Couldn’t add the prescription', 'Check the connection and try again. Values are still here.');
     }
   };
-
-  const footer = (
-    <View className="flex-row justify-end gap-md">
-      <Button variant="quiet" onPress={onClose}>
-        Cancel
-      </Button>
-      <Button 
-        variant="primary" 
-        onPress={handleSave}
-        disabled={createPrescription.isPending}
-      >
-        {createPrescription.isPending ? 'Saving...' : 'Save prescription'}
-      </Button>
-    </View>
-  );
 
   return (
     <Sheet
       visible={visible}
       onClose={onClose}
-      title="Add Prescription"
-      subtitle="Enter prescription values"
-      footer={footer}
+      wide
+      title="Add prescription"
+      subtitle="From an exam here or an outside prescription. An optician verifies it before it’s used for an order."
+      primary={{ label: 'Add prescription', onPress: save, disabled: !canSave, loading: create.isPending }}
     >
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="gap-lg">
-          {/* Source selector */}
-          <View className="gap-sm">
-            <FieldLabel>Source</FieldLabel>
-            <View className="flex-row gap-sm">
-              <Chip
-                label="Enter manually"
-                variant={source === 'manual' ? 'on' : 'default'}
-                onPress={() => setSource('manual')}
-                />
-              <Chip
-                label="Photograph paper Rx"
-                variant={source === 'photo' ? 'on' : 'default'}
-                onPress={() => setSource('photo')}
-                />
-              <Chip
-                label="Import from order"
-                variant={source === 'import' ? 'on' : 'default'}
-                onPress={() => setSource('import')}
-                />
+      <View className="gap-[24px]">
+        <Field label="Values" error={gridError} hint="Plano: type 0 or “pl”. Leave blank what isn’t on the prescription.">
+          <View className="border border-border rounded-md">
+            <View className="flex-row items-center px-[12px] min-h-[36px]">
+              <View className="w-[96px]" />
+              {COLS.map((c) => <Text key={c.key} className="flex-1 text-caption-sm uppercase text-text-tertiary px-[6px]">{c.label}</Text>)}
             </View>
-          </View>
-
-          {/* Type + Prescriber fields */}
-          <View className="flex-row gap-md">
-            <View className="flex-1 gap-sm">
-              <FieldLabel>Type</FieldLabel>
-              <View className="flex-row flex-wrap gap-xs">
-                {(['single_vision', 'progressive', 'bifocal', 'reading', 'other'] as const).map((t) => (
-                  <Chip
-                    key={t}
-                    label={t.replace('_', ' ')}
-                    variant={type === t ? 'on' : 'default'}
-                    onPress={() => setType(t)}
-                  />
-
-                ))}
+            {(['od', 'os'] as Eye[]).map((eye) => (
+              <View key={eye} className="flex-row items-center px-[12px] py-[8px] border-t border-border">
+                <Text className="w-[96px] text-body-md text-text-primary">
+                  {eye.toUpperCase()} <Text className="text-text-tertiary">{eye === 'od' ? 'Right' : 'Left'}</Text>
+                </Text>
+                {COLS.map((c) => {
+                  const bad = cellError(c.key, grid[eye][c.key]);
+                  return (
+                    <View key={c.key} className="flex-1 px-[6px]">
+                      <TextInput
+                        value={grid[eye][c.key]}
+                        onChangeText={set(eye, c.key)}
+                        placeholder={c.placeholder}
+                        placeholderTextColor={kitColors.iconMuted}
+                        keyboardType="numbers-and-punctuation"
+                        accessibilityLabel={`${eye === 'od' ? 'Right' : 'Left'} eye ${c.label}`}
+                        className={`bg-bg-page border rounded-md px-[10px] min-h-[44px] text-body-md text-text-primary text-right ${bad ? 'border-error' : 'border-border'}`}
+                        style={{ fontVariant: ['tabular-nums'] }}
+                      />
+                    </View>
+                  );
+                })}
               </View>
-            </View>
-            <View className="flex-1 gap-sm">
-              <FieldLabel>Prescribed by</FieldLabel>
-              <TextInput
-                value={prescribedBy}
-                onChangeText={setPrescribedBy}
-                placeholder="Dr. Smith"
-                className="border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary"
-              />
-            </View>
+            ))}
           </View>
+        </Field>
 
-          {/* Exam date + Expiry fields */}
-          <View className="flex-row gap-md">
-            <View className="flex-1 gap-sm">
-              <FieldLabel>Exam date</FieldLabel>
-              <TextInput
-                value={prescribedAt}
-                onChangeText={setPrescribedAt}
-                placeholder="2024-01-15"
-                className="border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-              />
-            </View>
-            <View className="flex-1 gap-sm">
-              <FieldLabel>Expiry date</FieldLabel>
-              <TextInput
-                value={expiresAt}
-                onChangeText={setExpiresAt}
-                placeholder="2026-01-15"
-                className="border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-              />
-            </View>
+        <Field label="Pupillary distance">
+          <ChoiceChips options={[{ key: 'single', label: 'One number' }, { key: 'dual', label: 'Right and left' }]} value={pdMode} onChange={(m: 'single' | 'dual' | null) => setPdMode(m ?? 'single')} />
+          <View className="flex-row gap-[16px] mt-[4px]">
+            {pdMode === 'single' ? (
+              <TextField className="w-[200px]" label="PD (mm)" value={pd} onChangeText={setPd} placeholder="63" keyboardType="decimal-pad" />
+            ) : (
+              <>
+                <TextField className="w-[200px]" label="Right (mm)" value={pdR} onChangeText={setPdR} placeholder="31.5" keyboardType="decimal-pad" />
+                <TextField className="w-[200px]" label="Left (mm)" value={pdL} onChangeText={setPdL} placeholder="31.5" keyboardType="decimal-pad" />
+              </>
+            )}
           </View>
+        </Field>
 
-          {/* Values table */}
-          <View className="gap-sm">
-            <FieldLabel>Values</FieldLabel>
-            <View className="bg-bg-surface border border-border rounded-sm">
-              {/* Header */}
-              <View className="flex-row border-b border-border">
-                <View className="w-16 p-sm border-r border-border">
-                  <Text className="text-caption-md text-text-secondary font-medium">Eye</Text>
-                </View>
-                <View className="flex-1 p-sm border-r border-border">
-                  <Text className="text-caption-md text-text-secondary font-medium">SPH</Text>
-                </View>
-                <View className="flex-1 p-sm border-r border-border">
-                  <Text className="text-caption-md text-text-secondary font-medium">CYL</Text>
-                </View>
-                <View className="flex-1 p-sm border-r border-border">
-                  <Text className="text-caption-md text-text-secondary font-medium">Axis</Text>
-                </View>
-                <View className="flex-1 p-sm">
-                  <Text className="text-caption-md text-text-secondary font-medium">Add</Text>
-                </View>
-              </View>
-              
-              {/* OD row */}
-              <View className="flex-row border-b border-border">
-                <View className="w-16 p-sm border-r border-border items-center justify-center">
-                  <Text className="text-body-md text-text-primary font-medium">OD</Text>
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={sphereOd}
-                    onChangeText={setSphereOd}
-                    placeholder="±0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={cylinderOd}
-                    onChangeText={setCylinderOd}
-                    placeholder="±0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={axisOd}
-                    onChangeText={setAxisOd}
-                    placeholder="180"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1">
-                  <TextInput
-                    value={addOd}
-                    onChangeText={setAddOd}
-                    placeholder="+0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-              </View>
-              
-              {/* OS row */}
-              <View className="flex-row">
-                <View className="w-16 p-sm border-r border-border items-center justify-center">
-                  <Text className="text-body-md text-text-primary font-medium">OS</Text>
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={sphereOs}
-                    onChangeText={setSphereOs}
-                    placeholder="±0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={cylinderOs}
-                    onChangeText={setCylinderOs}
-                    placeholder="±0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1 border-r border-border">
-                  <TextInput
-                    value={axisOs}
-                    onChangeText={setAxisOs}
-                    placeholder="180"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-                <View className="flex-1">
-                  <TextInput
-                    value={addOs}
-                    onChangeText={setAddOs}
-                    placeholder="+0.00"
-                    keyboardType="numeric"
-                    className="px-sm py-sm text-body-md text-text-primary font-mono"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* PD fields */}
-          <View className="flex-row gap-md">
-            <View className="flex-1 gap-sm">
-              <FieldLabel>PD binocular</FieldLabel>
-              <TextInput
-                value={pdBinocular}
-                onChangeText={setPdBinocular}
-                placeholder="62"
-                keyboardType="numeric"
-                className="border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-              />
-            </View>
-            <View className="flex-1 gap-sm">
-              <FieldLabel>PD OD/OS</FieldLabel>
-              <View className="flex-row gap-xs">
-                <TextInput
-                  value={pdRight}
-                  onChangeText={setPdRight}
-                  placeholder="31"
-                  keyboardType="numeric"
-                  className="flex-1 border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-                />
-                <TextInput
-                  value={pdLeft}
-                  onChangeText={setPdLeft}
-                  placeholder="31"
-                  keyboardType="numeric"
-                  className="flex-1 border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-                />
-              </View>
-            </View>
-            <View className="flex-1 gap-sm">
-              <FieldLabel>Seg height</FieldLabel>
-              <TextInput
-                value={segHeight}
-                onChangeText={setSegHeight}
-                placeholder="14"
-                keyboardType="numeric"
-                className="border border-border rounded-sm bg-bg-surface px-[12px] min-h-[44px] text-body-md text-text-primary font-mono"
-              />
-            </View>
-          </View>
-
-          {/* Photo upload area */}
-          <View className="gap-sm">
-            <FieldLabel>Photo</FieldLabel>
-            <View className="border-2 border-dashed border-border rounded-md p-xl items-center justify-center min-h-[120px] bg-bg-muted">
-              <Text className="text-text-secondary text-body-sm">
-                Tap to upload prescription photo
-              </Text>
-            </View>
-          </View>
-
-          {/* Notes */}
-          <View className="gap-sm">
-            <FieldLabel>Notes</FieldLabel>
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Additional notes..."
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              className="border border-border rounded-sm bg-bg-surface px-[12px] py-[12px] text-body-md text-text-primary"
-            />
-          </View>
-
-          {/* Unverified explanation */}
-          <View className="gap-sm">
-            <View className="flex-row items-center gap-sm">
-              <Tag label="Unverified" variant="warn" />
-              <Text className="text-text-secondary text-body-sm flex-1">
-                This prescription will be marked as unverified until reviewed by an optometrist
-              </Text>
-            </View>
-          </View>
+        <View className="flex-row gap-[16px]">
+          <TextField className="flex-1" label="Exam date" value={date} onChangeText={setDate} error={dateError} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />
+          <TextField className="flex-1" label="Prescriber" value={prescriber} onChangeText={setPrescriber} placeholder="Dr. …" autoCapitalize="words" />
+          <TextField className="flex-1" label="Clinic" value={clinic} onChangeText={setClinic} autoCapitalize="words" />
         </View>
-      </ScrollView>
+      </View>
     </Sheet>
   );
 }

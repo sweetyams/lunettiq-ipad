@@ -1,31 +1,30 @@
+import { View } from 'react-native';
 import { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Sheet, TextField, formatPhone } from '@/src/ui/kit';
 import { useUpdateClient } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
 
 interface ContactEditSheetProps {
   clientId: string;
-  client: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string | null;
-    phone: string | null;
-  };
+  client: { firstName: string | null; lastName: string | null; email: string | null; phone: string | null };
   visible: boolean;
   onClose: () => void;
 }
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ContactEditSheet({ clientId, client, visible, onClose }: ContactEditSheetProps) {
   const [firstName, setFirstName] = useState(client.firstName || '');
   const [lastName, setLastName] = useState(client.lastName || '');
   const [email, setEmail] = useState(client.email || '');
-  const [phone, setPhone] = useState(client.phone || '');
-  const [language, setLanguage] = useState<'EN' | 'FR'>('EN');
-  const [homeStore, setHomeStore] = useState<'Plateau' | 'DIX30' | 'Online'>('Plateau');
-
+  const [phone, setPhone] = useState(formatPhone(client.phone) ?? '');
   const updateClient = useUpdateClient();
 
-  const handleSave = async () => {
+  const emailError = email.trim() && !EMAIL.test(email.trim()) ? 'That doesn’t look like an email address.' : null;
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneError = phone.trim() && phoneDigits.length < 10 ? 'Use 10 digits, e.g. 514-555-0123.' : null;
+
+  const save = async () => {
     try {
       await updateClient.mutateAsync({
         id: clientId,
@@ -36,125 +35,27 @@ export function ContactEditSheet({ clientId, client, visible, onClose }: Contact
           phone: phone.trim() || null,
         },
       });
+      toast.success('Contact saved');
       onClose();
-    } catch (error) {
-      console.error('Failed to update client:', error);
+    } catch {
+      toast.error('Couldn’t save contact', 'Check the connection and try again.');
     }
   };
-
-  const handleCancel = () => {
-    // Reset form to original values
-    setFirstName(client.firstName || '');
-    setLastName(client.lastName || '');
-    setEmail(client.email || '');
-    setPhone(client.phone || '');
-    onClose();
-  };
-
-  const footer = (
-    <View className="flex-row gap-md">
-      <Button variant="quiet" onPress={handleCancel}>
-        Cancel
-      </Button>
-      <Button variant="primary" onPress={handleSave} disabled={updateClient.isPending}>
-        {updateClient.isPending ? 'Saving...' : 'Save contact'}
-      </Button>
-    </View>
-  );
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleCancel}
+      onClose={onClose}
       title="Edit contact"
-      footer={footer}
+      primary={{ label: 'Save contact', onPress: save, disabled: !!(emailError || phoneError), loading: updateClient.isPending }}
     >
-      <View className="gap-lg">
-        {/* Name row */}
-        <View className="flex-row gap-md">
-          <View className="flex-1">
-            <FieldLabel>First name</FieldLabel>
-            <TextInput
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="First name"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-            />
-          </View>
-          <View className="flex-1">
-            <FieldLabel>Last name</FieldLabel>
-            <TextInput
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Last name"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-            />
-          </View>
+      <View className="gap-[20px]">
+        <View className="flex-row gap-[16px]">
+          <TextField className="flex-1" label="First name" value={firstName} onChangeText={setFirstName} autoCapitalize="words" textContentType="givenName" />
+          <TextField className="flex-1" label="Last name" value={lastName} onChangeText={setLastName} autoCapitalize="words" textContentType="familyName" />
         </View>
-
-        {/* Email */}
-        <View>
-          <FieldLabel>Email</FieldLabel>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="email@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-          />
-        </View>
-
-        {/* Phone + Language */}
-        <View className="flex-row gap-md">
-          <View className="flex-1">
-            <FieldLabel>Phone</FieldLabel>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="(514) 555-0123"
-              keyboardType="phone-pad"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-            />
-          </View>
-          <View className="flex-1">
-            <FieldLabel>Language</FieldLabel>
-            <View className="flex-row gap-sm">
-              <Chip
-                label="EN"
-                variant={language === 'EN' ? 'on' : 'default'}
-                onPress={() => setLanguage('EN')}
-              />
-              <Chip
-                label="FR"
-                variant={language === 'FR' ? 'on' : 'default'}
-                onPress={() => setLanguage('FR')}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Home store */}
-        <View>
-          <FieldLabel>Home store</FieldLabel>
-          <View className="flex-row gap-sm">
-            <Chip
-              label="Plateau"
-              variant={homeStore === 'Plateau' ? 'on' : 'default'}
-              onPress={() => setHomeStore('Plateau')}
-            />
-            <Chip
-              label="DIX30"
-              variant={homeStore === 'DIX30' ? 'on' : 'default'}
-              onPress={() => setHomeStore('DIX30')}
-            />
-            <Chip
-              label="Online only"
-              variant={homeStore === 'Online' ? 'on' : 'default'}
-              onPress={() => setHomeStore('Online')}
-            />
-          </View>
-        </View>
+        <TextField label="Email" value={email} onChangeText={setEmail} error={emailError} placeholder="name@example.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" />
+        <TextField label="Mobile" value={phone} onChangeText={setPhone} error={phoneError} hint="For pickup and appointment texts." placeholder="514-555-0123" keyboardType="phone-pad" textContentType="telephoneNumber" />
       </View>
     </Sheet>
   );

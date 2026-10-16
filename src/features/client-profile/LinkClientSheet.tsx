@@ -1,6 +1,10 @@
-import { View, Text, TextInput } from 'react-native';
-import { useState } from 'react';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { View, Text } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Sheet, TextField, Field, ChoiceChips, ListRow, Badge } from '@/src/ui/kit';
+import { Avatar } from '@/src/ui/Avatar';
+import { useClients, useCreateClientLink } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
+import type { Client, RelationshipType } from '@/src/api/clients.types';
 
 interface LinkClientSheetProps {
   clientId: string;
@@ -8,145 +12,92 @@ interface LinkClientSheetProps {
   onClose: () => void;
 }
 
-const RELATIONSHIP_TYPES = [
-  'Spouse',
-  'Parent',
-  'Child',
-  'Sibling',
-  'Partner',
-  'Other',
+const TYPES: Array<{ key: RelationshipType; label: string }> = [
+  { key: 'spouse', label: 'Spouse' },
+  { key: 'partner', label: 'Partner' },
+  { key: 'parent', label: 'Parent' },
+  { key: 'child', label: 'Child' },
+  { key: 'sibling', label: 'Sibling' },
+  { key: 'colleague', label: 'Colleague' },
+  { key: 'other', label: 'Other' },
 ];
 
+const nameOf = (c: Client) => [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'No name yet';
+
 export function LinkClientSheet({ clientId, visible, onClose }: LinkClientSheetProps) {
-  // TODO: Integrate with useClients search for real client lookup
-  // TODO: Call POST /api/clients/{id}/links when API endpoint confirmed
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [isLinking, setIsLinking] = useState(false);
+  const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
+  const [picked, setPicked] = useState<Client | null>(null);
+  const [type, setType] = useState<RelationshipType | null>(null);
+  const createLink = useCreateClientLink();
 
-  const handleRelationshipTypePress = (type: string) => {
-    setSelectedType(type === selectedType ? null : type);
-  };
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), 250);
+    return () => clearTimeout(t);
+  }, [query]);
 
-  const handleLink = async () => {
-    if (!selectedClient || !selectedType) return;
-    
-    setIsLinking(true);
+  const { data, isFetching } = useClients(debounced.length >= 2 ? { q: debounced, limit: 6 } : { limit: 0 });
+  const results = debounced.length >= 2 ? (data?.clients ?? []).filter((c) => c.id !== clientId) : [];
+
+  const save = async () => {
+    if (!picked || !type) return;
     try {
-      // TODO: Implement actual linking API call
-      // await linkClients({ clientId, linkedClientId: selectedClient.id, relationshipType: selectedType });
-      
-      console.log('Would link client:', {
-        clientId,
-        linkedClientId: selectedClient.id,
-        relationshipType: selectedType,
-      });
-      
+      await createLink.mutateAsync({ clientId, linkedClientId: picked.id, relationshipType: type });
+      toast.success('Linked', `${nameOf(picked)} added to relationships.`);
       onClose();
-    } catch (error) {
-      console.error('Failed to link clients:', error);
-    } finally {
-      setIsLinking(false);
+    } catch {
+      toast.error('Couldn’t link', 'Check the connection and try again.');
     }
   };
-
-  const handleClose = () => {
-    setSearchQuery('');
-    setSelectedType(null);
-    setSelectedClient(null);
-    onClose();
-  };
-
-  const canLink = selectedClient && selectedType;
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleClose}
+      onClose={onClose}
       title="Link a client"
-      subtitle="Create a household or relationship link"
-      footer={
-        <View className="flex-row gap-md">
-          <Button
-            variant="ghost"
-            onPress={handleClose}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onPress={handleLink}
-            disabled={!canLink || isLinking}
-            className="flex-1"
-          >
-            {isLinking ? 'Linking...' : 'Link client'}
-          </Button>
-        </View>
-      }
+      subtitle="Family or partners who shop together."
+      primary={{ label: 'Link client', onPress: save, disabled: !picked || !type, loading: createLink.isPending }}
     >
-      <View className="gap-lg">
-        <View className="gap-sm">
-          <FieldLabel>Search for client</FieldLabel>
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search by name or email..."
-            className="bg-color-bg-surface border border-color-border rounded-md p-md text-body-lg text-color-text-primary"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          
-          {/* TODO: Replace with actual search results */}
-          {searchQuery.length >= 2 && (
-            <View className="gap-xs">
-              <Text className="text-body-sm text-color-text-muted">
-                Search results (placeholder)
-              </Text>
-              <View className="bg-color-bg-surface border border-color-border rounded-md p-md">
-                <Button
-                  variant="ghost"
-                  onPress={() => setSelectedClient({ id: 'mock-1', name: 'Mock Client' })}
-                  className="justify-start"
-                >
-                  <Text className="text-body-lg text-color-text-primary">
-                    {searchQuery} (Mock Result)
-                  </Text>
-                </Button>
-              </View>
-            </View>
-          )}
-          
-          {selectedClient && (
-            <View className="bg-color-bg-muted rounded-md p-md">
-              <Text className="text-body-lg text-color-text-primary font-medium">
-                Selected: {selectedClient.name}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View className="gap-sm">
-          <FieldLabel>Relationship type</FieldLabel>
-          <View className="flex-row flex-wrap gap-sm">
-            {RELATIONSHIP_TYPES.map((type) => (
-              <Chip
-                key={type}
-                label={type}
-                variant={selectedType === type ? 'on' : 'default'}
-                onPress={() => handleRelationshipTypePress(type)}
+      <View className="gap-[20px]">
+        {picked ? (
+          <Field label="Client">
+            <View className="border border-border rounded-md">
+              <ListRow
+                divider={false}
+                leading={<Avatar size="sm" firstName={picked.firstName ?? ''} lastName={picked.lastName ?? ''} />}
+                title={nameOf(picked)}
+                subtitle={picked.email ?? undefined}
+                trailing={<Text className="text-body-sm font-medium text-text-primary" onPress={() => setPicked(null)} accessibilityRole="button">Change</Text>}
               />
-            ))}
+            </View>
+          </Field>
+        ) : (
+          <View className="gap-[8px]">
+            <TextField label="Find a client" value={query} onChangeText={setQuery} placeholder="Name, email or phone" autoCapitalize="none" autoCorrect={false} autoFocus />
+            {debounced.length >= 2 ? (
+              <View className="border border-border rounded-md overflow-hidden">
+                {results.length === 0 ? (
+                  <Text className="text-body-sm text-text-tertiary px-[16px] py-[14px]">{isFetching ? 'Searching…' : 'No matching clients.'}</Text>
+                ) : (
+                  results.map((c, i) => (
+                    <ListRow
+                      key={c.id}
+                      divider={i > 0}
+                      onPress={() => setPicked(c)}
+                      leading={<Avatar size="sm" firstName={c.firstName ?? ''} lastName={c.lastName ?? ''} />}
+                      title={nameOf(c)}
+                      subtitle={c.email ?? undefined}
+                      trailing={c.tags?.some((t) => t.startsWith('member-')) ? <Badge tone="info">{c.tags.find((t) => t.startsWith('member-'))!.replace('member-', '').toUpperCase()}</Badge> : undefined}
+                    />
+                  ))
+                )}
+              </View>
+            ) : null}
           </View>
-        </View>
-
-        {/* TODO: Remove this placeholder text when API is integrated */}
-        <View className="bg-color-bg-muted rounded-md p-md">
-          <Text className="text-body-sm text-color-text-secondary">
-            Note: This is a placeholder UI. Client search and linking API integration is pending.
-          </Text>
-        </View>
+        )}
+        <Field label="Relationship">
+          <ChoiceChips options={TYPES} value={type} onChange={setType} />
+        </Field>
       </View>
     </Sheet>
   );

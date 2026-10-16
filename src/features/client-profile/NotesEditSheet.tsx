@@ -1,7 +1,8 @@
+import { View, Text } from 'react-native';
 import { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Sheet, TextField, Field, ChoiceChips } from '@/src/ui/kit';
 import { useUpdateEnrichment } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
 
 interface NotesEditSheetProps {
   clientId: string;
@@ -10,89 +11,41 @@ interface NotesEditSheetProps {
   onClose: () => void;
 }
 
+const QUICK = ['Follow up', 'Price sensitive', 'Bring partner', 'Size up'] as const;
+
 export function NotesEditSheet({ clientId, currentNotes, visible, onClose }: NotesEditSheetProps) {
   const [notes, setNotes] = useState(currentNotes || '');
-
   const updateEnrichment = useUpdateEnrichment();
 
-  const quickTags = ['Follow up', 'Price sensitive', 'Bring spouse', 'Size up'];
-
-  const handleQuickTag = (tag: string) => {
-    const currentText = notes.trim();
-    const newText = currentText ? `${currentText}\n\n${tag}` : tag;
-    setNotes(newText);
+  const append = (tag: string | null) => {
+    if (!tag) return;
+    setNotes((n) => (n.trim() ? `${n.trim()}\n${tag}` : tag));
   };
 
-  const handleSave = async () => {
+  const save = async () => {
     try {
-      await updateEnrichment.mutateAsync({
-        clientId,
-        data: {
-          internalNotes: notes.trim() || null,
-        },
-      });
+      await updateEnrichment.mutateAsync({ clientId, data: { internalNotes: notes.trim() || null } });
+      toast.success('Notes saved');
       onClose();
-    } catch (error) {
-      console.error('Failed to update notes:', error);
+    } catch {
+      toast.error('Couldn’t save notes', 'Check the connection and try again.');
     }
   };
-
-  const handleCancel = () => {
-    // Reset to original notes
-    setNotes(currentNotes || '');
-    onClose();
-  };
-
-  const footer = (
-    <View className="flex-row gap-md">
-      <Button variant="quiet" onPress={handleCancel}>
-        Cancel
-      </Button>
-      <Button variant="primary" onPress={handleSave} disabled={updateEnrichment.isPending}>
-        {updateEnrichment.isPending ? 'Saving...' : 'Save notes'}
-      </Button>
-    </View>
-  );
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleCancel}
+      onClose={onClose}
       title="Internal notes"
-      subtitle="Staff only — never shown in client view"
-      footer={footer}
+      subtitle="Staff only. Never shown in client view."
+      primary={{ label: 'Save notes', onPress: save, disabled: notes === (currentNotes || ''), loading: updateEnrichment.isPending }}
     >
-      <View className="gap-lg">
-        {/* Notes textarea */}
-        <View>
-          <FieldLabel>Notes</FieldLabel>
-          <TextInput
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Add internal notes about this client..."
-            multiline
-            textAlignVertical="top"
-            className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[88px] text-body-md text-color-text-primary"
-          />
-        </View>
-
-        {/* Quick tags */}
-        <View>
-          <FieldLabel>Quick tags</FieldLabel>
-          <Text className="text-body-sm text-color-text-secondary mb-sm">
-            Tap to append to notes
-          </Text>
-          <View className="flex-row flex-wrap gap-sm">
-            {quickTags.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                variant="default"
-                onPress={() => handleQuickTag(tag)}
-              />
-            ))}
-          </View>
-        </View>
+      <View className="gap-[20px]">
+        <TextField label="Notes" value={notes} onChangeText={setNotes} placeholder="Anything the next person serving them should know" multiline autoFocus />
+        <Field label="Add a line">
+          <ChoiceChips options={QUICK} value={null} onChange={append} />
+          <Text className="text-body-sm text-text-tertiary">Tap to append to the notes.</Text>
+        </Field>
       </View>
     </Sheet>
   );

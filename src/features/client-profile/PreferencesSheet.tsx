@@ -1,7 +1,9 @@
+import { View, Text } from 'react-native';
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, Alert } from 'react-native';
-import { Sheet, Chip, FieldLabel, Button } from '@/src/ui';
+import { Plus } from 'lucide-react-native';
+import { Sheet, TextField, Field, ChoiceChips, Button } from '@/src/ui/kit';
 import { useClientPreferences, useUpdatePreferences } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
 import type { StatedPreferences } from '@/src/api/clients.types';
 
 interface PreferencesSheetProps {
@@ -10,161 +12,77 @@ interface PreferencesSheetProps {
   onClose: () => void;
 }
 
-const PREDEFINED_OPTIONS = {
-  shapes: ['Rectangular', 'Square', 'Round', 'Cat-eye', 'Aviator', 'Geometric'],
-  materials: ['Acetate', 'Titanium', 'Steel', 'Combination'],
-  colours: ['Tortoise', 'Black', 'Crystal', 'Bold colour', 'Metallic'],
-  brandsAdmired: ['CHIMI', 'Kaleos', 'Jimmy Fairly', 'Lexxola'],
-};
+type ListKey = keyof Omit<StatedPreferences, 'notes'>;
+
+const GROUPS: Array<{ key: ListKey; label: string; options: string[] }> = [
+  { key: 'shapes', label: 'Shapes', options: ['Rectangular', 'Square', 'Round', 'Cat-eye', 'Aviator', 'Geometric'] },
+  { key: 'colours', label: 'Colours', options: ['Tortoise', 'Black', 'Crystal', 'Bold colour', 'Metallic'] },
+  { key: 'materials', label: 'Materials', options: ['Acetate', 'Titanium', 'Steel', 'Combination'] },
+  { key: 'brandsAdmired', label: 'Brands they like', options: [] },
+  { key: 'avoid', label: 'Avoid', options: ['Heavy frames', 'Thick rims', 'Bright colours', 'Oversized'] },
+];
+
+const EMPTY: StatedPreferences = { shapes: [], materials: [], colours: [], avoid: [], brandsAdmired: [], notes: '' };
+
+function Group({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) {
+  const [draft, setDraft] = useState('');
+  const [adding, setAdding] = useState(false);
+  const all = [...new Set([...options, ...value])];
+  const add = () => {
+    const t = draft.trim();
+    if (t && !value.includes(t)) onChange([...value, t]);
+    setDraft('');
+    setAdding(false);
+  };
+  return (
+    <Field label={label}>
+      <View className="flex-row flex-wrap items-center gap-[8px]">
+        {all.length ? <ChoiceChips multiple options={all} value={value} onChange={onChange} /> : null}
+        {adding ? null : <Button label="Add" icon={Plus} size="sm" variant="ghost" onPress={() => setAdding(true)} />}
+      </View>
+      {adding ? (
+        <View className="flex-row items-end gap-[8px]">
+          <TextField className="flex-1" label={`New ${label.toLowerCase()}`} value={draft} onChangeText={setDraft} onSubmitEditing={add} returnKeyType="done" autoFocus />
+          <Button label="Add" onPress={add} disabled={!draft.trim()} />
+        </View>
+      ) : null}
+    </Field>
+  );
+}
 
 export function PreferencesSheet({ clientId, visible, onClose }: PreferencesSheetProps) {
   const { data: preferences, isLoading } = useClientPreferences(clientId);
   const updatePreferences = useUpdatePreferences();
+  const [form, setForm] = useState<StatedPreferences>(EMPTY);
 
-  const [formData, setFormData] = useState<StatedPreferences>({
-    shapes: [],
-    materials: [],
-    colours: [],
-    avoid: [],
-    brandsAdmired: [],
-    notes: '',
-  });
-
-  // Pre-fill from API on mount or when preferences change
   useEffect(() => {
-    if (preferences?.stated) {
-      setFormData(preferences.stated);
-    }
+    if (preferences?.stated) setForm({ ...EMPTY, ...preferences.stated });
   }, [preferences]);
 
-  const toggleSelection = (category: keyof Omit<StatedPreferences, 'notes'>, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [category]: prev[category].includes(value)
-        ? prev[category].filter(item => item !== value)
-        : [...prev[category], value],
-    }));
-  };
-
-  const addCustomOption = (category: keyof Omit<StatedPreferences, 'notes'>) => {
-    Alert.prompt(
-      'Add Custom Option',
-      `Enter a custom ${category.slice(0, -1)}:`,
-      (text) => {
-        if (text && text.trim() && !formData[category].includes(text.trim())) {
-          setFormData(prev => ({
-            ...prev,
-            [category]: [...prev[category], text.trim()],
-          }));
-        }
-      }
-    );
-  };
-
-  const handleSave = async () => {
+  const save = async () => {
     try {
-      await updatePreferences.mutateAsync({
-        clientId,
-        data: formData,
-      });
+      await updatePreferences.mutateAsync({ clientId, data: form });
+      toast.success('Preferences saved');
       onClose();
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save preferences. Please try again.');
+    } catch {
+      toast.error('Couldn’t save preferences', 'Check the connection and try again.');
     }
   };
 
-  const renderChipGroup = (
-    category: keyof Omit<StatedPreferences, 'notes'>,
-    title: string,
-    options: string[],
-    isAvoidGroup = false
-  ) => (
-    <View className="py-md border-b border-color-border">
-      <Text className="text-body-md font-medium text-color-text-primary">{title}</Text>
-      <View className="flex-row flex-wrap gap-sm mt-[10px]">
-        {/* Predefined options */}
-        {options.map(option => (
-          <Chip
-            key={option}
-            label={option}
-            variant={formData[category].includes(option) ? (isAvoidGroup ? 'neg' : 'on') : 'default'}
-            onPress={() => toggleSelection(category, option)}
-          />
-        ))}
-        
-        {/* Custom options not in predefined list */}
-        {formData[category]
-          .filter(item => !options.includes(item))
-          .map(customOption => (
-            <Chip
-              key={customOption}
-              label={customOption}
-              variant={isAvoidGroup ? 'neg' : 'on'}
-              onPress={() => toggleSelection(category, customOption)}
-            />
-          ))}
-        
-        {/* Add custom option */}
-        <Chip
-          label={isAvoidGroup ? '+ Add' : 'Other'}
-          variant="add"
-          onPress={() => addCustomOption(category)}
-        />
-      </View>
-    </View>
-  );
-
   return (
-    <Sheet visible={visible} onClose={onClose} title="Edit Preferences">
-      <ScrollView className="flex-1 px-lg">
-        {/* Shapes */}
-        {renderChipGroup('shapes', 'Shapes', PREDEFINED_OPTIONS.shapes)}
-        
-        {/* Materials */}
-        {renderChipGroup('materials', 'Materials', PREDEFINED_OPTIONS.materials)}
-        
-        {/* Colours */}
-        {renderChipGroup('colours', 'Colours', PREDEFINED_OPTIONS.colours)}
-        
-        {/* Brands Admired */}
-        {renderChipGroup('brandsAdmired', 'Brands admired', PREDEFINED_OPTIONS.brandsAdmired)}
-        
-        {/* Avoid */}
-        {renderChipGroup('avoid', 'Avoid', [], true)}
-        
-        {/* Notes */}
-        <View className="py-md">
-          <FieldLabel>Notes</FieldLabel>
-          <TextInput
-            className="bg-color-bg-surface border border-color-border rounded-md p-md text-body-lg text-color-text-primary mt-sm"
-            style={{ minHeight: 80 }}
-            multiline
-            placeholder="Additional preferences or notes..."
-            placeholderTextColor="#737373"
-            value={formData.notes}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, notes: text }))}
-            textAlignVertical="top"
-          />
-        </View>
-      </ScrollView>
-      
-      {/* Footer Actions */}
-      <View className="flex-row gap-md p-lg border-t border-color-border">
-        <Button
-          variant="ghost"
-          onPress={onClose}
-          className="flex-1"
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          onPress={handleSave}
-          loading={updatePreferences.isPending}
-          className="flex-1"
-        >
-          Save preferences
-        </Button>
+    <Sheet
+      visible={visible}
+      onClose={onClose}
+      title="Frame preferences"
+      subtitle="What they gravitate to, and what to steer away from."
+      primary={{ label: 'Save preferences', onPress: save, disabled: isLoading, loading: updatePreferences.isPending }}
+    >
+      <View className="gap-[24px]">
+        {GROUPS.map((g) => (
+          <Group key={g.key} label={g.label} options={g.options} value={form[g.key]} onChange={(v) => setForm((f) => ({ ...f, [g.key]: v }))} />
+        ))}
+        <TextField label="Notes" value={form.notes} onChangeText={(notes) => setForm((f) => ({ ...f, notes }))} placeholder="e.g. Loves the Marais in crimson, finds metal too cold" multiline />
+        {isLoading ? <Text className="text-body-sm text-text-tertiary">Loading saved preferences…</Text> : null}
       </View>
     </Sheet>
   );

@@ -1,7 +1,8 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View } from 'react-native';
 import { useState, useEffect } from 'react';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Sheet, Field, ChoiceChips } from '@/src/ui/kit';
 import { useMultiPairQuestionnaire, useSaveQuestionnaire } from '@/src/api/useMultiPair';
+import { toast } from '@/src/ui/useToastStore';
 import type { LifestyleResponses } from '@/src/api/multi-pair.types';
 
 interface LifestyleQuestionnaireSheetProps {
@@ -10,287 +11,86 @@ interface LifestyleQuestionnaireSheetProps {
   onClose: () => void;
 }
 
-export function LifestyleQuestionnaireSheet({ 
-  clientId, 
-  visible, 
-  onClose 
-}: LifestyleQuestionnaireSheetProps) {
-  const [mode, setMode] = useState<'staff' | 'client'>('staff');
-  const [responses, setResponses] = useState<LifestyleResponses>({});
-  
-  const { data: existingQuestionnaires } = useMultiPairQuestionnaire(clientId);
-  const saveQuestionnaireMutation = useSaveQuestionnaire();
-  const existingData = existingQuestionnaires?.[0] ?? null;
+type Opt<K extends string> = Array<{ key: K; label: string }>;
 
-  // Load existing data when available
+const WORK: Opt<NonNullable<LifestyleResponses['workEnvironment']>> = [
+  { key: 'office', label: 'Office' }, { key: 'mixed', label: 'Mixed' }, { key: 'outdoor', label: 'Outdoors' }, { key: 'industrial', label: 'Workshop / site' },
+];
+const SCREENS: Opt<NonNullable<LifestyleResponses['screenTime']>> = [
+  { key: 'minimal', label: 'Under 2h' }, { key: 'moderate', label: '2–5h' }, { key: 'heavy', label: '5–8h' }, { key: 'extreme', label: 'Over 8h' },
+];
+const OUTDOORS: Opt<NonNullable<LifestyleResponses['outdoorHours']>> = [
+  { key: 'minimal', label: 'Rarely' }, { key: 'moderate', label: 'Weekends' }, { key: 'heavy', label: 'Every day' },
+];
+const DRIVING: Opt<NonNullable<LifestyleResponses['driving']>> = [
+  { key: 'none', label: 'Rarely' }, { key: 'occasional', label: 'Sometimes' }, { key: 'daily', label: 'Every day' }, { key: 'professional', label: 'For work' },
+];
+const GLARE: Opt<NonNullable<LifestyleResponses['glareSensitivity']>> = [
+  { key: 'none', label: 'Not at all' }, { key: 'mild', label: 'A little' }, { key: 'moderate', label: 'Somewhat' }, { key: 'severe', label: 'Very' },
+];
+const CONCERN: Opt<NonNullable<LifestyleResponses['primaryConcern']>> = [
+  { key: 'vision', label: 'Seeing clearly' }, { key: 'style', label: 'Style' }, { key: 'protection', label: 'Protecting their eyes' }, { key: 'convenience', label: 'Convenience' },
+];
+const SPORTS = ['Running', 'Cycling', 'Skiing', 'Golf', 'Racquet sports', 'Water sports', 'Gym'];
+const HOBBIES = ['Reading', 'Crafts', 'Music', 'Gaming', 'Photography', 'Travel'];
+const PAIRS = [{ key: '0', label: 'None' }, { key: '1', label: '1' }, { key: '2', label: '2' }, { key: '3', label: '3 or more' }];
+
+export function LifestyleQuestionnaireSheet({ clientId, visible, onClose }: LifestyleQuestionnaireSheetProps) {
+  const [r, setR] = useState<LifestyleResponses>({});
+  const { data: existing } = useMultiPairQuestionnaire(clientId);
+  const save = useSaveQuestionnaire();
+  const last = existing?.[0];
+
   useEffect(() => {
-    if (existingData?.responses) {
-      setResponses(existingData.responses);
-    }
-  }, [existingData]);
+    if (last?.responses) setR(last.responses);
+  }, [last]);
 
-  const updateResponse = <T extends keyof LifestyleResponses>(
-    field: T,
-    value: LifestyleResponses[T]
-  ) => {
-    setResponses(prev => ({ ...prev, [field]: value }));
-  };
+  const set = <K extends keyof LifestyleResponses>(k: K) => (v: LifestyleResponses[K] | null) =>
+    setR((prev) => ({ ...prev, [k]: v ?? undefined }));
 
-  const updateMultiSelectResponse = (field: 'sports' | 'hobbies', value: string) => {
-    setResponses(prev => {
-      const current = prev[field] || [];
-      const updated = current.includes(value)
-        ? current.filter(item => item !== value)
-        : [...current, value];
-      return { ...prev, [field]: updated };
-    });
-  };
+  const answered = [r.workEnvironment, r.screenTime, r.outdoorHours, r.driving, r.glareSensitivity, r.primaryConcern, r.sports?.length, r.hobbies?.length, r.existingPairs != null]
+    .filter(Boolean).length;
 
-  const handleSave = async () => {
+  const submit = async () => {
     try {
-      await saveQuestionnaireMutation.mutateAsync({
-        customerId: clientId,
-        responses
-      });
+      await save.mutateAsync({ customerId: clientId, responses: r });
+      toast.success('Lifestyle saved');
       onClose();
-    } catch (error) {
-      console.error('Failed to save questionnaire:', error);
+    } catch {
+      toast.error('Couldn’t save', 'Check the connection and try again. Answers are still here.');
     }
   };
-
-  const countAnswered = () => {
-    let count = 0;
-    if (responses.sports?.length) count++;
-    if (responses.screenTime) count++;
-    if (responses.outdoorHours) count++;
-    if (responses.driving) count++;
-    if (responses.glareSensitivity) count++;
-    if (responses.hobbies?.length) count++;
-    if (responses.primaryConcern) count++;
-    return count;
-  };
-
-  const primaryUseOptions = [
-    'Office/screens',
-    'Driving', 
-    'Reading',
-    'Sport/outdoors',
-    'All-day wear',
-    'Social/evening'
-  ];
-
-  const screenTimeOptions = [
-    { label: 'Under 2h', value: 'minimal' as const },
-    { label: '2-5h', value: 'moderate' as const },
-    { label: '5-8h', value: 'heavy' as const },
-    { label: 'Over 8h', value: 'extreme' as const }
-  ];
-
-  const outdoorOptions = [
-    { label: 'Rarely', value: 'minimal' as const },
-    { label: 'Weekends', value: 'moderate' as const },
-    { label: 'Daily', value: 'heavy' as const },
-    { label: 'Works outdoors', value: 'heavy' as const }
-  ];
-
-  const drivingOptions = [
-    { label: 'Daily commute', value: 'daily' as const },
-    { label: 'Few times/week', value: 'occasional' as const },
-    { label: 'Weekends only', value: 'occasional' as const },
-    { label: 'Rarely', value: 'none' as const }
-  ];
-
-  const sensitivityOptions = [
-    { label: 'Very sensitive', value: 'severe' as const },
-    { label: 'Somewhat', value: 'moderate' as const },
-    { label: 'Not particularly', value: 'mild' as const },
-    { label: 'Only in bright sun', value: 'none' as const }
-  ];
-
-  const styleOptions = [
-    'Bold/statement',
-    'Classic/timeless',
-    'Sporty/technical',
-    'Lightweight/minimal',
-    'Trend-led'
-  ];
-
-  const budgetOptions = [
-    { label: 'Under $200', value: 'vision' as const },
-    { label: '$200-$400', value: 'style' as const },
-    { label: '$400-$600', value: 'protection' as const },
-    { label: 'Over $600', value: 'convenience' as const },
-    { label: 'Insurance covers it', value: 'convenience' as const }
-  ];
-
-  const headerRight = (
-    <View className="flex-row gap-xs">
-      <Chip
-        label="Staff — one page"
-        variant={mode === 'staff' ? 'on' : 'default'}
-        onPress={() => setMode('staff')}
-      />
-      <Chip
-        label="Hand to client — guided"
-        variant={mode === 'client' ? 'on' : 'default'}
-        onPress={() => setMode('client')}
-      />
-    </View>
-  );
 
   return (
     <Sheet
       visible={visible}
       onClose={onClose}
-      title="Lifestyle"
-      subtitle={clientId}
-      headerRight={headerRight}
       wide
+      title="Lifestyle"
+      subtitle="Two minutes. Helps suggest the right lenses and a second pair."
+      footerNote={`${answered} of 9 answered`}
+      primary={{ label: 'Save lifestyle', onPress: submit, disabled: answered === 0, loading: save.isPending }}
     >
-      <ScrollView className="flex-1">
-        {/* Question 1: Primary Use */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            What do they primarily use their glasses for?
-          </Text>
-          <Text className="text-body-sm text-color-text-muted">
-            Select all that apply
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {primaryUseOptions.map(option => (
-              <Chip
-                key={option}
-                label={option}
-                variant={responses.sports?.includes(option) ? 'on' : 'default'}
-                onPress={() => updateMultiSelectResponse('sports', option)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 2: Screen Time */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            Daily screen time
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {screenTimeOptions.map(option => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                variant={responses.screenTime === option.value ? 'on' : 'default'}
-                onPress={() => updateResponse('screenTime', option.value)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 3: Outdoors */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            Time spent outdoors
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {outdoorOptions.map(option => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                variant={responses.outdoorHours === option.value ? 'on' : 'default'}
-                onPress={() => updateResponse('outdoorHours', option.value)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 4: Driving */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            How often do they drive?
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {drivingOptions.map(option => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                variant={responses.driving === option.value ? 'on' : 'default'}
-                onPress={() => updateResponse('driving', option.value)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 5: Light Sensitivity */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            Light sensitivity
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {sensitivityOptions.map(option => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                variant={responses.glareSensitivity === option.value ? 'on' : 'default'}
-                onPress={() => updateResponse('glareSensitivity', option.value)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 6: Frame Styles */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            Frame styles for a second pair
-          </Text>
-          <Text className="text-body-sm text-color-text-muted">
-            Select all that apply
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {styleOptions.map(option => (
-              <Chip
-                key={option}
-                label={option}
-                variant={responses.hobbies?.includes(option) ? 'on' : 'default'}
-                onPress={() => updateMultiSelectResponse('hobbies', option)}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Question 7: Budget */}
-        <View className="py-md border-b border-color-bg-muted">
-          <Text className="text-body-md font-medium text-color-text-primary">
-            Comfortable budget for additional pair
-          </Text>
-          <View className="flex-row flex-wrap gap-sm mt-[10px]">
-            {budgetOptions.map(option => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                variant={responses.primaryConcern === option.value ? 'on' : 'default'}
-                onPress={() => updateResponse('primaryConcern', option.value)}
-              />
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-
-      {/* Footer */}
-      <View className="flex-row justify-between items-center p-lg border-t border-color-border">
-        <Text className="text-body-sm text-color-text-muted">
-          {countAnswered()} of 7 answered · saves as one record
-        </Text>
-        <View className="flex-row gap-md">
-          <Button variant="ghost" onPress={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onPress={handleSave}
-            loading={saveQuestionnaireMutation.isPending}
-          >
-            Save lifestyle
-          </Button>
-        </View>
+      <View className="gap-[24px]">
+        <Field label="Where do they work?"><ChoiceChips options={WORK} value={r.workEnvironment ?? null} onChange={set('workEnvironment')} /></Field>
+        <Field label="Screen time a day"><ChoiceChips options={SCREENS} value={r.screenTime ?? null} onChange={set('screenTime')} /></Field>
+        <Field label="Time outdoors"><ChoiceChips options={OUTDOORS} value={r.outdoorHours ?? null} onChange={set('outdoorHours')} /></Field>
+        <Field label="Driving"><ChoiceChips options={DRIVING} value={r.driving ?? null} onChange={set('driving')} /></Field>
+        <Field label="Bothered by glare or bright light"><ChoiceChips options={GLARE} value={r.glareSensitivity ?? null} onChange={set('glareSensitivity')} /></Field>
+        <Field label="Sports" hint="Select all that apply.">
+          <ChoiceChips multiple options={[...new Set([...SPORTS, ...(r.sports ?? [])])]} value={r.sports ?? []} onChange={set('sports')} />
+        </Field>
+        <Field label="Hobbies" hint="Select all that apply.">
+          <ChoiceChips multiple options={[...new Set([...HOBBIES, ...(r.hobbies ?? [])])]} value={r.hobbies ?? []} onChange={set('hobbies')} />
+        </Field>
+        <Field label="What matters most in their glasses?"><ChoiceChips options={CONCERN} value={r.primaryConcern ?? null} onChange={set('primaryConcern')} /></Field>
+        <Field label="Pairs they wear today">
+          <ChoiceChips
+            options={PAIRS}
+            value={r.existingPairs == null ? null : String(Math.min(3, r.existingPairs))}
+            onChange={(k: string | null) => setR((p) => ({ ...p, existingPairs: k == null ? undefined : Number(k) }))}
+          />
+        </Field>
       </View>
     </Sheet>
   );

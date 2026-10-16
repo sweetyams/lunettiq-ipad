@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
 import { useClientEnrichment } from '@/src/api/useClients';
+import { useInteractions } from '@/src/api/useInteractions';
 import { Badge, KeyValue, Section, formatDate } from '@/src/ui/kit';
 import type { Prescription } from '@/src/api/prescriptions.types';
 import { formatDiopter, formatPlain, rxStatus, rxTypeLabel } from './rxFormat';
@@ -56,6 +57,10 @@ function RxEntry({ rx, first }: { rx: Prescription; first: boolean }) {
 export function ClinicalTab({ clientId, onAddPrescription, onEditFit, onAddClinicalNote }: ClinicalTabProps) {
   const { data: prescriptions = [], isLoading: rxLoading } = usePrescriptions({ clientId });
   const { data: enrichment } = useClientEnrichment(clientId);
+  const { data: history } = useInteractions(clientId);
+  const clinicalNotes = (history?.interactions ?? [])
+    .filter((i) => (i.metadata as Record<string, unknown> | null)?.category === 'clinical')
+    .sort((a, b) => Date.parse(b.occurredAt) - Date.parse(a.occurredAt));
 
   const sorted = prescriptions; // newest first, from the hook
   const frame = enrichment?.frameWidthMm;
@@ -77,8 +82,20 @@ export function ClinicalTab({ clientId, onAddPrescription, onEditFit, onAddClini
           )}
         </Section>
 
-        <Section title="Clinical notes" action={{ label: 'Add', onPress: onAddClinicalNote }}>
-          <Text className="text-body-sm text-text-tertiary">Staff only. None yet.</Text>
+        <Section title="Clinical notes" count={clinicalNotes.length || undefined} padded={clinicalNotes.length === 0} action={{ label: 'Add', onPress: onAddClinicalNote }}>
+          {clinicalNotes.length === 0 ? (
+            <Text className="text-body-sm text-text-tertiary">Staff only. None yet.</Text>
+          ) : (
+            clinicalNotes.map((n, i) => (
+              <View key={n.id} className={`px-[20px] py-[14px] gap-[4px] ${i > 0 ? 'border-t border-border' : ''}`}>
+                <View className="flex-row items-baseline justify-between gap-[12px]">
+                  <Text className="text-body-md font-medium text-text-primary flex-shrink" numberOfLines={1}>{n.subject || 'Clinical note'}</Text>
+                  <Text className="text-body-sm text-text-tertiary">{formatDate(n.occurredAt)}</Text>
+                </View>
+                {n.body ? <Text className="text-body-md text-text-secondary">{n.body}</Text> : null}
+              </View>
+            ))
+          )}
         </Section>
       </View>
 
@@ -88,7 +105,7 @@ export function ClinicalTab({ clientId, onAddPrescription, onEditFit, onAddClini
             mono
             rows={[
               { label: 'Face shape', value: enrichment?.faceShape },
-              { label: 'Frame width', value: frame ? `${frame} mm` : null },
+              { label: 'Lens width', value: frame ? `${frame} mm` : null },
               { label: 'Bridge width', value: bridge ? `${bridge} mm` : null },
             ]}
           />

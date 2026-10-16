@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import type { Prescription, CreatePrescriptionPayload, UpdatePrescriptionPayload } from './prescriptions.types';
-import { sortPrescriptions, toPrescription, type FoundryPrescriptionRow } from './prescriptionsMapping';
+import { sortPrescriptions, toFoundryPrescriptionInput, toPrescription, type FoundryPrescriptionRow } from './prescriptionsMapping';
 
 /**
  * A client's prescriptions, newest first. Uses the client-scoped route:
@@ -32,8 +32,8 @@ export function usePrescription(id: string) {
 export function useCreatePrescription() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreatePrescriptionPayload) =>
-      api.post<Prescription>('/api/admin/prescriptions', payload),
+    mutationFn: async (payload: CreatePrescriptionPayload) =>
+      toPrescription(await api.post<FoundryPrescriptionRow>('/api/admin/prescriptions', toFoundryPrescriptionInput(payload))),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prescriptions'] });
     },

@@ -1,7 +1,8 @@
-import { View, Text, TextInput } from 'react-native';
+import { View } from 'react-native';
 import { useState } from 'react';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Sheet, TextField, Field, ChoiceChips } from '@/src/ui/kit';
 import { useCreateInteraction } from '@/src/api/useInteractions';
+import { toast } from '@/src/ui/useToastStore';
 
 interface AddNoteSheetProps {
   clientId: string;
@@ -9,119 +10,45 @@ interface AddNoteSheetProps {
   onClose: () => void;
 }
 
-const QUICK_TAGS = [
-  'Follow up needed',
-  'Price sensitive',
-  'Discussed insurance',
-  'Rx follow up',
-];
+const QUICK_TAGS = ['Follow up needed', 'Price sensitive', 'Discussed insurance', 'Rx follow up'] as const;
 
 export function AddNoteSheet({ clientId, visible, onClose }: AddNoteSheetProps) {
+  const [tags, setTags] = useState<string[]>([]);
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  
   const createInteraction = useCreateInteraction();
 
-  const handleTagPress = (tag: string) => {
-    if (subject.includes(tag)) return;
-    
-    const newSubject = subject ? `${subject}, ${tag}` : tag;
-    setSubject(newSubject);
-  };
-
-  const handleSave = async () => {
-    if (!body.trim()) return;
-    
-    setIsSaving(true);
+  const save = async () => {
     try {
       await createInteraction.mutateAsync({
         clientId,
         type: 'note',
         direction: 'internal',
-        subject: subject.trim() || undefined,
+        subject: [subject.trim(), ...tags].filter(Boolean).join(' · ') || undefined,
         body: body.trim(),
+        metadata: tags.length ? { tags } : undefined,
       });
-      
-      // Reset form
-      setSubject('');
-      setBody('');
+      toast.success('Note saved', 'It’s on the client’s history.');
       onClose();
-    } catch (error) {
-      console.error('Failed to create note:', error);
-    } finally {
-      setIsSaving(false);
+    } catch {
+      toast.error('Couldn’t save the note', 'Check the connection and try again. Your text is still here.');
     }
-  };
-
-  const handleClose = () => {
-    setSubject('');
-    setBody('');
-    onClose();
   };
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleClose}
+      onClose={onClose}
       title="Add note"
-      footer={
-        <View className="flex-row gap-md">
-          <Button
-            variant="ghost"
-            onPress={handleClose}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onPress={handleSave}
-            disabled={!body.trim() || isSaving}
-            className="flex-1"
-          >
-            {isSaving ? 'Saving...' : 'Save note'}
-          </Button>
-        </View>
-      }
+      subtitle="Staff only. Appears in the client’s history."
+      primary={{ label: 'Save note', onPress: save, disabled: !body.trim(), loading: createInteraction.isPending }}
     >
-      <View className="gap-lg">
-        <View className="gap-sm">
-          <FieldLabel>Subject (optional)</FieldLabel>
-          <TextInput
-            value={subject}
-            onChangeText={setSubject}
-            placeholder="Brief summary..."
-            className="bg-color-bg-surface border border-color-border rounded-md p-md text-body-lg text-color-text-primary"
-            multiline={false}
-          />
-        </View>
-
-        <View className="gap-sm">
-          <FieldLabel>Quick tags</FieldLabel>
-          <View className="flex-row flex-wrap gap-sm">
-            {QUICK_TAGS.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                variant={subject.includes(tag) ? 'on' : 'default'}
-                onPress={() => handleTagPress(tag)}
-              />
-            ))}
-          </View>
-        </View>
-
-        <View className="gap-sm">
-          <FieldLabel required>Note</FieldLabel>
-          <TextInput
-            value={body}
-            onChangeText={setBody}
-            placeholder="Enter your note here..."
-            className="bg-color-bg-surface border border-color-border rounded-md p-md text-body-lg text-color-text-primary min-h-[120px]"
-            multiline
-            textAlignVertical="top"
-          />
-        </View>
+      <View className="gap-[20px]">
+        <TextField label="Note" required value={body} onChangeText={setBody} placeholder="What happened, what they liked, what to do next" multiline autoFocus />
+        <Field label="Tags">
+          <ChoiceChips multiple options={QUICK_TAGS} value={tags} onChange={setTags} />
+        </Field>
+        <TextField label="Subject" hint="Optional. A short line for the timeline." value={subject} onChangeText={setSubject} placeholder="e.g. Second pair for driving" />
       </View>
     </Sheet>
   );

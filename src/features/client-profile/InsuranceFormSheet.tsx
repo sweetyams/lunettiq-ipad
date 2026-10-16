@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView } from 'react-native';
-import { Sheet, FieldLabel, Chip, Button, Card, CardBody, RowKV } from '@/src/ui';
+import { View } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Sheet, TextField, Field, ChoiceChips, KeyValue, formatDollars, formatDate } from '@/src/ui/kit';
 import { useInsuranceProfile, useSaveInsurance } from '@/src/api/useMultiPair';
-import type { SaveInsurancePayload } from '@/src/api/multi-pair.types';
+import { toast } from '@/src/ui/useToastStore';
 
 interface InsuranceFormSheetProps {
   clientId: string;
@@ -10,234 +10,99 @@ interface InsuranceFormSheetProps {
   onClose: () => void;
 }
 
+const PROVIDERS = ['Desjardins', 'Sun Life', 'Manulife', 'Canada Life', 'Blue Cross', 'Green Shield'];
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
 export function InsuranceFormSheet({ clientId, visible, onClose }: InsuranceFormSheetProps) {
-  const { data: existingProfile, isLoading } = useInsuranceProfile(clientId);
+  const { data: existing, isLoading } = useInsuranceProfile(clientId);
   const saveInsurance = useSaveInsurance();
 
-  // Form state
   const [provider, setProvider] = useState('');
   const [policyNumber, setPolicyNumber] = useState('');
-  const [coverageAmount, setCoverageAmount] = useState('');
-  const [pairsAllowed, setPairsAllowed] = useState('');
-  const [pairsUsed, setPairsUsed] = useState('');
-  const [renewalDate, setRenewalDate] = useState('');
+  const [coverage, setCoverage] = useState('');
+  const [pairsAllowed, setPairsAllowed] = useState('1');
+  const [pairsUsed, setPairsUsed] = useState('0');
+  const [renewal, setRenewal] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Pre-fill form when existing profile loads
   useEffect(() => {
-    if (existingProfile) {
-      setProvider(existingProfile.provider || '');
-      setPolicyNumber(existingProfile.policyNumber || '');
-      setCoverageAmount(existingProfile.coverageAmount?.toString() || '');
-      setPairsAllowed(existingProfile.pairsAllowed.toString());
-      setPairsUsed(existingProfile.pairsUsed.toString());
-      setRenewalDate(existingProfile.renewalDate || '');
-      setNotes(existingProfile.notes || '');
-    }
-  }, [existingProfile]);
+    if (!existing?.provider) return;
+    setProvider(existing.provider);
+    setPolicyNumber(existing.policyNumber ?? '');
+    setCoverage(existing.coverageAmount != null ? String(existing.coverageAmount) : '');
+    setPairsAllowed(String(existing.pairsAllowed));
+    setPairsUsed(String(existing.pairsUsed));
+    setRenewal(existing.renewalDate?.slice(0, 10) ?? '');
+    setNotes(existing.notes ?? '');
+  }, [existing]);
 
-  // Reset form when sheet closes
-  useEffect(() => {
-    if (!visible) {
-      setProvider('');
-      setPolicyNumber('');
-      setCoverageAmount('');
-      setPairsAllowed('');
-      setPairsUsed('');
-      setRenewalDate('');
-      setNotes('');
-    }
-  }, [visible]);
+  const allowed = parseInt(pairsAllowed, 10) || 0;
+  const used = parseInt(pairsUsed, 10) || 0;
+  const amount = parseFloat(coverage) || 0;
+  const usedError = used > allowed ? 'More than the plan allows.' : null;
+  const renewalError = renewal.trim() && (!ISO_DATE.test(renewal.trim()) || Number.isNaN(Date.parse(renewal.trim()))) ? 'Use YYYY-MM-DD, e.g. 2027-01-01.' : null;
+  const canSave = !!provider.trim() && allowed > 0 && !usedError && !renewalError;
 
-  // Calculate live coverage summary
-  const pairsAllowedNum = parseInt(pairsAllowed) || 0;
-  const pairsUsedNum = parseInt(pairsUsed) || 0;
-  const coverageAmountNum = parseFloat(coverageAmount) || 0;
-  
-  const pairsRemaining = Math.max(0, pairsAllowedNum - pairsUsedNum);
-  const coveragePerPair = pairsAllowedNum > 0 ? coverageAmountNum / pairsAllowedNum : 0;
-  const coverageRemaining = Math.max(0, coverageAmountNum - (coveragePerPair * pairsUsedNum));
-  
-  // Calculate days until renewal
-  const daysUntilRenewal = renewalDate 
-    ? Math.ceil((new Date(renewalDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    : null;
-
-  const handleSave = async () => {
-    const payload: SaveInsurancePayload = {
-      customerId: clientId,
-      provider: provider.trim(),
-      policyNumber: policyNumber.trim() || undefined,
-      coverageAmount: coverageAmountNum || undefined,
-      pairsAllowed: pairsAllowedNum,
-      pairsUsed: pairsUsedNum || undefined,
-      renewalDate: renewalDate.trim() || undefined,
-      notes: notes.trim() || undefined,
-    };
-
+  const save = async () => {
     try {
-      await saveInsurance.mutateAsync(payload);
+      await saveInsurance.mutateAsync({
+        customerId: clientId,
+        provider: provider.trim(),
+        policyNumber: policyNumber.trim() || undefined,
+        coverageAmount: amount || undefined,
+        pairsAllowed: allowed,
+        pairsUsed: used,
+        renewalDate: renewal.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      toast.success('Insurance saved');
       onClose();
-    } catch (error) {
-      // Error handling will be shown via mutation state
-      console.error('Failed to save insurance:', error);
+    } catch {
+      toast.error('Couldn’t save insurance', 'Check the connection and try again.');
     }
   };
 
-  const canSave = provider.trim() && pairsAllowedNum > 0;
+  const perPair = allowed > 0 ? amount / allowed : 0;
+  const left = Math.max(0, allowed - used);
 
   return (
     <Sheet
       visible={visible}
       onClose={onClose}
-      title="Insurance Information"
-      subtitle="Coverage details and household sharing"
-      footer={
-        <View className="flex-row gap-md">
-          <Button variant="quiet" onPress={onClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button 
-            variant="primary" 
-            onPress={handleSave}
-            disabled={!canSave || saveInsurance.isPending}
-            className="flex-1"
-          >
-            {saveInsurance.isPending ? 'Saving...' : 'Save insurance'}
-          </Button>
-        </View>
-      }
+      title="Insurance"
+      subtitle="Vision coverage, used to plan second pairs."
+      primary={{ label: 'Save insurance', onPress: save, disabled: !canSave || isLoading, loading: saveInsurance.isPending }}
     >
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="gap-lg">
-          {/* Provider field */}
-          <View>
-            <FieldLabel>Provider</FieldLabel>
-            <TextInput
-              value={provider}
-              onChangeText={setProvider}
-              placeholder="e.g. Desjardins, Sun Life, Manulife"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-              placeholderTextColor="#737373"
-            />
-          </View>
-
-          {/* Policy number + Coverage amount (2-col) */}
-          <View className="flex-row gap-md">
-            <View className="flex-1">
-              <FieldLabel>Policy number</FieldLabel>
-              <TextInput
-                value={policyNumber}
-                onChangeText={setPolicyNumber}
-                placeholder="Optional"
-                className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-                placeholderTextColor="#737373"
-              />
-            </View>
-            <View className="flex-1">
-              <FieldLabel>Coverage amount</FieldLabel>
-              <TextInput
-                value={coverageAmount}
-                onChangeText={setCoverageAmount}
-                placeholder="$0.00"
-                keyboardType="numeric"
-                className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-                placeholderTextColor="#737373"
-              />
-            </View>
-          </View>
-
-          {/* Pairs allowed + Pairs used + Renewal date (3-col) */}
-          <View className="flex-row gap-sm">
-            <View className="flex-1">
-              <FieldLabel>Pairs allowed</FieldLabel>
-              <TextInput
-                value={pairsAllowed}
-                onChangeText={setPairsAllowed}
-                placeholder="2"
-                keyboardType="numeric"
-                className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-                placeholderTextColor="#737373"
-              />
-            </View>
-            <View className="flex-1">
-              <FieldLabel>Pairs used</FieldLabel>
-              <TextInput
-                value={pairsUsed}
-                onChangeText={setPairsUsed}
-                placeholder="0"
-                keyboardType="numeric"
-                className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-                placeholderTextColor="#737373"
-              />
-            </View>
-            <View className="flex-1">
-              <FieldLabel>Renewal date</FieldLabel>
-              <TextInput
-                value={renewalDate}
-                onChangeText={setRenewalDate}
-                placeholder="YYYY-MM-DD"
-                className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] min-h-[44px] text-body-md text-color-text-primary"
-                placeholderTextColor="#737373"
-              />
-            </View>
-          </View>
-
-          {/* Shared with - household members */}
-          <View>
-            <FieldLabel>Shared with</FieldLabel>
-            <View className="flex-row flex-wrap gap-sm">
-              {/* TODO: When household members API is available, map over linked members */}
-              {/* Example: spouse chip when linked */}
-              <Chip label="Link household member" variant="add" />
-            </View>
-          </View>
-
-          {/* Notes textarea */}
-          <View>
-            <FieldLabel>Notes</FieldLabel>
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Special conditions, restrictions, etc."
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              className="border border-color-border rounded-sm bg-color-bg-surface px-[12px] py-[12px] text-body-md text-color-text-primary"
-              placeholderTextColor="#737373"
-            />
-          </View>
-
-          {/* Live coverage summary card */}
-          {(pairsAllowedNum > 0 || coverageAmountNum > 0) && (
-            <Card className="bg-color-bg-muted rounded-sm border-0">
-              <CardBody>
-                <Text className="text-heading-sm text-color-text-primary mb-md">
-                  Coverage Summary
-                </Text>
-                <View className="gap-sm">
-                  <RowKV 
-                    label="Pairs remaining" 
-                    value={`${pairsRemaining} of ${pairsAllowedNum}`}
-                  />
-                  {coverageAmountNum > 0 && (
-                    <RowKV 
-                      label="Coverage remaining" 
-                      value={`$${coverageRemaining.toFixed(2)}`}
-                    />
-                  )}
-                  {daysUntilRenewal !== null && (
-                    <RowKV 
-                      label="Renews in" 
-                      value={`${daysUntilRenewal} days`}
-                    />
-                  )}
-                </View>
-              </CardBody>
-            </Card>
-          )}
+      <View className="gap-[20px]">
+        <Field label="Provider" required>
+          <ChoiceChips options={PROVIDERS} value={PROVIDERS.includes(provider) ? provider : null} onChange={(p: string | null) => setProvider(p ?? '')} />
+        </Field>
+        <TextField label="Other provider" hint="If not listed above." value={PROVIDERS.includes(provider) ? '' : provider} onChangeText={setProvider} placeholder="Provider name" />
+        <View className="flex-row gap-[16px]">
+          <TextField className="flex-1" label="Policy number" value={policyNumber} onChangeText={setPolicyNumber} autoCapitalize="characters" autoCorrect={false} />
+          <TextField className="flex-1" label="Coverage ($)" hint="Total for the period." value={coverage} onChangeText={setCoverage} keyboardType="decimal-pad" placeholder="300" />
         </View>
-      </ScrollView>
+        <View className="flex-row gap-[16px]">
+          <TextField className="flex-1" label="Pairs allowed" value={pairsAllowed} onChangeText={setPairsAllowed} keyboardType="number-pad" />
+          <TextField className="flex-1" label="Pairs used" value={pairsUsed} onChangeText={setPairsUsed} error={usedError} keyboardType="number-pad" />
+          <TextField className="flex-1" label="Renews" value={renewal} onChangeText={setRenewal} error={renewalError} placeholder="YYYY-MM-DD" keyboardType="numbers-and-punctuation" />
+        </View>
+        <TextField label="Notes" value={notes} onChangeText={setNotes} placeholder="e.g. Shared with spouse; needs receipt itemised" multiline />
+        {allowed > 0 ? (
+          <Field label="Summary">
+            <View className="border border-border rounded-md px-[16px]">
+              <KeyValue
+                mono
+                rows={[
+                  { label: 'Pairs left', value: `${left} of ${allowed}` },
+                  { label: 'Coverage left', value: amount ? formatDollars(Math.max(0, amount - perPair * used)) : null },
+                  { label: 'Renews', value: renewalError ? null : formatDate(renewal.trim() ? `${renewal.trim()}T12:00:00` : null) },
+                ]}
+              />
+            </View>
+          </Field>
+        ) : null}
+      </View>
     </Sheet>
   );
 }

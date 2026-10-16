@@ -25,3 +25,16 @@ describe('prescriptions mapping', () => {
     expect(sortPrescriptions([a, c, b]).map((p) => p.id)).toEqual(['b', 'c', 'a']);
   });
 });
+
+describe('prescription create payload', () => {
+  it('writes Foundry columns with text optics and the right PD type', async () => {
+    const { toFoundryPrescriptionInput } = await import('@/src/api/prescriptionsMapping');
+    const single = toFoundryPrescriptionInput({ clientId: 'c1', sphereOd: -1.5, cylinderOd: -0.75, axisOd: 90, sphereOs: 0, addOs: 2, pdSingle: 63, prescribedBy: ' Dr Roy ', prescribedAt: '2026-09-12' });
+    expect(single).toMatchObject({
+      customerId: 'c1', shopifyCustomerId: 'c1', sphereOd: '-1.50', cylinderOd: '-0.75', axisOd: 90, sphereOs: '0.00', addOs: '+2.00',
+      pdType: 'single', pdSingle: '63', pdRight: null, prescriberName: 'Dr Roy', prescriptionDate: '2026-09-12', status: 'submitted',
+    });
+    const dual = toFoundryPrescriptionInput({ clientId: 'c1', pdSingle: 63, pdRight: 31.5, pdLeft: 32 });
+    expect(dual).toMatchObject({ pdType: 'dual', pdSingle: null, pdRight: '31.5', pdLeft: '32' });
+  });
+});

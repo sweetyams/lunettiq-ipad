@@ -30,7 +30,6 @@ export interface Prescription {
 
 export interface CreatePrescriptionPayload {
   clientId: string;
-  type: Prescription['type'];
   sphereOd?: number;
   cylinderOd?: number;
   axisOd?: number;
@@ -39,12 +38,14 @@ export interface CreatePrescriptionPayload {
   cylinderOs?: number;
   axisOs?: number;
   addOs?: number;
+  /** One binocular PD, or pdRight + pdLeft (monocular). */
+  pdSingle?: number;
   pdRight?: number;
   pdLeft?: number;
   prescribedBy?: string;
+  clinicName?: string;
+  /** YYYY-MM-DD exam date. */
   prescribedAt?: string;
-  expiresAt?: string;
-  notes?: string;
 }
 
 export interface UpdatePrescriptionPayload {

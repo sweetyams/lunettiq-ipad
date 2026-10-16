@@ -1,6 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import type { Client, ClientProfile } from './clients.types';
+import type { Client, ClientListResponse, ClientProfile } from './clients.types';
+import { duplicateSearchTerms, findLikelyDuplicates, type DuplicateCheckParams } from './duplicateCheck';
 
 interface CreateClientData {
   firstName: string;
@@ -11,26 +13,7 @@ interface CreateClientData {
   notes?: string;
 }
 
-interface DuplicateCheckParams {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-}
-
-interface DuplicateClient {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
-  phone: string | null;
-  fullName: string;
-}
-
-interface DuplicateCheckResponse {
-  duplicates: DuplicateClient[];
-  total: number;
-}
+export type { DuplicateCheckParams, DuplicateClient } from './duplicateCheck';
 
 export function useCreateClient() {
   const queryClient = useQueryClient();
@@ -47,42 +30,23 @@ export function useCreateClient() {
   });
 }
 
-export function useDuplicateCheck() {
-  return useQuery({
-    queryKey: ['clients', 'duplicates'],
-    queryFn: ({ queryKey }) => {
-      const [, , params] = queryKey as [string, string, DuplicateCheckParams];
-      const searchParams: Record<string, string> = {};
-      
-      if (params.firstName) searchParams.firstName = params.firstName;
-      if (params.lastName) searchParams.lastName = params.lastName;
-      if (params.email) searchParams.email = params.email;
-      if (params.phone) searchParams.phone = params.phone;
-
-      return api.get<DuplicateCheckResponse>('/api/clients/duplicates', { params: searchParams });
-    },
-    enabled: false, // Manual trigger only
-    staleTime: 0, // Always fresh for duplicate checking
-  });
-}
-
+/**
+ * Imperative duplicate check for the New client form. Foundry has no
+ * duplicates endpoint (`/api/clients/duplicates` hits `[id]` and 500s), so
+ * this searches the client list and matches locally.
+ */
 export function useTriggerDuplicateCheck() {
   const queryClient = useQueryClient();
-
-  return (params: DuplicateCheckParams) => {
-    return queryClient.fetchQuery({
+  return useCallback((params: DuplicateCheckParams) =>
+    queryClient.fetchQuery({
       queryKey: ['clients', 'duplicates', params],
-      queryFn: () => {
-        const searchParams: Record<string, string> = {};
-        
-        if (params.firstName) searchParams.firstName = params.firstName;
-        if (params.lastName) searchParams.lastName = params.lastName;  
-        if (params.email) searchParams.email = params.email;
-        if (params.phone) searchParams.phone = params.phone;
-
-        return api.get<DuplicateCheckResponse>('/api/clients/duplicates', { params: searchParams });
+      queryFn: async () => {
+        const terms = duplicateSearchTerms(params);
+        const pages = await Promise.all(terms.map((q) =>
+          api.get<ClientListResponse>('/api/clients', { params: { q, limit: '20' } }).catch(() => ({ clients: [] as Client[], total: 0 }))));
+        const duplicates = findLikelyDuplicates(params, pages.flatMap((p) => p?.clients ?? []));
+        return { duplicates, total: duplicates.length };
       },
-      staleTime: 0,
-    });
-  };
+      staleTime: 30_000,
+    }), [queryClient]);
 }

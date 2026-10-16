@@ -1,7 +1,9 @@
-import { View, Text, TextInput } from 'react-native';
+import { View, Text } from 'react-native';
 import { useState } from 'react';
-import { Sheet, FieldLabel, Chip, Button } from '@/src/ui';
+import { Plus } from 'lucide-react-native';
+import { Sheet, TextField, Field, ChoiceChips, Button } from '@/src/ui/kit';
 import { useUpdateClient } from '@/src/api/useClients';
+import { toast } from '@/src/ui/useToastStore';
 
 interface TagManagementSheetProps {
   clientId: string;
@@ -10,153 +12,55 @@ interface TagManagementSheetProps {
   onClose: () => void;
 }
 
-const SUGGESTED_TAGS = [
-  'VIP',
-  'Price sensitive',
-  'Referred',
-  'Multi-pair candidate',
-  'Insurance-led',
-  'Second pair interest',
-];
+const SUGGESTED = ['VIP', 'Price sensitive', 'Referred', 'Multi-pair candidate', 'Insurance-led', 'Second pair interest'];
+// Membership tier tags are managed by loyalty, not by hand.
+const isSystem = (t: string) => t.startsWith('member-');
 
-export function TagManagementSheet({ 
-  clientId, 
-  currentTags, 
-  visible, 
-  onClose 
-}: TagManagementSheetProps) {
-  const [localTags, setLocalTags] = useState<string[]>(currentTags);
-  const [newTag, setNewTag] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  
+export function TagManagementSheet({ clientId, currentTags, visible, onClose }: TagManagementSheetProps) {
+  const system = currentTags.filter(isSystem);
+  const initial = [...new Set(currentTags.filter((t) => !isSystem(t)))];
+  const [tags, setTags] = useState<string[]>(initial);
+  const [draft, setDraft] = useState('');
   const updateClient = useUpdateClient();
 
-  const addTag = (tag: string) => {
-    const trimmedTag = tag.trim();
-    if (!trimmedTag || localTags.includes(trimmedTag)) return;
-    
-    setLocalTags(prev => [...prev, trimmedTag]);
-    setNewTag('');
+  const options = [...new Set([...initial, ...SUGGESTED, ...tags])];
+  const changed = [...tags].sort().join('|') !== [...initial].sort().join('|');
+
+  const add = () => {
+    const t = draft.trim();
+    if (t && !tags.includes(t)) setTags([...tags, t]);
+    setDraft('');
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setLocalTags(prev => prev.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleSuggestedTagPress = (tag: string) => {
-    if (!localTags.includes(tag)) {
-      addTag(tag);
-    }
-  };
-
-  const handleAddNewTag = () => {
-    if (newTag.trim()) {
-      addTag(newTag);
-    }
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
+  const save = async () => {
     try {
-      await updateClient.mutateAsync({ 
-        id: clientId, 
-        data: { tags: localTags } 
-      });
-      
+      await updateClient.mutateAsync({ id: clientId, data: { tags: [...system, ...tags] } });
+      toast.success('Tags saved');
       onClose();
-    } catch (error) {
-      console.error('Failed to update tags:', error);
-    } finally {
-      setIsSaving(false);
+    } catch {
+      toast.error('Couldn’t save tags', 'Check the connection and try again.');
     }
   };
-
-  const handleClose = () => {
-    setLocalTags(currentTags);
-    setNewTag('');
-    onClose();
-  };
-
-  const hasChanges = JSON.stringify(localTags.sort()) !== JSON.stringify(currentTags.sort());
 
   return (
     <Sheet
       visible={visible}
-      onClose={handleClose}
-      title="Manage tags"
-      footer={
-        <View className="flex-row gap-md">
-          <Button
-            variant="ghost"
-            onPress={handleClose}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onPress={handleSave}
-            disabled={!hasChanges || isSaving}
-            className="flex-1"
-          >
-            {isSaving ? 'Saving...' : 'Save tags'}
-          </Button>
-        </View>
-      }
+      onClose={onClose}
+      title="Tags"
+      subtitle="Selected tags are saved on the client. Tap to add or remove."
+      primary={{ label: 'Save tags', onPress: save, disabled: !changed, loading: updateClient.isPending }}
     >
-      <View className="gap-lg">
-        {localTags.length > 0 && (
-          <View className="gap-sm">
-            <FieldLabel>Current tags</FieldLabel>
-            <View className="flex-row flex-wrap gap-sm">
-              {localTags.map((tag) => (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  variant="on"
-                  onPress={() => removeTag(tag)}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        <View className="h-px bg-color-border" />
-
-        <View className="gap-sm">
-          <FieldLabel>Add tag</FieldLabel>
-          <View className="flex-row gap-sm">
-            <TextInput
-              value={newTag}
-              onChangeText={setNewTag}
-              placeholder="Enter tag name..."
-              className="flex-1 bg-color-bg-surface border border-color-border rounded-md p-md text-body-lg text-color-text-primary"
-              onSubmitEditing={handleAddNewTag}
-              returnKeyType="done"
-            />
-            <Button
-              variant="ghost"
-              onPress={handleAddNewTag}
-              disabled={!newTag.trim()}
-            >
-              Add
-            </Button>
-          </View>
+      <View className="gap-[20px]">
+        <Field label="Tags">
+          <ChoiceChips multiple options={options} value={tags} onChange={setTags} />
+        </Field>
+        <View className="flex-row items-end gap-[8px]">
+          <TextField className="flex-1" label="New tag" value={draft} onChangeText={setDraft} onSubmitEditing={add} returnKeyType="done" placeholder="e.g. Sun lover" />
+          <Button label="Add" icon={Plus} onPress={add} disabled={!draft.trim()} />
         </View>
-
-        <View className="gap-sm">
-          <FieldLabel>Suggested tags</FieldLabel>
-          <View className="flex-row flex-wrap gap-sm">
-            {SUGGESTED_TAGS.map((tag) => (
-              <Chip
-                key={tag}
-                label={tag}
-                variant={localTags.includes(tag) ? 'on' : 'default'}
-                onPress={() => handleSuggestedTagPress(tag)}
-              />
-            ))}
-          </View>
-        </View>
+        {system.length ? (
+          <Text className="text-body-sm text-text-tertiary">Membership tier ({system.map((t) => t.replace('member-', '').toUpperCase()).join(', ')}) is kept as is.</Text>
+        ) : null}
       </View>
     </Sheet>
   );

@@ -17,9 +17,13 @@ export function useCreateInteraction() {
   
   return useMutation({
     mutationFn: (params: CreateInteractionParams) =>
+      // Foundry reads type/direction/subject/body/metadata (crm interactionCreateSchema).
+      // Sending only `notes` used to drop every note's text.
       api.post<Interaction>(`/api/clients/${params.clientId}/interactions`, {
         type: params.type,
-        notes: params.notes,
+        direction: params.direction ?? 'internal',
+        subject: params.subject ?? null,
+        body: params.body ?? params.notes ?? null,
         metadata: params.metadata,
         surface: params.surface || 'tablet',
       }),

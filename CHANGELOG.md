@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-10-16] — Phase D4.3–D4.4: New client and all profile sheets on the kit; five broken writes fixed
+
+### Fixed
+- **Notes lost their text.** `useCreateInteraction` sent only `type/notes/metadata`; Foundry reads `subject/body/direction`. Every Add note / Clinical note saved empty. Now sends the right fields.
+- **Adding a prescription always failed.** The iPad posted its own field names; Foundry inserts the body raw and needs `customerId`, `shopifyCustomerId`, text optics, `prescriptionDate`, `prescriberName`. New `toFoundryPrescriptionInput` (tested).
+- **Duplicate check always 500'd** (`/api/clients/duplicates` doesn't exist) and fired on every render. Now searches the client list and matches email, phone (last 10 digits) and accent-insensitive names locally (tested); one request per term.
+- **Link client was a mock** (fake "(Mock Result)", Link only logged). Now searches real clients and creates the link; the links list is mapped from Foundry's raw rows (it would have crashed on the first link).
+- **New client could never succeed** (Foundry has no create-client route). The form now says so on 404/405 instead of a generic error; Foundry ask filed.
+- **Fit units:** "Frame width 140" fed sizing guidance that expects lens width (47–55). Relabelled to lens width / bridge with range checks.
+- **Lifestyle answers saved to the wrong fields** (primary use → `sports`, styles → `hobbies`, budget → `primaryConcern`) and duplicate option values highlighted together. Rebuilt on the real fields.
+- **Tags:** could delete the membership tier tag; sorted the `currentTags` prop in place. Tier is now preserved.
+- Edit contact had fake Language and Home store chips (hard-coded non-Lunettiq stores) that saved nothing: removed. Multi-pair results had a hard-coded $250 per pair and five buttons that did nothing: rebuilt from real data with one working action ("Client wants this").
+- Clinical notes are tagged `category: clinical` and now show on the Clinical tab (it always said "None yet").
+- Every sheet reports save failures with a toast (they only `console.error`'d) and no `Alert.prompt`.
+
+### Changed
+- **Sheet** (kit): white dialog with hairline + overlay elevation, title/subtitle/close, keyboard-avoiding scroll body, footer with Cancel + one primary (optional danger and note).
+- **Form controls** (kit): `Field`, `TextField` (sentence-case labels, focus ring, inline errors/hints), `ChoiceChips` (single/multi, near-black selected).
+- All 13 profile sheets rebuilt on them: Add note, Clinical note, Internal notes, Edit contact (validation), Fit, Tags, Link client, Preferences (inline "Add" instead of `Alert.prompt`), Multi-pair suggestions, Insurance (provider chips, live summary), Lifestyle, Prescription (OD/OS grid with range/step checks, single or dual PD), Store picker.
+- **New client:** back link + title + Cancel / Create client; two-column form with an "Already a client?" panel listing matches with the reason (same email / phone / name). Offline state is honest (the old "Save reminder" saved nothing).
+
 ## [2026-10-16] — Phase D4.2: Client profile on the kit; Rx privacy and landscape-modal fixes
 
 ### Fixed

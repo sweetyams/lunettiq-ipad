@@ -14,3 +14,6 @@ export { formatPhone, formatDate, formatDollars } from './format';
 export { StatRow } from './StatRow';
 export { KeyValue } from './KeyValue';
 export { Tabs } from './Tabs';
+export { Sheet } from './Sheet';
+export { Field, TextField } from './Field';
+export { ChoiceChips } from './ChoiceChips';
