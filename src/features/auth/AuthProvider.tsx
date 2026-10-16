@@ -27,7 +27,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const { isSignedIn, isLoaded, userId, signOut } = useAuth();
   const { locked, unlock: autoUnlock, resetActivity } = useAutoLock();
-  const { pinSystemEnabled } = useDeviceSettings();
+  const { pinSystemEnabled, lockTimeout } = useDeviceSettings();
   const { setDeviceOwner, clearOperator, switchOperator } = useOperatorStore();
 
   const activeSlug = useTenantStore((s) => s.activeProject?.slug ?? null);
@@ -77,8 +77,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Fresh sign-in (transitioned from not-signed-in to signed-in during this session)
       // OR first app launch with existing Clerk session
 
-      if (!effectivePinEnabled) {
-        // PIN system off (solo mode, or tenant lacks device-management) — skip lock
+      if (!effectivePinEnabled || lockTimeout === 'never') {
+        // PIN system off (solo mode, or tenant lacks device-management), or a
+        // manager set Auto-lock to Never (test devices) — skip the relaunch lock
         setInitialLock(false);
       } else {
         // PIN system on — show lock screen on app relaunch
@@ -89,7 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     wasSignedInRef.current = true;
-  }, [isLoaded, isSignedIn, effectivePinEnabled, initialLock]);
+  }, [isLoaded, isSignedIn, effectivePinEnabled, lockTimeout, initialLock]);
 
   // If the tenant turns out NOT to support device-management (probe resolves false)
   // after we already engaged the lock, drop it — this tenant can't verify a PIN.

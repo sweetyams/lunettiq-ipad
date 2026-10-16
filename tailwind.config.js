@@ -11,6 +11,9 @@
  *
  * Last synced: 2026-07-29 (API version 77f8561f)
  *
+ * PHASE D (2026-10-16): staff chrome now follows Found UI (the Builder's system).
+ * Lunettiq storefront values remain for `brand` and client-facing content.
+ *
  * BRAND SEMANTICS (Lunettiq-specific — differs from typical convention):
  *   brand  = identity color (#023891 blue) — filter highlights, branding moments, active states
  *   accent = interactive dark (#1D1F21) — buttons, selected tabs, pressed states
@@ -39,41 +42,47 @@ module.exports = {
         //   bg-brand            → colors.brand.DEFAULT
         //   bg-accent           → colors.accent.DEFAULT
 
+        // ─── Found UI (Builder) chrome — foundry/src/app/globals.css, OKLCH → hex ──
+        // White first: pages, cards and panels are white; depth comes from hairlines
+        // and elevation, never grey fills. `muted`/`subtle` are for accents only
+        // (selected segment, pressed row, input well). See docs/v2/02-design-parity.md.
+
         // Backgrounds → bg-bg-{key}
         bg: {
-          page:            '#ffffff',
-          surface:         '#F8F6F7',
-          'surface-hover': '#F8F6F7',
-          muted:           '#F8F6F7',
-          inverse:         '#111111',
+          page:            '#FFFFFF',
+          surface:         '#FFFFFF',               // cards/panels: white + border-border
+          'surface-hover': '#F7F7F7',
+          muted:           '#F7F7F7',               // accents only
+          subtle:          '#F7F7F7',               // accents only (alias)
+          inverse:         '#171717',
           elevated:        '#FFFFFF',
-          overlay:         'rgba(17, 17, 17, 0.5)',
+          overlay:         'rgba(10, 10, 10, 0.4)',
         },
 
         // Text → text-text-{key}
         text: {
-          primary:   '#1D1F21',
-          secondary: 'rgba(29, 31, 33, 0.65)',
-          tertiary:  'rgba(29, 31, 33, 0.55)',
-          muted:     'rgba(29, 31, 33, 0.45)',
+          primary:   '#0A0A0A',   // --foreground
+          secondary: '#52525B',
+          tertiary:  '#71717A',   // --muted-foreground
+          muted:     '#71717A',
+          dim:       'rgba(113, 113, 122, 0.6)', // --dim
           inverse:   '#FFFFFF',
-          link:      '#1D1F21',
-          error:     '#B42318',
+          link:      '#0A0A0A',
+          error:     '#E7000B',
         },
 
         // Borders → border-border, border-border-{key}
         border: {
-          DEFAULT: 'rgba(17, 17, 17, 0.18)',
-          hover:   'rgba(17, 17, 17, 0.28)',
-          strong:  'rgba(17, 17, 17, 0.24)',
+          DEFAULT: '#E4E4E7',     // --border
+          hover:   '#D4D4D8',
+          strong:  '#D4D4D8',
           inverse: 'rgba(255, 255, 255, 0.18)',
         },
 
         // Focus ring → ring-focus-ring
-        'focus-ring': 'rgba(17, 17, 17, 0.4)',
+        'focus-ring': '#A1A1AA',  // --ring
 
-        // Brand (Lunettiq blue — identity color, sparingly used)
-        // → bg-brand, text-brand-text, bg-brand-soft
+        // Brand (Lunettiq blue — identity moments only, from the storefront)
         brand: {
           DEFAULT: '#023891',
           hover:   '#022e78',
@@ -81,33 +90,49 @@ module.exports = {
           soft:    'rgba(2, 56, 145, 0.08)',
         },
 
-        // Accent (dark — primary interactive color: buttons, selected states)
-        // → bg-accent, text-accent-text
+        // Accent = Found UI --primary: the one primary action per view
         accent: {
-          DEFAULT: '#1D1F21',
-          hover:   '#1D1F21',
+          DEFAULT: '#171717',
+          hover:   '#262626',
           text:    '#FFFFFF',
         },
 
-        // Feedback → text-error, bg-error, bg-error-soft, etc.
-        error:          '#B42318',
-        'error-soft':   'rgba(180, 35, 24, 0.08)',
-        success:        '#067647',
-        'success-soft': 'rgba(6, 118, 71, 0.08)',
-        warning:        '#B54708',
-        'warning-soft': 'rgba(181, 71, 8, 0.08)',
-        info:           '#023891',
+        // Status (Found UI): text colour, soft background, ring
+        error:          '#E7000B',
+        'error-soft':   'rgba(231, 0, 11, 0.08)',
+        'error-ring':   'rgba(231, 0, 11, 0.2)',
+        success:        '#008053',
+        'success-soft': '#E6F7EE',
+        'success-ring': '#B1E1C9',
+        warning:        '#C76A18',
+        'warning-soft': '#FCF3E2',
+        'warning-ring': '#EDD5A3',
+        info:           '#0077BA',
+        'info-soft':    '#E7F5FF',
+        'info-ring':    '#B2DAF9',
 
         // Commerce
-        sale:      '#B42318',
-        'sold-out': 'rgba(17, 17, 17, 0.45)',
+        sale:      '#E7000B',
+        'sold-out': '#71717A',
         limited:   '#7C6F64',
 
         // Skeleton → bg-skeleton-bg, bg-skeleton-shimmer
         skeleton: {
-          bg:      '#F7F5F2',
-          shimmer: '#EFEEE9',
+          bg:      '#F4F4F5',
+          shimmer: '#E4E4E7',
         },
+
+        // ─── Legacy names (old navy/green palette) ─────────────────────────────
+        // These were used in ~79 places but never existed, so they rendered
+        // nothing. Aliased to the nearest Found UI token until each screen is
+        // migrated in Phase D; audit:design reports any remaining use.
+        navy:     '#171717',
+        green:    '#008053',
+        blue:     '#0077BA',
+        warmGrey: '#E4E4E7',
+        offWhite: '#FFFFFF',
+        charcoal: '#0A0A0A',
+        muted:    '#F7F7F7',
 
         // ─── iPad-specific semantic tokens ────────────────────────────────────
         // Derived from the Foundry storefront tokens above. No new raw colors.
@@ -115,21 +140,21 @@ module.exports = {
 
         // Verdicts (fitting session) → bg-verdict-loved, text-verdict-liked, etc.
         verdict: {
-          loved:    '#067647',                  // = success
+          loved:    '#008053',                  // = success
           liked:    '#023891',                  // = brand
-          unsure:   '#B54708',                  // = warning
-          rejected: 'rgba(29, 31, 33, 0.45)',   // = text-muted
+          unsure:   '#C76A18',                  // = warning
+          rejected: '#71717A',                  // = text-muted
         },
 
         // Privacy mode strips → bg-mode-staff, bg-mode-client
         mode: {
           staff:  '#023891',  // = brand (2pt strip)
-          client: '#067647',  // = success (6pt strip + CLIENT VIEW)
+          client: '#008053',  // = success (6pt strip + CLIENT VIEW)
         },
 
         // Staff chrome (dark panels) → bg-chrome-bg, text-chrome-text, border-chrome-border
         chrome: {
-          bg:     '#111111',                    // = bg-inverse
+          bg:     '#171717',                    // = bg-inverse
           text:   '#FFFFFF',                    // = text-inverse
           border: 'rgba(255, 255, 255, 0.18)', // = border-inverse
         },
@@ -149,44 +174,45 @@ module.exports = {
       // Letter-spacing values are in em — NativeWind converts to pts at render.
       // Weight 400 is the system default; 500+ used only on interactive controls.
       fontSize: {
-        // Display — large titles, hero content
-        'display-xxl': ['64px', { lineHeight: '68px', fontWeight: '400', letterSpacing: '-0.02em' }],
-        'display-xl':  ['48px', { lineHeight: '52px', fontWeight: '400', letterSpacing: '-0.01em' }],
-        'display-lg':  ['36px', { lineHeight: '40px', fontWeight: '400' }],
-        'display-md':  ['28px', { lineHeight: '32px', fontWeight: '400' }],
-        'display-sm':  ['22px', { lineHeight: '28px', fontWeight: '400' }],
+        // Found UI hierarchy (title / heading / section / body / caption), one step
+        // larger for touch and for clients without glasses. Floor: 14px (13px only
+        // for uppercase micro-labels). Titles are medium weight, like the Builder.
+        'display-xxl': ['56px', { lineHeight: '60px', fontWeight: '500', letterSpacing: '-0.02em' }],
+        'display-xl':  ['40px', { lineHeight: '46px', fontWeight: '500', letterSpacing: '-0.02em' }],
+        'display-lg':  ['30px', { lineHeight: '36px', fontWeight: '500', letterSpacing: '-0.01em' }],  // page title
+        'display-md':  ['26px', { lineHeight: '32px', fontWeight: '500', letterSpacing: '-0.01em' }],
+        'display-sm':  ['22px', { lineHeight: '28px', fontWeight: '500' }],
 
-        // Heading — section titles, panel labels
-        'heading-xl':  ['20px', { lineHeight: '24px', fontWeight: '400' }],
-        'heading-lg':  ['18px', { lineHeight: '23px', fontWeight: '400', letterSpacing: '0.04em' }],
-        'heading-md':  ['16px', { lineHeight: '20px', fontWeight: '400', letterSpacing: '0.02em' }],
-        'heading-sm':  ['16px', { lineHeight: '20px', fontWeight: '400', letterSpacing: '0.02em' }],
-        'heading-xs':  ['14px', { lineHeight: '20px', fontWeight: '400', letterSpacing: '0.02em' }],
+        'heading-xl':  ['20px', { lineHeight: '28px', fontWeight: '500' }],                          // panel title
+        'heading-lg':  ['18px', { lineHeight: '26px', fontWeight: '500' }],                          // row title
+        'heading-md':  ['16px', { lineHeight: '24px', fontWeight: '500' }],
+        'heading-sm':  ['16px', { lineHeight: '24px', fontWeight: '500' }],
+        'heading-xs':  ['14px', { lineHeight: '20px', fontWeight: '500' }],
 
-        // Body — readable content
-        'body-xl':     ['18px', { lineHeight: '26px', fontWeight: '400', letterSpacing: '0.04em' }],
-        'body-lg':     ['16px', { lineHeight: '23px', fontWeight: '400', letterSpacing: '0.04em' }],
-        'body-md':     ['14px', { lineHeight: '20px', fontWeight: '400', letterSpacing: '0.02em' }],
+        'body-xl':     ['18px', { lineHeight: '28px', fontWeight: '400' }],  // client-visible
+        'body-lg':     ['16px', { lineHeight: '24px', fontWeight: '400' }],  // staff body
+        'body-md':     ['16px', { lineHeight: '24px', fontWeight: '400' }],
         'body-sm':     ['14px', { lineHeight: '20px', fontWeight: '400' }],
-        'body-xs':     ['12px', { lineHeight: '20px', fontWeight: '400' }],
+        'body-xs':     ['14px', { lineHeight: '20px', fontWeight: '400' }],
 
-        // Price — mono, tabular numerals
-        'price':       ['14px', { lineHeight: '20px', fontWeight: '400', letterSpacing: '0.04em' }],
+        'price':       ['16px', { lineHeight: '24px', fontWeight: '500' }],
 
-        // Caption — small labels, metadata
         'caption-lg':  ['14px', { lineHeight: '20px', fontWeight: '400' }],
-        'caption-md':  ['12px', { lineHeight: '18px', fontWeight: '400' }],
-        'caption-sm':  ['11px', { lineHeight: '16px', fontWeight: '400', letterSpacing: '0.02em' }],
-        'caption-xs':  ['10px', { lineHeight: '14px', fontWeight: '400', letterSpacing: '0.02em' }],
+        'caption-md':  ['14px', { lineHeight: '20px', fontWeight: '400' }],
+        'caption-sm':  ['13px', { lineHeight: '18px', fontWeight: '500', letterSpacing: '0.06em' }],  // micro-label
+        'caption-xs':  ['13px', { lineHeight: '18px', fontWeight: '500', letterSpacing: '0.06em' }],
       },
 
       // ─── Font families — from /api/design/native.fonts ─────────────────
       // General Sans is a variable-weight font (200–700) from Fontshare.
       // One .ttf file covers all weights. Downloaded at boot, cached in MMKV.
+      // The Builder uses Inter with the Apple system font as its fallback. On iOS
+      // the system font (SF Pro, which Inter is modelled on) gives real weights
+      // and Dynamic Type; "General Sans" was configured but never loaded.
       fontFamily: {
-        sans:    ['"General Sans"', 'Arial', 'Helvetica', 'sans-serif'],
-        display: ['"General Sans"', 'Arial', 'Helvetica', 'sans-serif'],
-        mono:    ['"DM Sans"', 'SF Mono', 'Menlo', 'monospace'],
+        sans:    ['System'],
+        display: ['System'],
+        mono:    ['System'],  // numbers: Builder uses tabular figures, not a monospace face
       },
 
       // ─── Spacing — from /api/design/native.spacing ───────────────────────
@@ -203,10 +229,12 @@ module.exports = {
       // NOTE: Lunettiq storefront is sharp-edged — buttons and cards often use
       // radius 0. These tokens exist for elements that need rounding (pills,
       // avatars, specific interactive states). Don't apply radius-lg to buttons.
+      // Found UI: 8px controls, 10px cards/panels (--radius 0.625rem), pills full.
       borderRadius: {
         sm:   '6px',
-        md:   '10px',
-        lg:   '14px',
+        md:   '8px',
+        lg:   '10px',
+        xl:   '12px',
         full: '9999px',
       },
     },

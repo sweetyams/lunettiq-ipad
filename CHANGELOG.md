@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026-10-16] — Phase D0: Found UI tokens (Builder parity)
+
+### Changed
+- Staff chrome follows Found UI, the Builder's system (`docs/v2/02-design-parity.md`): white pages and cards (no grey fills), zinc hairlines `#E4E4E7`, near-black primary `#171717`, Found UI status colours with soft backgrounds and rings. Lunettiq blue stays for identity moments.
+- Type: Builder hierarchy one step larger for touch; 14px floor (13px only for uppercase micro-labels); medium-weight titles; storefront letter-spacing removed from UI text.
+- Font: system font (SF Pro). "General Sans" was configured but never loaded.
+- Radius: 8px controls, 10px cards.
+- Legacy colour names (`navy`, `green`, `warmGrey`, `bg-muted`…) used ~79 times but never defined are aliased to Found UI tokens until each screen is migrated.
+- Auto-lock "Never" now also skips the PIN lock on relaunch (test devices).
+
+### Added
+- `docs/v2/02-design-parity.md`: Builder design language, audit (288 grey fills, 305 hex colours, 266 sub-14px texts…), every screen and flow, target kit, Phase D tasks. Phase D added to `docs/v2/TASKS.md`.
+
 ## [2026-10-16] — V2 S0: five-tab structure
 
 ### Changed
