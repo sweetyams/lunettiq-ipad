@@ -16,7 +16,7 @@ Updated with every commit. Branch: `feat/v2-s0-visit-persistence` (iPad), `feat/
 | 0.5 | Replace `Alert.alert`, remove "coming soon" | ⬜ | 30 alerts, ~20 stubs |
 | 0.6 | Offline writes (session, try-ons, notes, holds) | ⬜ | Connectivity check fixed (`b502d2f`) |
 | 0.7 | Demo seed relative to today | ✅ | Foundry `dbc614302`, `5de9458c7` (not merged). Re-run before each demo |
-| 0.8 | Five-tab structure (Floor, Clients, Orders, Follow-ups, Review) | ✅ | Pending commit hash below. Orders = stage list (kanban is 3.1); Follow-ups = call queue (call card is 5.3); Review = inbox with claim/release (sign-off is 4.3) |
+| 0.8 | Five-tab structure (Floor, Clients, Orders, Follow-ups, Review) | ✅ | `35dc5df`. Orders = stage list (kanban is 3.1); Follow-ups = call queue (call card is 5.3); Review = inbox with claim/release (sign-off is 4.3) |
 
 ### Unplanned fixes found along the way (Sprint 0)
 
