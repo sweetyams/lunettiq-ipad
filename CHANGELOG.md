@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-10-16] — Phase D4.1: Clients list on the kit
+
+### Changed
+- **Clients:** PageHeader with count and "New client"; white search field and `FilterChips`; Builder list rows (selection = subtle fill, tier as an info badge; no blue edge); preview with a quiet avatar, tier/Active badges, `StatRow` (orders, lifetime value, last visit), missing-profile items as small add buttons, and Start visit (primary) · Open profile · Book appointment. Second Sight removed from the preview (parked for V3/V4).
+
+### Added
+- Kit: `StatRow`.
+
 ## [2026-10-16] — Phase D8: Orders, Follow-ups, Review on the kit
 
 ### Changed

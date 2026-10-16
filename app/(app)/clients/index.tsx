@@ -1,12 +1,13 @@
 import { View, Text, FlatList, TextInput, Pressable, ScrollView } from 'react-native';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { User, Search } from 'lucide-react-native';
+import { User, Search, UserPlus, Plus, Play, CalendarPlus } from 'lucide-react-native';
 
 import { useClients } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
-import { Avatar, Button, Chip, Tag, StatCard, ProfileGapChips } from '@/src/ui';
+import { Avatar } from '@/src/ui/Avatar';
+import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, kitColors } from '@/src/ui/kit';
 import type { Client, ClientSearchParams } from '@/src/api/clients.types';
 
 // --- Types ---
@@ -89,48 +90,33 @@ export default function ClientsScreen() {
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* TopBar */}
-      <View className="flex-row items-center justify-between px-lg py-md border-b border-border">
-        <Text className="text-heading-lg text-text-primary">Clients</Text>
-        <Text className="text-body-sm text-text-muted">
-          <Text className="font-mono">{total.toLocaleString()}</Text> total
-        </Text>
-      </View>
+      <PageHeader
+        title="Clients"
+        subtitle={`${total.toLocaleString()} client${total === 1 ? '' : 's'}`}
+        actions={<Button label="New client" icon={UserPlus} onPress={() => router.push('/clients/new')} />}
+      />
 
-      {/* Split View */}
       <View className="flex-1 flex-row">
-        {/* Left Panel — 452px fixed */}
-        <View className="w-[452px] border-r border-border flex-col">
-          {/* Search */}
-          <View className="px-lg py-md">
-            <View className="flex-row items-center bg-bg-surface border border-border rounded-sm px-[12px] min-h-[44px]">
-              <Search size={16} color="rgba(29,31,33,0.45)" />
+        {/* List */}
+        <View className="w-[440px] border-r border-border">
+          <View className="px-[20px] pt-[16px] pb-[12px] gap-[12px]">
+            <View className="flex-row items-center bg-bg-page border border-border rounded-md px-[12px] min-h-[44px]">
+              <Search size={18} color={kitColors.iconMuted} />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search by name, email, or phone"
-                placeholderTextColor="rgba(29,31,33,0.45)"
-                className="flex-1 ml-sm text-body-md text-text-primary"
+                placeholder="Search by name, email or phone"
+                placeholderTextColor={kitColors.textTertiary}
+                className="flex-1 ml-[8px] text-body-md text-text-primary"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Search clients"
               />
             </View>
+            <FilterChips<FilterType> value={activeFilter} onChange={setActiveFilter} options={FILTERS} />
           </View>
 
-          {/* Filter Pills */}
-          <View className="flex-row gap-sm px-lg pb-md">
-            {FILTERS.map((f) => (
-              <Chip
-                key={f.key}
-                label={f.label}
-                variant={activeFilter === f.key ? 'on' : 'default'}
-                onPress={() => setActiveFilter(f.key)}
-              />
-            ))}
-          </View>
-
-          {/* Client List */}
-          <View className="flex-1 border-t border-border">
+          <View className="flex-1">
             {isLoading ? (
               <ListLoadingState />
             ) : error ? (
@@ -146,33 +132,20 @@ export default function ClientsScreen() {
                 initialNumToRender={15}
                 maxToRenderPerBatch={10}
                 windowSize={10}
+                contentContainerStyle={{ paddingBottom: 140 }}
               />
             )}
           </View>
-
-          {/* New Client Button — pinned at bottom */}
-          <View className="px-lg py-md border-t border-border">
-            <Button
-              variant="ghost"
-              block
-              onPress={() => router.push('/clients/new')}
-              accessibilityLabel="Create new client"
-            >
-              + New client
-            </Button>
-          </View>
         </View>
 
-        {/* Right Panel — Preview */}
+        {/* Preview */}
         <View className="flex-1">
           {selectedClient ? (
             <ClientPreview client={selectedClient} />
           ) : (
             <View className="flex-1 items-center justify-center">
-              <User size={48} color="rgba(29,31,33,0.18)" />
-              <Text className="text-body-md text-text-muted mt-md">
-                Select a client to preview
-              </Text>
+              <User size={40} color={kitColors.iconMuted} />
+              <Text className="text-body-md text-text-tertiary mt-[12px]">Select a client to preview</Text>
             </View>
           )}
         </View>
@@ -202,35 +175,24 @@ function ClientRow({ client, isSelected, onPress }: ClientRowProps) {
     return new Date(client.updatedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
   }, [client.updatedAt]);
 
+  const tier = hasCultTag ? 'CULT' : hasVaultTag ? 'VAULT' : null;
   return (
-    <Pressable
+    <ListRow
+      selected={isSelected}
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`${name || 'Unnamed client'}, last activity ${activityText}`}
-      className={`flex-row items-center gap-[12px] px-lg py-[12px] min-h-[72px] border-b border-bg-muted ${
-        isSelected ? 'bg-bg-muted border-l-[3px] border-l-brand' : ''
-      }`}
-    >
-      <Avatar firstName={client.firstName} lastName={client.lastName} size="md" />
-
-      <View className="flex-1 min-w-0">
-        <View className="flex-row items-center gap-sm">
-          <Text
-            className={`text-body-md text-text-primary ${name ? 'font-medium' : ''}`}
-            numberOfLines={1}
-          >
+      leading={<Avatar firstName={client.firstName} lastName={client.lastName} size="md" />}
+      title={
+        <View className="flex-row items-center gap-[8px]">
+          <Text className={`text-body-md text-text-primary ${name ? 'font-medium' : 'text-text-tertiary'}`} numberOfLines={1}>
             {name || 'No name yet'}
           </Text>
-          {hasCultTag && <Tag label="CULT" variant="cult" />}
-          {hasVaultTag && <Tag label="VAULT" variant="vault" />}
+          {tier ? <Badge tone="info">{tier}</Badge> : null}
         </View>
-        <Text className="text-body-sm text-text-muted" numberOfLines={1}>
-          {client.email || 'No email'}
-        </Text>
-      </View>
-
-      <Text className="text-caption-sm font-mono text-text-muted">{activityText}</Text>
-    </Pressable>
+      }
+      subtitle={client.email || 'No email'}
+      trailing={<Text className="text-body-sm text-text-tertiary">{activityText}</Text>}
+    />
   );
 }
 
@@ -300,66 +262,40 @@ function ClientPreview({ client }: ClientPreviewProps) {
   }, [client.id, router]);
 
   return (
-    <ScrollView
-      className="flex-1"
-      contentContainerClassName="px-[40px] py-xl"
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Identity Header */}
-      <View className="flex-row items-center gap-lg">
+    <ScrollView className="flex-1" contentContainerStyle={{ padding: 40, paddingBottom: 140, gap: 24 }} showsVerticalScrollIndicator={false}>
+      {/* Identity */}
+      <View className="flex-row items-center gap-[20px]">
         <Avatar firstName={client.firstName} lastName={client.lastName} size="lg" />
         <View className="flex-1">
-          <View className="flex-row items-center gap-[12px]">
-            <Text className="text-heading-xl text-text-primary">{name}</Text>
-            {tier && <Tag label={tier} variant={tierVariant as 'cult' | 'vault' | 'default'} />}
-            {isActive && <Tag label="Active" variant="ok" />}
+          <View className="flex-row items-center gap-[10px]">
+            <Text className="text-display-md text-text-primary" numberOfLines={1}>{name}</Text>
+            {tier ? <Badge tone="info">{tier}</Badge> : null}
+            {isActive ? <Badge tone="success" dot>Active</Badge> : null}
           </View>
-          <Text className="text-body-md text-text-secondary mt-[2px]">
-            {contactParts.join(' \u00B7 ')}
-          </Text>
+          <Text className="text-body-md text-text-tertiary mt-[4px]" numberOfLines={1}>{contactParts.join(' · ')}</Text>
         </View>
       </View>
 
-      {/* Stats Card */}
-      <View className="mt-lg">
-        <StatCard
-          stats={[
-            { value: String(client.orderCount ?? 0), label: 'Orders' },
-            { value: formatCurrency(client.totalSpent), label: 'Lifetime value' },
-            { value: formatLastVisit(client.updatedAt), label: 'Last visit' },
-          ]}
-        />
-      </View>
+      <StatRow
+        stats={[
+          { value: String(client.orderCount ?? 0), label: 'Orders' },
+          { value: formatCurrency(client.totalSpent), label: 'Lifetime value' },
+          { value: formatLastVisit(client.updatedAt), label: 'Last visit' },
+        ]}
+      />
 
-      {/* Profile Gaps */}
-      <View className="mt-lg">
-        <ProfileGapChips gaps={gaps} onGapPress={handleGapPress} />
-      </View>
+      <Section title="Missing from profile" count={gaps.length}>
+        <View className="flex-row flex-wrap gap-[8px]">
+          {gaps.map((g) => (
+            <Button key={g.id} label={g.label} icon={Plus} size="sm" onPress={() => handleGapPress(g.id)} />
+          ))}
+        </View>
+      </Section>
 
-      {/* Action Buttons */}
-      <View className="mt-xl flex-row gap-md">
-        <View className="flex-1">
-          <Button variant="primary" block onPress={handleStartSession}>
-            Start session
-          </Button>
-        </View>
-        <View className="flex-1">
-          <Button variant="ghost" block onPress={() => router.push(`/clients/${client.id}`)}>
-            Open profile
-          </Button>
-        </View>
-      </View>
-      <View className="mt-md flex-row gap-md">
-        <View className="flex-1">
-          <Button variant="quiet" block onPress={() => router.push('/appointments')}>
-            Book appointment
-          </Button>
-        </View>
-        <View className="flex-1">
-          <Button variant="quiet" block onPress={() => router.push('/more/second-sight')}>
-            Second Sight
-          </Button>
-        </View>
+      <View className="flex-row gap-[12px]">
+        <Button label="Start visit" icon={Play} variant="primary" size="lg" onPress={handleStartSession} />
+        <Button label="Open profile" size="lg" onPress={() => router.push(`/clients/${client.id}`)} />
+        <Button label="Book appointment" icon={CalendarPlus} variant="ghost" size="lg" onPress={() => router.push('/appointments')} />
       </View>
     </ScrollView>
   );
@@ -386,14 +322,12 @@ function ListErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <View className="flex-1 items-center justify-center py-xl px-lg">
       <Text className="text-body-md text-text-primary font-medium mb-xs">
-        Failed to load clients
+        Couldn’t load clients
       </Text>
-      <Text className="text-body-sm text-text-muted text-center mb-lg">
-        Check your connection and try again
+      <Text className="text-body-sm text-text-tertiary text-center mb-lg">
+        Check the connection and try again.
       </Text>
-      <Button variant="primary" size="sm" onPress={onRetry}>
-        Retry
-      </Button>
+      <Button label="Try again" size="sm" onPress={onRetry} />
     </View>
   );
 }
@@ -401,7 +335,7 @@ function ListErrorState({ onRetry }: { onRetry: () => void }) {
 function ListEmptyState({ searchQuery }: { searchQuery: string }) {
   return (
     <View className="flex-1 items-center justify-center py-xl px-lg">
-      <User size={40} color="rgba(29,31,33,0.18)" />
+      <User size={40} color={kitColors.iconMuted} />
       <Text className="text-body-md text-text-primary font-medium mt-md text-center">
         {searchQuery ? `No results for "${searchQuery}"` : 'No clients yet'}
       </Text>
