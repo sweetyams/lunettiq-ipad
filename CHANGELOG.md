@@ -1,5 +1,17 @@
 # Changelog
 
+## [2026-10-16] — V2 S0: landscape-first, brand splash, sign-in and lock
+
+### Changed
+- App is landscape-only (`orientation: 'landscape'`, `requireFullScreen: true` so iPadOS honours the lock). The in-store iPad lives in a landscape case.
+- Splash: Lunettiq wordmark on the dark staff ground (`#111111`, = `bg-inverse`) instead of a placeholder navy square.
+- Sign-in: landscape split screen. Dark brand panel with the wordmark; sign-in form on the right. Primary action uses `accent` (near-black), per the brand rule; Lunettiq blue stays for identity moments.
+- PIN lock uses the shared `Wordmark` component.
+- Brand decision: keep the live storefront brand from Foundry tokens. The charter's navy/green/off-white palette was never the shipped brand; charter, V2 plan, house rules and design summary corrected.
+
+### Added
+- `src/ui/Wordmark.tsx`
+
 ## [2026-10-15] — V2 S0: Home shows the real demo day
 
 ### Fixed

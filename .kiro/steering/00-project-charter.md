@@ -21,7 +21,7 @@ iPad Pro 12.9" (6th gen+), handheld in leather case. Landscape primary, portrait
 4. **No keyboard required.** Primary flows are tap/swipe. Typing is the last resort.
 5. **API-first.** All data flows through Foundry API. Never bypass, never duplicate business logic.
 6. **Accessible.** Large type (17pt min body, 28pt+ headings), high contrast (client may not have glasses), VoiceOver support.
-7. **Brand-grade.** Dark navy (#0A153D), deep green (#005D23), warm off-white (#F5F2EC). Editorial photography quality. No emoji. No cheap interactions.
+7. **Brand-grade.** The Lunettiq storefront brand, served live from Foundry's design tokens (`GET /api/design/native`): white page, warm grey surfaces, near-black type and primary buttons, Lunettiq blue `#023891` as the identity colour used sparingly, dark `#111111` for staff chrome (splash, lock, sign-in panel). Never hardcode colours (see `02-design-system.md`). Editorial photography quality. No emoji. No cheap interactions.
 
 ## Tech Stack (locked)
 

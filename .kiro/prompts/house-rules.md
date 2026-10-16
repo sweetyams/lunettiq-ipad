@@ -6,12 +6,12 @@ description: "Quick reference of all project conventions — the cheat sheet"
 # Lunettiq iPad — House Rules
 
 ## Colors (NativeWind tokens only)
-- `navy` (#0A153D) — primary backgrounds, headers, buttons
-- `green` (#005D23) — ONE accent only, single primary action per screen
-- `offWhite` (#F5F2EC) — page backgrounds
-- `warmGrey` (#E8E4DE) — borders, dividers
-- `charcoal` (#2B2B2B) — body text
-- `midGrey` (#6B6B6B) — secondary text
+Values come from Foundry's live Lunettiq tokens (`tailwind.config.js` + `DesignTokenProvider`); see `.kiro/steering/02-design-system.md`.
+- `bg-bg-page` / `bg-bg-surface` — page and card backgrounds (white, warm grey)
+- `bg-accent` + `text-accent-text` — the primary action per screen (near-black)
+- `bg-brand` / `text-brand` — Lunettiq blue, identity moments only, used sparingly
+- `bg-bg-inverse` / `chrome-*` — dark staff chrome (splash, lock, sign-in panel, session bar)
+- `text-text-primary` / `text-text-muted` — body and secondary text; `border-border` for dividers
 - Never hex/rgb literals — always via className tokens
 - No shadows — border-based depth only
 

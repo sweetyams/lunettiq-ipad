@@ -4,7 +4,8 @@ module.exports = ({ config }) => ({
   name: 'Lunettiq',
   slug: 'lunettiq-ipad',
   version: '0.1.0',
-  orientation: 'default',
+  // In-store iPad lives in a landscape case; layouts are designed landscape-first.
+  orientation: 'landscape',
   platforms: ['ios'],
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -12,7 +13,8 @@ module.exports = ({ config }) => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.lunettiq.ipad',
-    requireFullScreen: false,
+    // Required for iPadOS to honour the orientation lock (no Split View / Slide Over).
+    requireFullScreen: true,
     infoPlist: {
       NSCameraUsageDescription: 'Lunettiq uses the camera to capture fitting photos and Second Sight trade-in documentation.',
       NSPhotoLibraryUsageDescription: 'Allow Lunettiq to save fitting photos.',
@@ -41,8 +43,9 @@ module.exports = ({ config }) => ({
       'expo-splash-screen',
       {
         image: './assets/splash.png',
-        backgroundColor: '#0A153D',
-        imageWidth: 200,
+        // Same dark ground as the PIN lock and sign-in brand panel (bg-inverse).
+        backgroundColor: '#111111',
+        imageWidth: 360,
       },
     ],
   ],

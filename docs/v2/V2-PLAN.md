@@ -76,7 +76,7 @@ Commit `594aaf6` ("client profile, appointments, multi-pair, and UI updates") re
 ### 2.4 Other V1 debt that V2 must clear
 
 - Portrait by default (`app.config.js` `orientation: 'default'`). The charter says landscape first.
-- Brand drift: blue `#023891` accent and a plain "L" sign-in screen, while the charter specifies navy `#0A153D`, green `#005D23` and off-white `#F5F2EC`.
+- Brand: the charter listed navy `#0A153D`, green `#005D23` and off-white `#F5F2EC`, but the live Lunettiq brand (Foundry tokens, storefront) is white / warm grey / near-black with blue `#023891`. **Decision (2026-10-16): keep the live storefront brand**; the charter has been corrected. The real gap was a plain "L" sign-in screen and a placeholder navy splash.
 - 30 `Alert.alert` calls and ~20 "coming soon" TODOs in demo paths.
 - The More tab is hidden from the tab bar (`href: null`), so Rx, Second Sight and Custom Design are hard to reach.
 - Offline writes are not wired (`useOfflineWrite` has 0 consumers; only Appointments reads offline).
@@ -135,7 +135,7 @@ Each item names the code to touch, the Foundry dependency, and the acceptance te
 |---|---|---|---|
 | 0.1 | **Restore server session creation.** Start a Visit → `useCreateSession` → replace the local id; end → `useEndSession` with outcome; queue offline when the network is down | `app/(app)/clients/[id]/session.tsx`, `useSessionStore.ts`, `useSessions.ts`, `SyncQueue.createSessionWrite` | `crm_try_on_sessions` gains a row per visit in `lunettiq-demo` |
 | 0.2 | **Persist try-ons.** Each fitting photo upload + verdict → `useCreateProductInteraction` (`tried_on`, verdict) linked to the session | `fitting.tsx`, `useFittingStore.ts`, `PhotoUploadWorker.ts` | A no-sale visit creates a `hot_lead_opportunities` row via the existing event |
-| 0.3 | **Landscape first** + brand tokens (navy/green/off-white), new sign-in and lock screens with wordmark | `app.config.js` (`orientation: 'landscape'`), `design-tokens.fallback.ts`, `tailwind.config.js`, `(auth)/login.tsx`, `PinLockScreen.tsx` | `pnpm audit:design` passes; no `#023891` left |
+| 0.3 | **Landscape first** + live storefront brand (Foundry tokens), wordmark splash, sign-in and lock screens | `app.config.js` (`orientation: 'landscape'`, `requireFullScreen`), `assets/splash.png`, `(auth)/login.tsx`, `PinLockScreen.tsx`, `src/ui/Wordmark.tsx` | `pnpm audit:design` passes; app launches landscape; primary CTAs use `accent` |
 | 0.4 | **i18n FR/EN** with `i18next` + `expo-localization`; extract strings screen by screen; language switch in Profile; client language on the profile drives client-facing screens | new `src/i18n/`, all screens | 100% of the Visit spine in FR and EN |
 | 0.5 | **Replace `Alert.alert`** with `Sheet`/`Toast`; remove or hide every "coming soon" | 30 call sites | `grep -r "Alert.alert\|coming soon"` = 0 in `app/` |
 | 0.6 | **Offline writes** through `useOfflineWrite` for: session start/end, interactions, verdicts, notes, holds, questionnaire | `src/sync/*`, the mutations above | Airplane-mode visit syncs on reconnect, with the pending count shown in `SyncIndicator` |

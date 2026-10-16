@@ -57,7 +57,7 @@
 - Full submission to Foundry API
 
 ### Design System Compliance
-- Uses brand colors (navy #0A153D, green #005D23)
+- Uses brand colors from Foundry's design tokens (see `.kiro/steering/02-design-system.md`)
 - 44pt minimum touch targets
 - 17pt minimum text
 - Border-based depth styling

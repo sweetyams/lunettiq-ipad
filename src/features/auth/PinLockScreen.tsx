@@ -6,6 +6,7 @@ import { useOperatorStore, Operator } from './useOperatorStore';
 import { useAuthenticate, AuthenticateResponse } from '@/src/api/useDeviceAuth';
 import { useBiometric } from './useBiometric';
 import { APIError } from '@/src/api/client';
+import { Wordmark } from '@/src/ui/Wordmark';
 
 // Lock screen colors — hardcoded for reliability (renders before token provider)
 const C = {
@@ -100,8 +101,10 @@ export function PinLockScreen({ onUnlock, isAuthReady = true, onSignOut, onChang
   return (
     <View style={styles.overlay}>
       <View style={styles.screen}>
-        {/* Branding */}
-        <Text style={styles.branding}>LUNETTIQ</Text>
+        {/* Branding — shared with the splash and sign-in */}
+        <View style={styles.branding}>
+          <Wordmark tone="inverse" size="md" />
+        </View>
 
         {/* PIN pad — centered */}
         <View style={styles.pinContent}>
@@ -175,11 +178,8 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   branding: {
-    fontSize: 24,
-    letterSpacing: 8,
-    color: C.textSubtle,
-    fontWeight: '300',
     marginBottom: 48,
+    opacity: 0.7,
   },
   pinContent: {
     flex: 1,

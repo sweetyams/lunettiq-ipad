@@ -4,6 +4,7 @@ import { useSignIn, useSSO } from '@clerk/clerk-expo';
 import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { admitAfterClerkLogin } from '@/src/features/auth/AuthProvider';
+import { Wordmark } from '@/src/ui/Wordmark';
 
 // Warm up the browser for Android to reduce auth load time
 // On iOS, this is a no-op but we call it for consistency
@@ -96,16 +97,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 bg-bg-page">
-      <View className="flex-1 justify-center items-center px-8">
-        <View className="w-full max-w-[340px]">
-          {/* Logo */}
-          <View className="items-center mb-12">
-            <View className="w-10 h-10 rounded-lg bg-brand items-center justify-center mb-4">
-              <Text className="text-brand-text text-lg font-bold">L</Text>
-            </View>
-            <Text className="text-heading-xl text-text-primary">Sign in to Lunettiq</Text>
-            <Text className="text-body-md text-text-muted mt-xs">Welcome back</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 flex-row bg-bg-page">
+      {/* Brand panel — same dark ground and wordmark as the splash and PIN lock */}
+      <View className="flex-1 bg-bg-inverse items-center justify-center px-2xl">
+        <Wordmark tone="inverse" caption="In store" />
+      </View>
+
+      {/* Sign-in panel */}
+      <View className="flex-1 justify-center items-center px-2xl">
+        <View className="w-full max-w-[380px]">
+          <View className="mb-2xl">
+            <Text className="text-display-md text-text-primary">Sign in</Text>
+            <Text className="text-body-md text-text-muted mt-xs">Use your Lunettiq staff account.</Text>
           </View>
 
           {stage === 'main' ? (
@@ -114,7 +117,7 @@ export default function LoginScreen() {
               <Pressable
                 onPress={handleGoogleSSO}
                 disabled={isLoading}
-                className="rounded-lg py-md px-lg min-h-[44px] items-center justify-center border border-border bg-bg-page"
+                className="rounded-lg py-md px-lg min-h-[52px] items-center justify-center border border-border-strong bg-bg-page"
               >
                 <Text className="text-body-md font-medium text-text-primary">
                   {isLoading ? 'Signing in...' : 'Continue with Google'}
@@ -131,9 +134,9 @@ export default function LoginScreen() {
               {/* Email fallback */}
               <Pressable
                 onPress={() => setStage('password')}
-                className="rounded-lg py-md px-lg min-h-[44px] items-center justify-center bg-brand"
+                className="rounded-lg py-md px-lg min-h-[52px] items-center justify-center bg-accent"
               >
-                <Text className="text-body-md font-medium text-brand-text">Sign in with email</Text>
+                <Text className="text-body-md font-medium text-accent-text">Sign in with email</Text>
               </Pressable>
             </View>
           ) : (
@@ -165,18 +168,18 @@ export default function LoginScreen() {
                 onPress={handlePasswordSignIn}
                 disabled={!email.trim() || isLoading}
                 className={`rounded-lg py-md px-lg min-h-[44px] items-center justify-center ${
-                  email.trim() && !isLoading ? 'bg-brand' : 'bg-bg-surface'
+                  email.trim() && !isLoading ? 'bg-accent' : 'bg-bg-surface'
                 }`}
               >
                 <Text className={`text-body-md font-medium ${
-                  email.trim() && !isLoading ? 'text-brand-text' : 'text-text-muted'
+                  email.trim() && !isLoading ? 'text-accent-text' : 'text-text-muted'
                 }`}>
                   {isLoading ? 'Signing in...' : 'Continue'}
                 </Text>
               </Pressable>
 
               <Pressable onPress={() => { setStage('main'); setPassword(''); }} className="items-center mt-sm min-h-[44px] justify-center">
-                <Text className="text-caption-md text-text-muted">← Back</Text>
+                <Text className="text-body-sm text-text-muted">Back</Text>
               </Pressable>
             </View>
           )}
