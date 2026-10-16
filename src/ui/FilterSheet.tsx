@@ -1,11 +1,5 @@
-import {
-  Modal,
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  useWindowDimensions,
-} from 'react-native';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { X, Check } from 'lucide-react-native';
 import { useDesignTokens } from '@/src/features/design';
 import type { FiltersResponse, FilterGroup } from '@/src/api/filters.types';

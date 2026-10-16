@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
+import { Modal } from '@/src/ui/Modal';
 import { X } from 'lucide-react-native';
 
 interface SheetProps {
