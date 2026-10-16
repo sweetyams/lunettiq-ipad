@@ -34,7 +34,7 @@ export function QuickActionsGrid() {
     {
       label: 'Rx Pipeline',
       icon: <ClipboardList color="#1A1A1A" size={20} />,
-      route: '/more/rx-pipeline',
+      route: '/orders',
       accessibilityLabel: 'View Rx Pipeline orders',
     },
     {

@@ -1,6 +1,7 @@
-import { View, Text, FlatList, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, FlatList, ScrollView, Alert, RefreshControl, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useDesignTokens } from '@/src/features/design';
 import { useCallback, useState } from 'react';
 import { Calendar } from 'lucide-react-native';
 import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow } from '@/src/api/useAppointments';
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   const markNoShow = useMarkNoShow();
   const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
   const queryClient = useQueryClient();
+  const { colors } = useDesignTokens();
 
   // Home is the floor's dashboard: refresh it every time staff come back to it,
   // so arrivals, holds and Rx changes made elsewhere show immediately.
@@ -201,9 +203,20 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="px-xl pt-2xl pb-lg border-b border-border">
-        <Text className="text-display-lg text-text-primary">Today</Text>
-        <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
+      <View className="px-xl pt-2xl pb-lg border-b border-border flex-row items-end justify-between">
+        <View>
+          <Text className="text-display-lg text-text-primary">Today</Text>
+          <Text className="text-body-md text-text-muted mt-xs">{formatDate()}</Text>
+        </View>
+        <Pressable
+          onPress={() => router.push('/appointments')}
+          accessibilityRole="button"
+          accessibilityLabel="Open the week schedule"
+          className="flex-row items-center gap-sm border border-border rounded-md px-lg min-h-[44px]"
+        >
+          <Calendar color={colors.textPrimary} size={18} />
+          <Text className="text-body-md font-medium text-text-primary">Week schedule</Text>
+        </Pressable>
       </View>
 
       <View className="flex-1 flex-row">

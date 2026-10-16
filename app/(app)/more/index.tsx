@@ -93,20 +93,20 @@ export default function MoreScreen() {
           label="Rx Pipeline"
           description="Track orders from lab to pickup"
           badge={readyForPickup}
-          onPress={() => router.push('/more/rx-pipeline')}
+          onPress={() => router.push('/orders')}
         />
         <MenuRow
           icon={<FileCheck color="#1A1A1A" size={18} />}
           label="Rx Approvals"
           description="Review and sign off prescriptions"
           badge={pendingApprovals}
-          onPress={() => router.push('/more/rx-approvals')}
+          onPress={() => router.push('/review')}
         />
         <MenuRow
           icon={<FileText color="#1A1A1A" size={18} />}
           label="Prescriptions"
           description="View and manage Rx records"
-          onPress={() => router.push('/more/rx-pipeline')}
+          onPress={() => router.push('/orders')}
           isLast
         />
       </View>

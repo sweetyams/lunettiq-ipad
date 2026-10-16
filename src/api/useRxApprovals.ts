@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
-import { toApprovalSummary } from './rxMapping';
+import { toApprovalSummary, toReviewItem, type FoundryApprovalRow, type ReviewItem } from './rxMapping';
+import { lookupClientNames } from './clientNames';
 import type {
   RxApproval,
   ApprovalStatus,
@@ -22,6 +23,26 @@ export function useRxApprovalQueue(status?: ApprovalStatus) {
         params: status ? { status } : undefined,
       }),
     staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+/** Optician inbox: requests for a status, mapped and with client names resolved. */
+export function useReviewQueue(status: 'submitted' | 'in_review' | 'completed') {
+  return useQuery({
+    queryKey: ['rx-approvals', 'queue', 'mapped', status],
+    queryFn: async (): Promise<ReviewItem[]> => {
+      const rows = await api.get<FoundryApprovalRow[]>('/api/admin/rx-approvals', {
+        params: status === 'completed' ? { limit: '100' } : { status, limit: '100' },
+      });
+      const list = (Array.isArray(rows) ? rows : []).filter((r) =>
+        status === 'completed' ? ['approved', 'rejected', 'returned'].includes(r.status) : true,
+      );
+      const names = await lookupClientNames(list.filter((r) => !r.snapshot?.clientName).map((r) => r.clientId));
+      const now = Date.now();
+      // Oldest first: the client who has waited longest is reviewed first.
+      return list.map((r) => toReviewItem(r, names, now)).sort((a, b) => b.minutesWaiting - a.minutesWaiting);
+    },
+    staleTime: 30 * 1000,
   });
 }
 

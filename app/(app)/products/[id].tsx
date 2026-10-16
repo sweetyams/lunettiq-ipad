@@ -180,7 +180,7 @@ export default function ProductDetailScreen() {
       setConfiguredCart(null);
       setConfiguredPrice(null);
       // Navigate to Rx Pipeline to see the new order
-      router.push('/more/rx-pipeline');
+      router.push('/orders');
     },
     [router]
   );

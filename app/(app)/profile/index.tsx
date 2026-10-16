@@ -269,13 +269,13 @@ export default function ProfileScreen() {
             icon={<ClipboardList size={20} color="#737373" />}
             label="Rx Pipeline"
             description="Prescription orders"
-            onPress={() => router.push('/(app)/more/rx-pipeline')}
+            onPress={() => router.push('/orders')}
           />
           <MenuRow
             icon={<FileCheck size={20} color="#737373" />}
             label="Rx Approvals"
             description="Review queue"
-            onPress={() => router.push('/(app)/more/rx-approvals')}
+            onPress={() => router.push('/review')}
             isLast
           />
         </View>

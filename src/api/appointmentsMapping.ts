@@ -8,6 +8,7 @@
  * up from `/api/clients/{id}` and cached for a few minutes.
  */
 import { api } from './client';
+import { lookupClientNames } from './clientNames';
 import type { Appointment, AppointmentListParams, AppointmentStatus, InventoryHold } from './appointments.types';
 
 export interface FoundryAppointmentRow {
@@ -81,34 +82,6 @@ export function toSchedulingParams(params?: AppointmentListParams & { clientId?:
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
-// --- Client name lookup (short-lived cache) ---
-
-const NAME_TTL_MS = 5 * 60_000;
-const nameCache = new Map<string, { name: string; at: number }>();
-
-async function lookupNames(ids: string[]): Promise<Map<string, string>> {
-  const now = Date.now();
-  const missing = ids.filter((id) => {
-    const hit = nameCache.get(id);
-    return !hit || now - hit.at > NAME_TTL_MS;
-  });
-  await Promise.all(
-    missing.map(async (id) => {
-      try {
-        const c = await api.get<{ firstName?: string | null; lastName?: string | null }>(`/api/clients/${id}`);
-        const name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim();
-        if (name) nameCache.set(id, { name, at: now });
-      } catch {
-        // A missing name falls back to the title or "Client"; never fail the list.
-      }
-    }),
-  );
-  return new Map(ids.flatMap((id) => {
-    const hit = nameCache.get(id);
-    return hit ? [[id, hit.name] as [string, string]] : [];
-  }));
-}
-
 /** GET /api/scheduling → iPad Appointments (with client names resolved). */
 export async function fetchAppointments(params?: AppointmentListParams & { clientId?: string }): Promise<Appointment[]> {
   const rows = await api.get<FoundryAppointmentRow[]>('/api/scheduling', { params: toSchedulingParams(params) });
@@ -119,7 +92,7 @@ export async function fetchAppointments(params?: AppointmentListParams & { clien
       .map((r) => r.customerId ?? r.shopifyCustomerId)
       .filter((id): id is string => !!id),
   )];
-  const names = needNames.length > 0 ? await lookupNames(needNames) : new Map<string, string>();
+  const names = needNames.length > 0 ? await lookupClientNames(needNames) : new Map<string, string>();
   return list.map((r) => toAppointment(r, names));
 }
 

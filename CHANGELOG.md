@@ -1,5 +1,18 @@
 # Changelog
 
+## [2026-10-16] — V2 S0: five-tab structure
+
+### Changed
+- Tab bar is now **Floor · Clients · Orders · Follow-ups · Review** + Profile (V2 plan §4). Schedule and Products are no longer tabs: Floor has a "Week schedule" button and Products stays in quick actions. The hidden More tab's Rx screens moved into tabs.
+- Tabs are matched to routes by name instead of position, so order/hiding can't mislabel tabs.
+- Badges: Floor = upcoming appointments, Orders = ready for pickup, Follow-ups = calls due, Review = requests waiting.
+
+### Added
+- **Orders**: every Rx order grouped into Awaiting Rx · In review · Ready for lab · At lab · Ready for pickup, oldest first, with an age chip on the Awaiting Rx cadence (day 7 amber, day 21 red), deposit held and balance owing. Replaces the old Rx Pipeline screen, which used a 5-state model Foundry no longer returns.
+- **Follow-ups**: the Smart Discounts call queue from `/api/admin/hot-leads/queue`, most urgent first (last chance, call now, email sent), with intent signals and the authorized discount.
+- **Review** (licensed opticians only, `org:rx:verify` / `org:rx:sign_off`): the remote-approval inbox, longest-waiting first, anomaly flags in red, Claim / Release, and "Claim next". Replaces the old Rx Approvals screen (unmapped fields, non-existent colour tokens).
+- `clientNames.ts` (shared client-name lookup), `ordersMapping.ts`, `hotLeadsMapping.ts`, review mapping in `rxMapping.ts`, with tests.
+
 ## [2026-10-16] — V2 S0: landscape-first, brand splash, sign-in and lock
 
 ### Changed

@@ -59,3 +59,75 @@ export function toApprovalSummary(raw: unknown): ApprovalSummary {
     total: n(r.total) || submitted + inReview,
   };
 }
+
+// --- Remote approval inbox ---
+
+export interface FoundryApprovalRow {
+  id: string;
+  orderId: string;
+  clientId: string;
+  status: string;
+  priority?: string | null;
+  submittedAt?: string | null;
+  claimedBy?: string | null;
+  flagsOpen?: number | null;
+  locationId?: string | null;
+  snapshot?: {
+    clientName?: string;
+    frame?: string;
+    lens?: string;
+    product?: { name?: string };
+    lensType?: string;
+    measurements?: { pd?: number };
+    flags?: Array<{ type?: string; message?: string }>;
+  } | null;
+  createdAt: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  orderId: string;
+  clientId: string;
+  clientName: string;
+  status: string;
+  priority: 'normal' | 'high';
+  claimedBy: string | null;
+  /** "Marais © Crimson · progressive 1.67" */
+  description: string;
+  pd: number | null;
+  /** First open anomaly, e.g. "PD difference: measured 58 mm vs 64 mm" */
+  anomaly: string | null;
+  minutesWaiting: number;
+}
+
+export function toReviewItem(row: FoundryApprovalRow, names: ReadonlyMap<string, string> = new Map(), now = Date.now()): ReviewItem {
+  const snap = row.snapshot ?? {};
+  const frame = snap.frame ?? snap.product?.name ?? null;
+  const lens = snap.lens ?? snap.lensType ?? null;
+  const submitted = Date.parse(row.submittedAt ?? row.createdAt);
+  const flag = snap.flags?.find((f) => f?.message)?.message ?? null;
+  return {
+    id: row.id,
+    orderId: row.orderId,
+    clientId: row.clientId,
+    clientName: snap.clientName ?? names.get(row.clientId) ?? 'Client',
+    status: row.status,
+    priority: row.priority === 'high' ? 'high' : 'normal',
+    claimedBy: row.claimedBy ?? null,
+    description: [frame, lens].filter(Boolean).join(' · ') || 'Rx order',
+    pd: typeof snap.measurements?.pd === 'number' ? snap.measurements.pd : null,
+    anomaly: flag ?? ((row.flagsOpen ?? 0) > 0 ? 'Flagged for attention' : null),
+    minutesWaiting: Number.isFinite(submitted) ? Math.max(0, Math.round((now - submitted) / 60_000)) : 0,
+  };
+}
+
+/** "2m", "1h 5m", "3d" */
+export function formatWaiting(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 24 * 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${Math.floor(minutes / (24 * 60))}d`;
+}

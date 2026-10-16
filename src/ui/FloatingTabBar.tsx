@@ -3,8 +3,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Home,
   Users,
-  Package,
-  Calendar,
+  ClipboardList,
+  PhoneCall,
+  FileCheck,
   Lock,
 } from 'lucide-react-native';
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
@@ -26,11 +27,13 @@ interface TabItemConfig {
   icon: typeof Home | null;
 }
 
+/** V2 tabs (plan §4). Matched to routes by name; routes not listed here are not tabs. */
 const TAB_ITEMS: TabItemConfig[] = [
-  { key: 'home', label: 'Home', icon: Home },
+  { key: 'home', label: 'Floor', icon: Home },
   { key: 'clients', label: 'Clients', icon: Users },
-  { key: 'products', label: 'Products', icon: Package },
-  { key: 'appointments', label: 'Schedule', icon: Calendar },
+  { key: 'orders', label: 'Orders', icon: ClipboardList },
+  { key: 'follow-ups', label: 'Follow-ups', icon: PhoneCall },
+  { key: 'review', label: 'Review', icon: FileCheck },
   { key: 'profile', label: 'Profile', icon: null },
 ];
 
@@ -47,9 +50,11 @@ interface FloatingTabBarProps {
     navigate: (name: string, params?: object) => void;
   };
   badges?: Record<string, number>;
+  /** Tab keys to leave out (e.g. Review for staff who can't verify prescriptions). */
+  hidden?: string[];
 }
 
-export function FloatingTabBar({ state, descriptors, navigation, badges }: FloatingTabBarProps) {
+export function FloatingTabBar({ state, descriptors, navigation, badges, hidden }: FloatingTabBarProps) {
   const { lock } = useAuthContext();
   const { colors } = useDesignTokens();
   const { activeOperator } = useOperatorStore();
@@ -85,8 +90,8 @@ export function FloatingTabBar({ state, descriptors, navigation, badges }: Float
           className="flex-row items-center rounded-full"
         >
           {state.routes.map((route, index) => {
-            const tabItem = TAB_ITEMS[index];
-            if (!tabItem) return null;
+            const tabItem = TAB_ITEMS.find((t) => t.key === route.name);
+            if (!tabItem || hidden?.includes(tabItem.key)) return null;
 
             const descriptor = descriptors[route.key];
             const isFocused = state.index === index;

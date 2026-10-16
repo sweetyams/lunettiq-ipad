@@ -26,7 +26,7 @@ export function RxStatusCard() {
 
       {/* Pipeline summary */}
       <Pressable
-        onPress={() => router.push('/more/rx-pipeline')}
+        onPress={() => router.push('/orders')}
         className="flex-row items-center py-sm min-h-[44px]"
         accessibilityRole="button"
         accessibilityLabel={`Rx Pipeline: ${readyCount} ready for pickup, ${inLabCount} in progress`}
@@ -56,7 +56,7 @@ export function RxStatusCard() {
 
       {/* Approvals summary */}
       <Pressable
-        onPress={() => router.push('/more/rx-approvals')}
+        onPress={() => router.push('/review')}
         className="flex-row items-center py-sm border-t border-border min-h-[44px]"
         accessibilityRole="button"
         accessibilityLabel={`Rx Approvals: ${pendingApprovals} pending review`}

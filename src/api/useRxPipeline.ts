@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import { toRxPipelineCounts } from './rxMapping';
+import { toOrderItem, type FoundryRxOrderRow, type OrderItem } from './ordersMapping';
 import type { RxOrder, RxPipelineCounts, CreateRxOrderPayload, UpdateRxOrderPayload } from './rx-pipeline.types';
 
 export function useRxPipelineOrders(params?: { state?: string; clientId?: string; limit?: number; offset?: number }) {
@@ -18,6 +19,19 @@ export function useRxPipelineOrders(params?: { state?: string; clientId?: string
     queryKey: ['rx-pipeline', 'orders', params],
     queryFn: () => api.get<RxOrder[]>('/api/admin/rx-pipeline/orders', { params: apiParams }),
     staleTime: 60 * 1000, // 1 minute
+  });
+}
+
+/** Every Rx order mapped to the floor's five stages (Orders tab). */
+export function useOrders() {
+  return useQuery({
+    queryKey: ['rx-pipeline', 'orders', 'mapped'],
+    queryFn: async (): Promise<OrderItem[]> => {
+      const rows = await api.get<FoundryRxOrderRow[]>('/api/admin/rx-pipeline/orders', { params: { limit: '500' } });
+      const now = Date.now();
+      return (Array.isArray(rows) ? rows : []).map((r) => toOrderItem(r, now));
+    },
+    staleTime: 60 * 1000,
   });
 }
 

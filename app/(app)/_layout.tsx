@@ -7,7 +7,10 @@ import { SessionBar } from '@/src/ui/SessionBar';
 import { SessionServerBridge } from '@/src/features/session/SessionServerBridge';
 import { FloatingTabBar } from '@/src/ui/FloatingTabBar';
 import { useRxApprovalSummary } from '@/src/api/useRxApprovals';
+import { useRxPipelineCounts } from '@/src/api/useRxPipeline';
+import { useFollowUps } from '@/src/api/useHotLeads';
 import { useTodayAppointments } from '@/src/api/useAppointments';
+import { usePermissions } from '@/src/features/auth/usePermissions';
 
 export default function AppLayout() {
   const mode = useSessionStore((s) => s.mode);
@@ -15,7 +18,12 @@ export default function AppLayout() {
 
   // Badge counts for notification dots
   const { data: rxSummary } = useRxApprovalSummary();
+  const { data: rxCounts } = useRxPipelineCounts();
+  const { data: followUps } = useFollowUps();
   const { data: todayAppointments } = useTodayAppointments();
+  const { hasAny } = usePermissions();
+  // Review is the licensed optician's inbox (OOAQ): hidden for everyone else.
+  const canReview = hasAny('org:rx:verify', 'org:rx:sign_off');
 
   // Hide TabBar in fitting and handed modes
   const hideTabBar = mode === 'fitting' || handedToClient;
@@ -31,12 +39,11 @@ export default function AppLayout() {
   const upcomingCount = todayAppointments?.filter(
     (a: { status: string }) => a.status === 'scheduled' || a.status === 'confirmed'
   ).length ?? 0;
-  if (upcomingCount > 0) {
-    badges.appointments = upcomingCount;
-  }
-  if (rxSummary?.submitted) {
-    badges.profile = rxSummary.submitted;
-  }
+  if (upcomingCount > 0) badges.home = upcomingCount;
+  if (rxCounts?.ready) badges.orders = rxCounts.ready;
+  const callsDue = followUps?.filter((f) => f.due === 'call_now' || f.due === 'last_chance').length ?? 0;
+  if (callsDue > 0) badges['follow-ups'] = callsDue;
+  if (canReview && rxSummary?.submitted) badges.review = rxSummary.submitted;
 
   return (
     <View className="flex-1">
@@ -48,7 +55,7 @@ export default function AppLayout() {
       <Tabs
         tabBar={(props) =>
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          hideTabBar ? null : <FloatingTabBar {...(props as any)} badges={badges} />
+          hideTabBar ? null : <FloatingTabBar {...(props as any)} badges={badges} hidden={canReview ? [] : ['review']} />
         }
         screenOptions={{
           headerShown: false,
@@ -56,18 +63,17 @@ export default function AppLayout() {
           tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
         }}
       >
-        <Tabs.Screen name="home" options={{ title: 'Home' }} />
+        {/* V2 tabs (plan §4): Floor · Clients · Orders · Follow-ups · Review · Profile */}
+        <Tabs.Screen name="home" options={{ title: 'Floor' }} />
         <Tabs.Screen name="clients" options={{ title: 'Clients' }} />
-        <Tabs.Screen name="products" options={{ title: 'Products' }} />
-        <Tabs.Screen name="appointments" options={{ title: 'Schedule' }} />
+        <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
+        <Tabs.Screen name="follow-ups" options={{ title: 'Follow-ups' }} />
+        <Tabs.Screen name="review" options={{ title: 'Review' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-        {/* More tab kept for routing but hidden from tab bar — accessed via Profile screen */}
-        <Tabs.Screen
-          name="more"
-          options={{
-            href: null, // Hides from tab bar
-          }}
-        />
+        {/* Not tabs: reached from Floor (schedule, catalogue) and Profile (tools) */}
+        <Tabs.Screen name="appointments" options={{ href: null }} />
+        <Tabs.Screen name="products" options={{ href: null }} />
+        <Tabs.Screen name="more" options={{ href: null }} />
       </Tabs>
     </View>
   );
