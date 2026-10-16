@@ -11,6 +11,7 @@ export const kitColors = {
   inverse: '#FFFFFF',
   primary: '#171717',
   border: '#E4E4E7',
+  subtle: '#F7F7F7',
   success: '#008053',
   warning: '#C76A18',
   danger: '#E7000B',

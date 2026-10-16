@@ -1,5 +1,11 @@
 # Changelog
 
+## [2026-10-16] — Fix: iPad locking with Auto-lock set to Never
+
+### Fixed
+- The manual lock button was a grey tab pinned to the right screen edge, floating over content (the right end of list rows on Floor, the right column of cards on Orders). A tap near a row's right edge locked the iPad, regardless of Auto-lock. The lock is now the last item in the tab bar, after a divider.
+- Verified on the simulator: relaunch with Auto-lock = Never opens without the PIN (fix from `5781ea0`), and 2.5 minutes idle doesn't lock.
+
 ## [2026-10-16] — Phase D0: Found UI tokens (Builder parity)
 
 ### Changed

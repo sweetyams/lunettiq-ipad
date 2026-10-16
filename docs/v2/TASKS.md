@@ -28,6 +28,7 @@ Updated with every commit. Branch: `feat/v2-s0-visit-persistence` (iPad), `feat/
 | Appointments without names/types/durations; week filter ignored | `ea6bef5` |
 | Rx counts card empty, Rx Pipeline screen crashed on real data | `ea6bef5` |
 | Unreadable status badges; Home not refreshing on return | `450a407` |
+| iPad locked with Auto-lock = Never (relaunch lock; edge lock tab over content) | `5781ea0`, see CHANGELOG |
 
 ## Phase D · Design parity with the Builder (added Oct 16)
 

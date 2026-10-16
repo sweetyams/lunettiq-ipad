@@ -19,7 +19,7 @@ import { kitColors } from '@/src/ui/kit/colors';
  * - Semi-transparent white pill, centered at bottom
  * - Icons only, black. Active = thicker stroke + light grey circle
  * - Profile tab: solid brand circle with white initials
- * - Lock: dark semi-transparent tab attached to right screen edge
+ * - Lock: last item in the pill, after a divider (not an edge tab over content)
  */
 
 interface TabItemConfig {
@@ -194,40 +194,30 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
               </Pressable>
             );
           })}
+
+          {/* Lock lives inside the bar, after a hairline divider (Builder toolbar
+              grouping). It used to be an edge tab floating over content, where a tap
+              near the right end of a row locked the iPad by accident. */}
+          <View style={{ width: 1, height: 28, backgroundColor: kitColors.border }} />
+          <Pressable
+            onPress={lock}
+            accessibilityRole="button"
+            accessibilityLabel="Lock the iPad and switch user"
+            hitSlop={4}
+            style={({ pressed }) => ({
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: pressed ? kitColors.subtle : 'transparent',
+            })}
+          >
+            <Lock size={22} color={kitColors.icon} strokeWidth={1.6} />
+          </Pressable>
         </View>
       </View>
 
-      {/* Lock — semi-transparent black tab, right edge, vertically aligned with pill */}
-      <View
-        style={{
-          position: 'absolute',
-          right: 0,
-          bottom: bottomOffset + 14,
-          backgroundColor: colors.bgOverlay,
-          borderTopLeftRadius: 12,
-          borderBottomLeftRadius: 12,
-          width: 44,
-          height: 52,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Pressable
-          onPress={lock}
-          accessibilityRole="button"
-          accessibilityLabel="Lock device and switch user"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.6 : 1,
-            transform: [{ scale: pressed ? 0.9 : 1 }],
-            width: 44,
-            height: 52,
-            alignItems: 'center',
-            justifyContent: 'center',
-          })}
-        >
-          <Lock size={20} color={colors.textInverse} strokeWidth={1.8} />
-        </Pressable>
-      </View>
     </View>
   );
 }
