@@ -1,10 +1,10 @@
-import { View, Text, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { Calendar, UserPlus } from 'lucide-react-native';
-import { useTodayAppointments, useMarkArrived, useStartAppointment, useMarkNoShow } from '@/src/api/useAppointments';
-import { useSessionStore } from '@/src/features/session/useSessionStore';
+import { useTodayAppointments } from '@/src/api/useAppointments';
+import { useVisitActions } from '@/src/features/appointments/useVisitActions';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
 import { HoldsSection, RecentClientsSection, RxSection } from '@/src/features/floor/FloorRail';
 import { Button, PageHeader, Section } from '@/src/ui/kit';
@@ -24,10 +24,7 @@ export default function HomeScreen() {
     refetch,
   } = useTodayAppointments();
 
-  const markArrived = useMarkArrived();
-  const startAppointment = useStartAppointment();
-  const markNoShow = useMarkNoShow();
-  const { startSession, mode: sessionMode, activeClientId } = useSessionStore();
+  const { arrive, startVisit } = useVisitActions();
   const queryClient = useQueryClient();
 
   // Home is the floor's dashboard: refresh it every time staff come back to it,
@@ -47,68 +44,6 @@ export default function HomeScreen() {
     if (aDone !== bDone) return aDone ? 1 : -1;
     return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
   });
-
-  const handleMarkArrived = useCallback((appointmentId: string) => {
-    markArrived.mutate(appointmentId);
-  }, [markArrived]);
-
-  const handleStartAppointment = useCallback((appointmentId: string) => {
-    startAppointment.mutate(appointmentId);
-  }, [startAppointment]);
-
-  const handleStartSession = useCallback((appointmentId: string) => {
-    const appointment = appointments?.find((a) => a.id === appointmentId);
-    if (!appointment?.clientId) {
-      toast.warning('No Client', 'This appointment has no linked client.');
-      return;
-    }
-    if (sessionMode !== 'idle' && activeClientId !== appointment.clientId) {
-      toast.warning('Visit in progress', 'End the current visit before starting another.');
-      return;
-    }
-    // Starts the visit (local id now; SessionServerBridge creates it on Foundry)
-    startSession(appointment.clientId, appointment.clientName || 'Client', {
-      appointmentId: appointment.id,
-    });
-    router.push(`/clients/${appointment.clientId}/session`);
-  }, [appointments, sessionMode, activeClientId, startSession, router]);
-
-  const handleAppointmentPress = useCallback((appointmentId: string) => {
-    // Could show detail popover in future; for now do nothing
-  }, []);
-
-  const handleAppointmentLongPress = useCallback((appointment: Appointment) => {
-    const actions: Array<{ text: string; style?: 'destructive' | 'cancel'; onPress?: () => void }> = [];
-
-    if (appointment.status !== 'no_show' && appointment.status !== 'completed') {
-      actions.push({
-        text: 'Mark No-show',
-        style: 'destructive',
-        onPress: () => markNoShow.mutate(appointment.id),
-      });
-    }
-
-    if (appointment.clientId) {
-      actions.push({
-        text: 'View profile',
-        onPress: () => router.push(`/clients/${appointment.clientId}`),
-      });
-    }
-
-    actions.push({ text: 'Cancel', style: 'cancel' });
-
-    Alert.alert(
-      appointment.clientName || 'Appointment',
-      undefined,
-      actions
-    );
-  }, [markNoShow, router]);
-
-  // Arrived → start the appointment and open the visit in one tap.
-  const handleStartVisit = useCallback((appointmentId: string) => {
-    startAppointment.mutate(appointmentId);
-    handleStartSession(appointmentId);
-  }, [startAppointment, handleStartSession]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -159,7 +94,7 @@ export default function HomeScreen() {
               <View className="p-[20px]"><ErrorState error="Couldn’t load today’s appointments" onRetry={refetch} /></View>
             ) : list.length === 0 ? (
               <View className="px-[20px] pb-[28px] pt-[8px] items-start gap-[12px]">
-                <Text className="text-body-md text-text-secondary">No appointments today. Walk-ins start from Clients.</Text>
+                <Text className="text-body-md text-text-secondary">No appointments today. Walk-ins start from Schedule.</Text>
                 <Button label="Find a client" size="sm" onPress={() => router.push('/clients')} />
               </View>
             ) : (
@@ -168,11 +103,10 @@ export default function HomeScreen() {
                   key={a.id}
                   first={i === 0}
                   appointment={a}
-                  onMarkArrived={handleMarkArrived}
-                  onStartVisit={handleStartVisit}
-                  onOpenVisit={handleStartSession}
-                  onPress={a.clientId ? () => router.push(`/clients/${a.clientId}`) : undefined}
-                  onLongPress={() => handleAppointmentLongPress(a)}
+                  onMarkArrived={() => arrive(a)}
+                  onStartVisit={() => startVisit(a)}
+                  onOpenVisit={() => startVisit(a)}
+                  onPress={() => router.push(`/appointments?selected=${a.id}`)}
                 />
               ))
             )}

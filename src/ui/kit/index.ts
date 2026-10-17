@@ -10,7 +10,7 @@ export { ListRow } from './ListRow';
 export { elevation } from './elevation';
 export { kitColors } from './colors';
 export { FilterChips } from './FilterChips';
-export { formatPhone, formatDate, formatDollars } from './format';
+export { formatPhone, formatDate, formatDollars, staffFirstName } from './format';
 export { StatRow } from './StatRow';
 export { KeyValue } from './KeyValue';
 export { Tabs } from './Tabs';

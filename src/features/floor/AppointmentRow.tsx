@@ -26,7 +26,7 @@ function formatTime(iso: string): { time: string; period: string } {
  * Builder list row; no coloured edges, no full-width buttons.
  */
 export function AppointmentRow({
-  appointment, onMarkArrived, onStartVisit, onOpenVisit, onPress, onLongPress, first,
+  appointment, onMarkArrived, onStartVisit, onOpenVisit, onPress, onLongPress, first, selected, hideAction,
 }: {
   appointment: Appointment;
   onMarkArrived: (id: string) => void;
@@ -35,6 +35,10 @@ export function AppointmentRow({
   onPress?: () => void;
   onLongPress?: () => void;
   first?: boolean;
+  /** Highlighted in a master–detail list (Schedule). */
+  selected?: boolean;
+  /** No action button (other days in Week view). */
+  hideAction?: boolean;
 }) {
   const privacyMode = usePrivacyStore((s) => s.mode);
   const status = STATUS[appointment.status] ?? STATUS.scheduled!;
@@ -43,7 +47,7 @@ export function AppointmentRow({
 
   // One action per row, and none in client-visible mode.
   let action: { label: string; onPress: () => void } | null = null;
-  if (privacyMode !== 'client') {
+  if (privacyMode !== 'client' && !hideAction) {
     if (appointment.status === 'scheduled' || appointment.status === 'confirmed') {
       action = { label: 'Mark arrived', onPress: () => onMarkArrived(appointment.id) };
     } else if (appointment.status === 'arrived') {
@@ -58,10 +62,11 @@ export function AppointmentRow({
       onPress={onPress}
       onLongPress={onLongPress}
       accessibilityRole="button"
+      accessibilityState={{ selected: !!selected }}
       accessibilityLabel={`${time} ${period}, ${appointment.clientName ?? 'Client'}, ${appointment.type}, ${status.label}`}
     >
       {({ pressed }) => (
-        <View className={`flex-row items-center gap-[20px] px-[20px] min-h-[76px] py-[12px] ${first ? '' : 'border-t border-border'} ${pressed ? 'bg-bg-subtle' : ''} ${done ? 'opacity-50' : ''}`}>
+        <View className={`flex-row items-center gap-[20px] px-[20px] min-h-[76px] py-[12px] ${first ? '' : 'border-t border-border'} ${pressed || selected ? 'bg-bg-subtle' : ''} ${done ? 'opacity-50' : ''}`}>
           <View className="w-[76px]">
             <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{time}</Text>
             <Text className="text-body-sm text-text-tertiary">{period}</Text>

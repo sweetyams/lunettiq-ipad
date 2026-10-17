@@ -19,6 +19,8 @@ export interface Appointment {
   clientName: string | null;
   clientId: string | null;
   type: string;
+  /** Service id (for finding free times when rescheduling). */
+  typeId?: string | null;
   status: AppointmentStatus;
   startsAt: string; // ISO 8601
   endsAt: string; // ISO 8601
@@ -118,7 +120,9 @@ export interface TimeSlot {
 
 export interface CreateAppointmentPayload {
   title: string;
-  shopifyCustomerId: string | null; // Foundry uses shopifyCustomerId, not clientId
+  /** Foundry reads customerId first, then shopifyCustomerId. */
+  customerId?: string | null;
+  shopifyCustomerId: string | null;
   staffId: string | null;
   typeId: string | null;
   startsAt: string; // ISO 8601

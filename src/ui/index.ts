@@ -11,7 +11,6 @@ export { ProfileGapChips } from './ProfileGapChips';
 export { Sheet } from './Sheet';
 
 // Foundation Components (alphabetical)
-export { AppointmentCard } from './AppointmentCard';
 export { Button } from './Button';
 export { Card, CardHead, CardBody, CardFoot } from './Card';
 export { ClientCard } from './ClientCard';

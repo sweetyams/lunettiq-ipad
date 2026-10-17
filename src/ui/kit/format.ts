@@ -20,3 +20,11 @@ export function formatDollars(amount: number | null | undefined): string {
   const n = amount ?? 0;
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
 }
+
+/** Staff display name: first name, or a tidy email local part ("willem@x.com" → "Willem"). */
+export function staffFirstName(name: string | null | undefined): string {
+  const n = (name ?? '').trim();
+  if (!n) return 'Staff';
+  const base = n.includes('@') ? n.split('@')[0]!.split(/[._-]/)[0]! : n.split(' ')[0]!;
+  return base.charAt(0).toUpperCase() + base.slice(1);
+}

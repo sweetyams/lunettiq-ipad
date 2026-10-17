@@ -14,6 +14,7 @@ import type { Appointment, AppointmentListParams, AppointmentStatus, InventoryHo
 export interface FoundryAppointmentRow {
   id: string;
   title?: string | null;
+  typeId?: string | null;
   customerId?: string | null;
   shopifyCustomerId?: string | null;
   staffId?: string | null;
@@ -52,6 +53,7 @@ export function toAppointment(row: FoundryAppointmentRow, names: ReadonlyMap<str
     clientId,
     clientName: row.clientName ?? row.customerName ?? (clientId ? names.get(clientId) : undefined) ?? nameFromTitle ?? null,
     type,
+    typeId: row.typeId ?? null,
     status: row.status as AppointmentStatus,
     startsAt: row.startsAt,
     endsAt: row.endsAt,

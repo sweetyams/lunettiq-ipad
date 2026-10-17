@@ -106,7 +106,7 @@ export default function ClientProfileScreen() {
             <Text className="text-body-md text-text-tertiary mt-[4px]" numberOfLines={1}>{contactLine}</Text>
           </View>
           <View className="flex-row items-center gap-[8px]">
-            {staff ? <Button label="Book" icon={CalendarPlus} variant="ghost" onPress={() => router.push('/appointments')} /> : null}
+            {staff ? <Button label="Book" icon={CalendarPlus} variant="ghost" onPress={() => router.push(`/appointments?book=${client.id}`)} /> : null}
             <Button label="Start visit" icon={Play} variant="primary" onPress={handleStartSession} />
           </View>
         </View>
@@ -155,7 +155,7 @@ export default function ClientProfileScreen() {
               )}
             </Section>
 
-            <Section title="Next visit" action={{ label: 'Book', onPress: () => router.push('/appointments') }}>
+            <Section title="Next visit" action={{ label: 'Book', onPress: () => router.push(`/appointments?book=${client.id}`) }}>
               {nextVisit ? (
                 <View className="gap-[4px]">
                   <Text className="text-body-md font-medium text-text-primary">{nextVisit.type}</Text>

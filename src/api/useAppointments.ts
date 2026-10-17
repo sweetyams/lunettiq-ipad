@@ -93,14 +93,22 @@ export function useStaffSchedules(date: string, locationId?: string) {
   });
 }
 
-/** Inventory holds for an appointment (frames pulled for client) */
-export function useAppointmentHolds(appointmentId: string | null) {
+/**
+ * Try-on holds for an appointment: those referencing the appointment or its
+ * client. Foundry's list ignores filters, so match here (never show another
+ * client's holds).
+ */
+export function useAppointmentHolds(appointmentId: string | null, clientId?: string | null) {
   return useQuery({
-    queryKey: ['inventory-holds', appointmentId],
-    queryFn: () =>
-      api.get<InventoryHold[]>('/api/inventory/protections', {
+    queryKey: ['inventory-holds', 'appointment', appointmentId, clientId ?? null, 'mapped'],
+    queryFn: async () => {
+      const rows = await api.get<FoundryProtectionRow[]>('/api/inventory/protections', {
         params: { reason: 'try_on_hold', appointmentId: appointmentId! },
-      }),
+      });
+      return (Array.isArray(rows) ? rows : [])
+        .map(toInventoryHold)
+        .filter((h) => h.appointmentId === appointmentId || (!!clientId && h.clientId === clientId));
+    },
     enabled: !!appointmentId,
     staleTime: 5 * 60 * 1000,
   });
@@ -327,8 +335,11 @@ export function useSendReminder() {
 /** Client's appointment history */
 export function useClientAppointments(clientId: string | null) {
   return useQuery({
-    queryKey: ['appointments', 'client', clientId],
-    queryFn: () => fetchAppointments({ clientId: clientId! }),
+    queryKey: ['appointments', 'client', clientId, 'scoped'],
+    // The scheduling route may ignore clientId; never show other clients' visits.
+    queryFn: async () => (await fetchAppointments({ clientId: clientId! }))
+      .filter((a) => a.clientId === clientId)
+      .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)),
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
   });

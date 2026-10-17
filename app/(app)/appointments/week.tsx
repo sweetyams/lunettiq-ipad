@@ -1,376 +1,145 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
-import { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useWeekAppointments, useStaffSchedules } from '@/src/api/useAppointments';
-import { Appointment } from '@/src/api/appointments.types';
-import { LoadingState, ErrorState, EmptyState } from '@/src/ui';
-import { CreateAppointmentSheet } from '@/src/features/appointments';
+import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { useState, useMemo, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, CalendarDays, CalendarPlus } from 'lucide-react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useWeekAppointments, useSchedulingStaff } from '@/src/api/useAppointments';
+import type { Appointment } from '@/src/api/appointments.types';
+import { LoadingState } from '@/src/ui/LoadingState';
+import { ErrorState } from '@/src/ui/ErrorState';
+import { EmptyState } from '@/src/ui/EmptyState';
+import { Button, FilterChips, PageHeader, Section, kitColors } from '@/src/ui/kit';
+import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
+import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet } from '@/src/features/appointments';
+import { useVisitActions } from '@/src/features/appointments/useVisitActions';
 
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  // Monday = start of week
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+function weekStartOf(d: Date) {
+  const r = new Date(d);
+  const day = r.getDay();
+  r.setDate(r.getDate() - (day === 0 ? 6 : day - 1));
+  r.setHours(0, 0, 0, 0);
+  return r;
 }
 
-function formatDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function addDays(date: Date, days: number): Date {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-
-export default function WeekViewScreen() {
+/** Week: day strip with counts, the chosen day's list, and the appointment inspector. */
+export default function WeekScreen() {
   const router = useRouter();
-  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
-  const [selectedDayIndex, setSelectedDayIndex] = useState(() => {
-    const today = new Date();
-    const day = today.getDay();
-    return day === 0 ? 6 : day - 1; // Monday = 0
-  });
-  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const params = useLocalSearchParams<{ date?: string; selected?: string }>();
+  const initial = params.date ? new Date(`${params.date}T12:00:00`) : new Date();
+  const [weekStart, setWeekStart] = useState(() => weekStartOf(initial));
+  const [day, setDay] = useState(() => ymd(initial));
+  const [selectedId, setSelectedId] = useState<string | null>(params.selected ?? null);
+  const [booking, setBooking] = useState<{ clientId: string | null; serviceType?: 'follow-up' } | null>(null);
+  const [editing, setEditing] = useState(false);
 
-  const selectedDate = useMemo(() => addDays(weekStart, selectedDayIndex), [weekStart, selectedDayIndex]);
-  const selectedDateStr = formatDate(selectedDate);
+  useEffect(() => {
+    if (!params.date) return;
+    const d = new Date(`${params.date}T12:00:00`);
+    setWeekStart(weekStartOf(d));
+    setDay(params.date);
+    if (params.selected) setSelectedId(params.selected);
+  }, [params.date, params.selected]);
 
-  const { data: weekAppointments, isLoading, error, refetch } = useWeekAppointments(weekStart);
-  const { data: staffSchedules } = useStaffSchedules(selectedDateStr);
+  const { data, isLoading, error, refetch, isRefetching } = useWeekAppointments(weekStart);
+  const { data: staff } = useSchedulingStaff();
+  const { arrive, startVisit } = useVisitActions();
+  const staffName = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s.name])), [staff]);
 
-  // Group appointments by date
-  const appointmentsByDate = useMemo(() => {
-    if (!weekAppointments) return {};
-    const grouped: Record<string, Appointment[]> = {};
-    for (const appt of weekAppointments) {
-      const dateKey = appt.startsAt.substring(0, 10); // YYYY-MM-DD
-      if (!grouped[dateKey]) grouped[dateKey] = [];
-      grouped[dateKey]!.push(appt);
+  // Group by the LOCAL day (startsAt is UTC; slicing it moves evening visits).
+  const byDay = useMemo(() => {
+    const m = new Map<string, Appointment[]>();
+    for (const a of data ?? []) {
+      const k = ymd(new Date(a.startsAt));
+      const withStaff = { ...a, staffName: a.staffName ?? (a.staffId ? staffName.get(a.staffId) ?? null : null) };
+      m.set(k, [...(m.get(k) ?? []), withStaff]);
     }
-    // Sort each day by time
-    for (const key of Object.keys(grouped)) {
-      grouped[key]!.sort(
-        (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
-      );
-    }
-    return grouped;
-  }, [weekAppointments]);
+    for (const list of m.values()) list.sort((x, y) => Date.parse(x.startsAt) - Date.parse(y.startsAt));
+    return m;
+  }, [data, staffName]);
 
-  const selectedDayAppointments = appointmentsByDate[selectedDateStr] ?? [];
-
-  const handlePreviousWeek = useCallback(() => {
-    setWeekStart((prev) => addDays(prev, -7));
-  }, []);
-
-  const handleNextWeek = useCallback(() => {
-    setWeekStart((prev) => addDays(prev, 7));
-  }, []);
-
-  const handleBackToToday = useCallback(() => {
-    router.back();
-  }, [router]);
-
-  const handleAppointmentTap = useCallback((appointment: Appointment) => {
-    // Navigate back to day view with this appointment's date and select it
-    const appointmentDate = appointment.startsAt.substring(0, 10); // YYYY-MM-DD
-    router.push({
-      pathname: '/appointments',
-      params: { selectedDate: appointmentDate, selectedAppointmentId: appointment.id }
-    });
-  }, [router]);
-
-  const isToday = (dayIndex: number) => {
-    const date = addDays(weekStart, dayIndex);
-    return formatDate(date) === formatDate(new Date());
-  };
-
-  const getDayCount = (dayIndex: number) => {
-    const dateStr = formatDate(addDays(weekStart, dayIndex));
-    return appointmentsByDate[dateStr]?.length ?? 0;
-  };
-
-  const formatTime = (isoString: string) => {
-    try {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    } catch {
-      return '';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'in_progress':
-        return 'bg-success';
-      case 'confirmed':
-        return 'bg-info';
-      case 'completed':
-        return 'bg-bg-muted';
-      case 'no_show':
-        return 'bg-error';
-      case 'cancelled':
-        return 'bg-bg-muted';
-      default:
-        return 'bg-border';
-    }
-  };
-
-  const weekLabel = useMemo(() => {
-    const end = addDays(weekStart, 6);
-    const startMonth = weekStart.toLocaleDateString('en-US', { month: 'short' });
-    const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
-    const startDay = weekStart.getDate();
-    const endDay = end.getDate();
-
-    if (startMonth === endMonth) {
-      return `${startMonth} ${startDay} – ${endDay}`;
-    }
-    return `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
-  }, [weekStart]);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const list = byDay.get(day) ?? [];
+  const selected = list.find((a) => a.id === selectedId) ?? null;
+  const todayKey = ymd(new Date());
+  const total = [...byDay.values()].reduce((n, l) => n + l.length, 0);
+  const title = `Week of ${weekStart.toLocaleDateString('en-CA', { month: 'long', day: 'numeric' })}`;
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Header */}
-      <View className="px-xl pt-2xl pb-lg border-b border-border">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center gap-md">
-            <Pressable
-              onPress={handleBackToToday}
-              className="min-h-[44px] min-w-[44px] items-center justify-center"
-              accessibilityRole="button"
-              accessibilityLabel="Back to today"
-            >
-              <ChevronLeft color="#1A1A1A" size={24} />
-            </Pressable>
-            <Text className="text-display-lg text-text-primary">Week View</Text>
-          </View>
-
-          <View className="flex-row items-center gap-md">
-            {/* New appointment button */}
-            <Pressable 
-              onPress={() => setShowCreateSheet(true)}
-              className="bg-brand rounded-md px-lg py-sm min-h-[44px] flex-row items-center gap-sm"
-              accessibilityRole="button"
-              accessibilityLabel="New appointment"
-            >
-              <Plus color="#FFFFFF" size={20} />
-              <Text className="text-brand-text text-body-md font-medium">New</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handlePreviousWeek}
-              className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-border"
-              accessibilityRole="button"
-              accessibilityLabel="Previous week"
-            >
-              <ChevronLeft color="#1A1A1A" size={20} />
-            </Pressable>
-            <Text className="text-body-lg font-medium text-text-primary min-w-[120px] text-center">
-              {weekLabel}
-            </Text>
-            <Pressable
-              onPress={handleNextWeek}
-              className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-border"
-              accessibilityRole="button"
-              accessibilityLabel="Next week"
-            >
-              <ChevronRight color="#1A1A1A" size={20} />
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      {/* Calendar strip — 7 days */}
-      <View className="px-xl py-md border-b border-border">
-        <View className="flex-row justify-between">
-          {DAY_NAMES.map((dayName, index) => {
-            const date = addDays(weekStart, index);
-            const dayNum = date.getDate();
-            const isSelected = index === selectedDayIndex;
-            const isTodayDay = isToday(index);
-            const count = getDayCount(index);
-
+      <PageHeader
+        title={title}
+        subtitle={`${total} appointments this week`}
+        actions={
+          <>
+            <Button label="Previous" icon={ChevronLeft} variant="ghost" onPress={() => setWeekStart((w) => addDays(w, -7))} accessibilityLabel="Previous week" />
+            <Button label="This week" onPress={() => { setWeekStart(weekStartOf(new Date())); setDay(todayKey); }} />
+            <Button label="Next" icon={ChevronRight} variant="ghost" onPress={() => setWeekStart((w) => addDays(w, 7))} accessibilityLabel="Next week" />
+            <Button label="Book" icon={CalendarPlus} variant="primary" onPress={() => setBooking({ clientId: null })} />
+          </>
+        }
+      />
+      <View className="px-[32px] pt-[16px] gap-[16px]">
+        <FilterChips<'today' | 'week' | 'staff'>
+          value="week"
+          onChange={(v) => { if (v === 'today') router.replace('/appointments'); if (v === 'staff') router.replace('/appointments/staff-schedule'); }}
+          options={[{ key: 'today', label: 'Today' }, { key: 'week', label: 'Week' }, { key: 'staff', label: 'Staff' }]}
+        />
+        <View className="flex-row gap-[8px]">
+          {days.map((d) => {
+            const k = ymd(d);
+            const on = k === day;
+            const count = byDay.get(k)?.length ?? 0;
             return (
-              <Pressable
-                key={dayName}
-                onPress={() => setSelectedDayIndex(index)}
-                className={`items-center px-md py-sm rounded-lg min-w-[72px] min-h-[44px] ${
-                  isSelected ? 'bg-brand' : isTodayDay ? 'bg-bg-surface border border-border' : ''
-                }`}
-                accessibilityRole="button"
-                accessibilityLabel={`${dayName} ${dayNum}, ${count} appointments`}
-              >
-                <Text
-                  className={`text-caption ${
-                    isSelected ? 'text-brand-text' : 'text-text-muted'
-                  }`}
-                >
-                  {dayName}
-                </Text>
-                <Text
-                  className={`text-heading-xl mt-xs ${
-                    isSelected ? 'text-brand-text' : 'text-text-primary'
-                  }`}
-                >
-                  {dayNum}
-                </Text>
-                {count > 0 && (
-                  <View
-                    className={`mt-xs w-5 h-5 rounded-full items-center justify-center ${
-                      isSelected ? 'bg-brand-foreground' : 'bg-bg-surface border border-border'
-                    }`}
-                  >
-                    <Text
-                      className={`text-[11px] font-medium ${
-                        isSelected ? 'text-text-primary' : 'text-text-muted'
-                      }`}
-                    >
-                      {count}
-                    </Text>
-                  </View>
-                )}
+              <Pressable key={k} onPress={() => { setDay(k); setSelectedId(null); }} className="flex-1" accessibilityRole="tab" accessibilityState={{ selected: on }}
+                accessibilityLabel={`${d.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}, ${count} appointments`}>
+                <View className={`items-center rounded-md border py-[10px] ${on ? 'bg-accent border-accent' : 'bg-bg-page border-border'}`}>
+                  <Text className={`text-body-sm ${on ? 'text-accent-text' : k === todayKey ? 'text-text-primary font-medium' : 'text-text-tertiary'}`}>
+                    {k === todayKey ? 'Today' : d.toLocaleDateString('en-CA', { weekday: 'short' })}
+                  </Text>
+                  <Text className={`text-heading-lg ${on ? 'text-accent-text' : 'text-text-primary'}`}>{d.getDate()}</Text>
+                  <Text className={`text-body-sm ${on ? 'text-accent-text' : 'text-text-tertiary'}`}>{count ? `${count} booked` : '—'}</Text>
+                </View>
               </Pressable>
             );
           })}
         </View>
       </View>
 
-      {/* Day detail */}
-      <View className="flex-1 flex-row">
-        {/* Main appointment list */}
-        <View className="flex-1">
-          {isLoading ? (
-            <LoadingState />
-          ) : error ? (
-            <ErrorState error={error} onRetry={() => refetch()} />
-          ) : selectedDayAppointments.length === 0 ? (
-            <EmptyState
-              message={`No appointments scheduled for ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
-            />
+      <View className="flex-1 flex-row mt-[8px]">
+        <ScrollView className="w-[640px] flex-grow-0" contentContainerStyle={{ padding: 24, paddingRight: 12, paddingBottom: 140 }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}>
+          {isLoading ? <LoadingState /> : error ? <ErrorState error={error} onRetry={refetch} /> : list.length === 0 ? (
+            <EmptyState message="Nothing booked this day." />
           ) : (
-            <ScrollView
-              className="flex-1"
-              contentContainerStyle={{ padding: 24 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Time slots */}
-              {selectedDayAppointments.map((appointment) => (
-                <View
-                  key={appointment.id}
-                  className="flex-row mb-md"
-                >
-                  {/* Time column */}
-                  <View className="w-[80px] pt-md">
-                    <Text className="text-caption-md text-text-muted font-mono">
-                      {formatTime(appointment.startsAt)}
-                    </Text>
-                  </View>
-
-                  {/* Appointment card */}
-                  <Pressable 
-                    onPress={() => handleAppointmentTap(appointment)}
-                    className="flex-1 bg-bg-surface border border-border rounded-lg p-md min-h-[44px] justify-center"
-                    accessibilityRole="button"
-                    accessibilityLabel={`View ${appointment.clientName ?? 'Walk-in'} appointment`}
-                  >
-                    <View className="flex-row items-center gap-sm mb-xs">
-                      <View className={`w-2 h-2 rounded-full ${getStatusColor(appointment.status)}`} />
-                      <Text className="text-body-md font-medium text-text-primary">
-                        {appointment.clientName ?? 'Walk-in'}
-                      </Text>
-                    </View>
-                    <Text className="text-caption-md text-text-muted">
-                      {appointment.type} • {appointment.duration} min
-                      {appointment.staffName ? ` • ${appointment.staffName}` : ''}
-                    </Text>
-                  </Pressable>
-                </View>
+            <Section padded={false}>
+              {list.map((a, i) => (
+                <AppointmentRow key={a.id} appointment={a} first={i === 0} selected={a.id === selectedId}
+                  hideAction={day !== todayKey}
+                  onPress={() => setSelectedId(a.id)}
+                  onMarkArrived={() => arrive(a)} onStartVisit={() => startVisit(a)} onOpenVisit={() => startVisit(a)} />
               ))}
-            </ScrollView>
+            </Section>
+          )}
+        </ScrollView>
+        <View className="flex-1 border-l border-border">
+          {selected ? (
+            <AppointmentDetailPanel appointment={selected} onEdit={() => setEditing(true)} onCancelled={() => setSelectedId(null)}
+              onBookFollowUp={() => setBooking({ clientId: selected.clientId, serviceType: 'follow-up' })} />
+          ) : (
+            <View className="flex-1 items-center justify-center gap-[12px]">
+              <CalendarDays size={32} color={kitColors.iconMuted} />
+              <Text className="text-body-md text-text-tertiary">Select an appointment to see details.</Text>
+            </View>
           )}
         </View>
-
-        {/* Staff sidebar */}
-        {staffSchedules && staffSchedules.length > 0 && (
-          <View className="w-[240px] border-l border-border p-md">
-            <Text className="text-caption-lg font-medium text-text-muted uppercase tracking-wide mb-md">
-              Staff on Duty
-            </Text>
-            {staffSchedules.map((schedule) => {
-              const staffAppointments = selectedDayAppointments.filter(
-                appt => appt.staffId === schedule.id
-              );
-              
-              return (
-                <View key={schedule.id} className="mb-lg">
-                  <View className="flex-row items-center justify-between mb-xs">
-                    <Text className="text-body-md font-medium text-text-primary">
-                      {schedule.staffName}
-                    </Text>
-                    <View className="w-5 h-5 rounded-full bg-bg-muted items-center justify-center">
-                      <Text className="text-caption-xs text-text-muted font-mono">
-                        {staffAppointments.length}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text className="text-caption-md text-text-muted mb-sm">
-                    {schedule.startTime} – {schedule.endTime}
-                  </Text>
-                  
-                  {/* Staff's appointments for selected day */}
-                  {staffAppointments.length > 0 && (
-                    <View className="gap-xs">
-                      {staffAppointments.slice(0, 3).map((appt) => (
-                        <Pressable
-                          key={appt.id}
-                          onPress={() => handleAppointmentTap(appt)}
-                          className="bg-bg-surface-hover rounded-sm px-xs py-xs border-l-2 border-brand"
-                          accessibilityRole="button"
-                          accessibilityLabel={`View ${appt.clientName} appointment`}
-                        >
-                          <Text className="text-caption-md text-text-primary font-medium">
-                            {formatTime(appt.startsAt)}
-                          </Text>
-                          <Text className="text-caption-xs text-text-muted">
-                            {appt.clientName ?? 'Walk-in'}
-                          </Text>
-                        </Pressable>
-                      ))}
-                      {staffAppointments.length > 3 && (
-                        <Text className="text-caption-xs text-text-muted">
-                          +{staffAppointments.length - 3} more
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        )}
       </View>
 
-      {/* Create appointment sheet */}
-      <CreateAppointmentSheet 
-        visible={showCreateSheet} 
-        onClose={() => setShowCreateSheet(false)} 
-        preselectedDate={selectedDateStr}
-      />
+      {booking ? (
+        <CreateAppointmentSheet visible onClose={() => setBooking(null)} preselectedClientId={booking.clientId}
+          preselectedServiceType={booking.serviceType ?? null} preselectedDate={day >= todayKey ? day : null} />
+      ) : null}
+      {selected && editing ? <EditAppointmentSheet visible appointment={selected} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} /> : null}
     </View>
   );
 }

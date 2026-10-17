@@ -98,3 +98,9 @@ Couldn't confirm by SQL: the Foundry MCP now refuses tenant queries (`DATABASE_T
 | 5 | **Client links** | `GET` returns raw rows (no joined client); `POST` doesn't set `projectId`; `DELETE` filters by `projectId`. | iPad expected `linkedClient` → would crash on the first link. New links can't be deleted. | iPad maps rows and resolves names; Link client now real. **Ask:** set `projectId` on create (and backfill), optionally join the other client's name. |
 
 **Update 2026-10-17:** another "No name yet" customer appeared on lunettiq-demo dated today with no staff action that should create one (the Clients list now shows 3). Supports the shell-customer theory above; worth checking which route created it (`customers.created_at` today, `acquisition_source`).
+
+## Scheduling gaps found in D6 (2026-10-17)
+
+- **Holds list ignores filters.** `GET /api/inventory/protections?appointmentId=…` returns every active hold, so an appointment showed other clients' frames. iPad now maps and filters by `referenceId` (appointment or customer). Ask: honour `appointmentId` / `customerId` / `reason`.
+- **No daily staff roster.** `/api/storefront/scheduling/staff?date=` returns staff who have *any* schedule (ignores `date`), with no shift times; lunettiq-demo has no `staff_schedules` rows. The Staff view now says "Working hours not set up" instead of marking everyone Off. Ask: a roster endpoint (staffId, startTime, endTime for a date) + seed shifts for the demo.
+- Appointment list rows have no client or staff names (iPad resolves both). Booking now sends `customerId`; previously bookings started from a profile or "Booked next visit" were created **without a client** (iPad bug, fixed).

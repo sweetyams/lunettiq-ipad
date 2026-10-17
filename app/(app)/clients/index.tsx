@@ -295,7 +295,7 @@ function ClientPreview({ client }: ClientPreviewProps) {
       <View className="flex-row gap-[12px]">
         <Button label="Start visit" icon={Play} variant="primary" size="lg" onPress={handleStartSession} />
         <Button label="Open profile" size="lg" onPress={() => router.push(`/clients/${client.id}`)} />
-        <Button label="Book appointment" icon={CalendarPlus} variant="ghost" size="lg" onPress={() => router.push('/appointments')} />
+        <Button label="Book appointment" icon={CalendarPlus} variant="ghost" size="lg" onPress={() => router.push(`/appointments?book=${client.id}`)} />
       </View>
     </ScrollView>
   );

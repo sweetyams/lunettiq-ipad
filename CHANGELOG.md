@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-10-17] — Phase D6: Schedule on the kit; booking, walk-ins and holds fixed
+
+### Fixed
+- **Bookings had no client.** `CreateAppointmentSheet` ignored `preselectedClientId`, so "Booked next visit" at the end of a visit (and any booking from a profile) created an appointment with no client. Now resolves the client and sends `customerId`.
+- **Start visit from Schedule never started a visit** (pushed to the workspace with no session → "No visit in progress"). Floor and Schedule now share `useVisitActions` (start/reopen visit with the appointment id, arrive, no-show; errors toast instead of failing silently).
+- **Walk-in stranded clients**: it created a client-less "Arrived" appointment and sent staff to a Clients mode that didn't exist. Now: find the client → logs the walk-in, marks arrived and opens the visit.
+- **Holds and history leaked across clients**: an appointment listed every active hold (Foundry ignores the filter) and "their other visits" could list anyone's. Both are scoped on the iPad.
+- **Reschedule** looked up free times with the service *name* as its id (no slots) and used UTC dates (evening appointments moved a day). Uses `typeId` and local dates.
+- **Week view** grouped by UTC date (evening visits on the wrong day) and tapping an appointment opened nothing. **Staff view** matched shifts by the wrong id, so nobody was ever on duty; it now says when Foundry has no working hours instead of marking everyone Off.
+- Native `Alert`s for cancel / no-show replaced with two-tap confirms; "Eye exam flow coming soon" and Second Sight intake buttons removed.
+
+### Changed
+- **Schedule (Today):** PageHeader with Walk-in and Book; Today / Week / Staff chips; staff filter (names tidied, duplicates disambiguated); Builder list rows with one action; inspector panel (status, time, client, service; Mark arrived / Start visit / Open visit as the one primary; Mark done, Confirm, Send reminder, Edit; details, notes, frames held, their other visits; Book follow-up after a completed visit).
+- **Week:** day strip with counts, the day's list + inspector, previous / this week / next; deep links `?date=&selected=`.
+- **Staff:** a column per person with their bookings; cards open in Week.
+- **Book appointment:** one page: service chips with durations, client search (or pre-filled), with whom ("Anyone available"), 14-day strip + calendar, deduplicated free times, notes.
+- **Edit:** reassign, new day/time from real availability, notes.
+- Floor rows open the appointment in Schedule (`?selected=`); profile and Clients "Book" open the booking sheet for that client (`?book=`).
+
+### Removed
+- `AppointmentCard`, `FollowUpBookingButton` (replaced by the inspector's Book follow-up).
+
+### Added
+- `useVisitActions`, `staffFirstName`, `Appointment.typeId`, `AppointmentRow` `selected` / `hideAction`. Demo seed re-run for 2026-10-17.
+
 ## [2026-10-17] — Phase D5: the visit on the kit; handed mode secured
 
 ### Fixed
