@@ -35,6 +35,10 @@ Work on a branch off main (e.g. `fix/ipad-v2-api-gaps`), one commit per item. Us
 12. **`GET /api/scheduling`.** Left-join and return `clientName` and `staffName`. The iPad already prefers those fields and does N extra lookups without them.
 13. **`GET /api/clients/[id]/prescriptions`.** Caps at 10 rows with no pagination. Add `limit`/`offset`.
 
+14. **Rx orders: configurator output.** The iPad now sends `customerId`, mapped `lensType` / `lensMaterial` / `lensTreatments`, and the full configurator output in `lensSpec` (`attributes`, `addons`, `pricingLines`, `productName`, `shopifyVariantId`), plus `totalCents`, `quoteTotalCents` and `labNotes`. Confirm the optician/lab screens read `lensSpec`, or add structured fields. Note: `variantId` must be a uuid in the schema, so Shopify variant ids go in `lensSpec`.
+15. **Scan resolve.** Return the linked `shopifyProductId` on `type: 'item'` results so the iPad can open the frame without a text search.
+16. **Demo lens flow.** lunettiq-demo has no configurator flow resolving for frames. Seed one in the today/demo seed so ordering shows lens options.
+
 ## Done when
 
 - Each item has a test.
