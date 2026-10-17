@@ -213,6 +213,16 @@ export function useClientWishlist(clientId: string) {
   });
 }
 
+/** Save a frame (variant) to the client's default wishlist. */
+export function useAddToWishlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clientId, variantId, notes }: { clientId: string; variantId: string; notes?: string }) =>
+      api.post(`/api/clients/${clientId}/wishlist`, { variantId, notes }),
+    onSuccess: (_, { clientId }) => qc.invalidateQueries({ queryKey: ['clients', clientId, 'wishlist'] }),
+  });
+}
+
 export function useClientWishlistGroups(clientId: string) {
   return useQuery({
     queryKey: ['clients', clientId, 'wishlist', 'groups'],

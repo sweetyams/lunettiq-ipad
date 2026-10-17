@@ -27,12 +27,12 @@ function TypeButton({ label, active, onPress }: TypeButtonProps) {
       accessibilityState={{ selected: active }}
       accessibilityLabel={`${label}${active ? ', selected' : ''}`}
       className={`min-h-[44px] px-lg py-sm items-center justify-center ${
-        active ? 'bg-color-brand' : 'bg-color-bg-surface'
+        active ? 'bg-accent' : 'bg-bg-page'
       }`}
     >
       <Text
         className={`text-body-md font-medium ${
-          active ? 'text-color-brand-text' : 'text-color-text-secondary'
+          active ? 'text-accent-text' : 'text-text-secondary'
         }`}
       >
         {label}
@@ -58,20 +58,20 @@ function ColourChip({ sibling, isCurrent, onPress }: ColourChipProps) {
       accessibilityState={{ selected: isCurrent }}
       className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full flex-row items-center justify-center border ${
         isCurrent
-          ? 'bg-color-brand border-color-brand'
-          : 'bg-color-bg-surface border-color-border'
+          ? 'bg-bg-page border-accent border-2'
+          : 'bg-bg-page border-border'
       }`}
     >
       {/* Colour swatch circle */}
       {sibling.colourHex && (
         <View
-          className={`w-5 h-5 rounded-full mr-xs border ${isCurrent ? 'border-white/50' : 'border-color-border'}`}
+          className={`w-5 h-5 rounded-full mr-xs border ${'border-border'}`}
           style={{ backgroundColor: sibling.colourHex }}
         />
       )}
       {/* Image thumbnail (fallback if no hex) */}
       {!sibling.colourHex && sibling.image && (
-        <View className="w-5 h-5 rounded-full mr-xs overflow-hidden border border-color-border">
+        <View className="w-5 h-5 rounded-full mr-xs overflow-hidden border border-border">
           <Image
             source={{ uri: sibling.image }}
             style={{ width: 20, height: 20 }}
@@ -80,8 +80,8 @@ function ColourChip({ sibling, isCurrent, onPress }: ColourChipProps) {
         </View>
       )}
       <Text
-        className={`text-caption-lg font-medium ${
-          isCurrent ? 'text-color-brand-text' : 'text-color-text-primary'
+        className={`text-body-sm font-medium ${
+          'text-text-primary'
         }`}
         numberOfLines={1}
       >
@@ -173,16 +173,13 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
   };
 
   return (
-    <View className="p-lg bg-color-bg-surface border-b border-color-border">
+    <View className="gap-[12px]">
       {/* Family name header */}
-      <Text className="text-body-md font-medium text-color-text-primary mb-md">
-        {family?.familyName?.toUpperCase() ?? 'Family'}
-      </Text>
 
       {/* Optical / Sun toggle */}
       {hasBothTypes && (
-        <View className="flex-row mb-md">
-          <View className="flex-row rounded-full overflow-hidden border border-color-border">
+        <View className="flex-row">
+          <View className="flex-row rounded-full overflow-hidden border border-border">
             <TypeButton
               label="Optical"
               active={selectedType === 'optical'}
@@ -200,8 +197,8 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
       {/* Colour chips */}
       {filteredSiblings.length > 1 && (
         <View>
-          <Text className="text-caption-lg text-color-text-muted mb-sm">
-            Colour: <Text className="text-color-text-primary">{currentSibling?.colour ?? ''}</Text>
+          <Text className="text-body-sm text-text-tertiary mb-[8px]">
+            Colour: <Text className="text-text-primary">{currentSibling?.colour ?? ''}</Text>
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View className="flex-row gap-sm">

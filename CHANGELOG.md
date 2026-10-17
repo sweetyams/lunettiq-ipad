@@ -1,5 +1,25 @@
 # Changelog
 
+## [2026-10-17] — Phase D7: Frames (catalogue), product detail, scanner and ordering
+
+### Fixed
+- **Creating an Rx order never worked.** Foundry validates `customerId`; the iPad sent `clientId`, and dropped the lens configuration and price entirely. New `toRxOrderCreate` (tested) sends `customerId`, lens type / material / treatments (mapped to Foundry's enums), the full configuration in `lensSpec`, totals and lab notes.
+- **The catalogue was unreachable** (its tab was hidden in 0.8 with no other entry point). Restored as **Frames** in the tab bar.
+- **Scanner was broken three ways** (POST to a GET route, expected a product but gets an inventory item, manual entry hit a non-existent route). Now resolves frame tags and shelf codes, shows stock by store and shelf, and opens the matching frame.
+- **Load more replaced the list** (paging changed `offset`, so you saw only the next 50). Grows the page instead.
+- Product detail: "Try" logged a try-on to Foundry without adding to the tray (tray and Foundry disagreed) → **Add to tray** uses the real tray. The heart said "Added to wishlist" but only logged a like → **Save to wishlist** calls the wishlist API (new `useAddToWishlist`). Removed the shortlist star.
+- Frames with no lens setup said "can be ordered as-is" with only a Close button → **Order frame only**.
+- `ColourSiblings` used non-existent `color-*` classes (rendered unstyled).
+
+### Changed
+- **Frames:** PageHeader ("Frames for Olivier" during a visit), Scan, search, Filters (kit Sheet with chips per Foundry facet), sort chips (Best match during a visit), 3–4 column grid of new `ProductCard` tiles (photo first, name, colours, staff-only price, stock / fit badges; no "Tap for price" pill in client view).
+- **Product detail:** photography left with thumbnails, inspector right (title, price, stock, In the tray, fit for this client, Optical/Sun, colour or version chips, size key-values, stock, guidance, about, story); Add to tray (primary), Order with lenses, Save to wishlist.
+- **Configurator:** kit Sheet, step chips, choice rows with a near-black ring, tint swatches, review as key-values, running total beside the one primary.
+- **Order summary:** lenses and price key-values, prescription radio list (client's own, with status badge), notes for the lab.
+
+### Removed
+- `FitBadge`, `StockDot`, `SearchBar`, `FilterPillRow`, the "owned" stub.
+
 ## [2026-10-17] — Phase D6: Schedule on the kit; booking, walk-ins and holds fixed
 
 ### Fixed

@@ -52,31 +52,15 @@ function FittingSession() {
 
 ### BarcodeScanner
 
-Full-screen barcode scanner for product identification.
+Camera that reads QR codes and retail barcodes and reports the **raw code**. Resolution is the caller's job (see `src/api/scanResolve.ts`, used by `app/(app)/products/scanner.tsx`).
 
 ```tsx
-import { BarcodeScanner } from '@/src/camera';
-
-function ProductScanner() {
-  const handleScan = (product: Product) => {
-    console.log('Scanned product:', product.name);
-    // Add to session or navigate to product detail
-  };
-
-  return (
-    <BarcodeScanner
-      onScan={handleScan}
-      onClose={() => navigation.goBack()}
-      onError={(error) => showAlert(error)}
-    />
-  );
-}
+<BarcodeScanner onCode={(code) => resolve(code)} paused={busy} />
 ```
 
 **Props:**
-- `onScan` - Called with resolved product data
-- `onClose` - Close scanner handler
-- `onError` - Error handling (optional)
+- `onCode` - Raw scanned value (debounced; repeated scans of the same code within 3s are ignored)
+- `paused` - Stop reporting while a lookup is in flight
 
 ## Hooks
 

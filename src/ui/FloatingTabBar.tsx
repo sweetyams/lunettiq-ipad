@@ -1,13 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  Home,
-  Users,
-  ClipboardList,
-  PhoneCall,
-  FileCheck,
-  Lock,
-} from 'lucide-react-native';
+import { Home, Users, ClipboardList, PhoneCall, FileCheck, Lock, Glasses } from 'lucide-react-native';
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { useDesignTokens } from '@/src/features/design';
@@ -32,6 +25,7 @@ interface TabItemConfig {
 const TAB_ITEMS: TabItemConfig[] = [
   { key: 'home', label: 'Floor', icon: Home },
   { key: 'clients', label: 'Clients', icon: Users },
+  { key: 'products', label: 'Frames', icon: Glasses },
   { key: 'orders', label: 'Orders', icon: ClipboardList },
   { key: 'follow-ups', label: 'Follow-ups', icon: PhoneCall },
   { key: 'review', label: 'Review', icon: FileCheck },

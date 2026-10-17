@@ -8,12 +8,12 @@
  *   4. Summary step with pricing
  *   5. onComplete(cartResult, priceSummary) → caller creates Rx order
  *
- * Design: Native modal sheet, progress bar, choice cards, single green CTA per step.
+ * Design: kit Sheet, step chips, choice rows with a near-black selection ring,
+ * running total beside the one primary.
  */
 import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { Modal } from '@/src/ui/Modal';
 import { useState, useMemo, useCallback } from 'react';
-import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react-native';
+import { ChevronRight, ChevronLeft, Check } from 'lucide-react-native';
 import {
   useConfiguratorResolve,
   useConfiguratorSnapshot,
@@ -22,7 +22,7 @@ import {
   isStepComplete,
   computePriceDelta,
 } from '@/src/api/useConfigurator';
-import { Button } from '@/src/ui/Button';
+import { Badge, Button, KeyValue, Section, Sheet, kitColors } from '@/src/ui/kit';
 import type {
   SnapshotStep,
   SnapshotGroup,
@@ -47,42 +47,30 @@ interface ChoiceCardProps {
 function ChoiceCard({ choice, isSelected, onPress, priceDelta }: ChoiceCardProps) {
   const label = choice.label?.en ?? choice.code;
   const description = choice.description?.en;
-  const price = priceDelta > 0 ? `+$${(priceDelta / 100).toFixed(2)}` : null;
+  const price = priceDelta > 0 ? `+$${(priceDelta / 100).toFixed(2)}` : 'Included';
 
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${label}${price ? `, ${price}` : ''}`}
-      className={`min-h-[44px] border rounded-lg p-md mb-sm flex-row items-center ${
-        isSelected
-          ? 'border-green bg-green/10'
-          : 'border-border bg-bg-surface'
-      }`}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: isSelected }}
+      accessibilityLabel={`${label}, ${price}`}
+      className="mb-[8px]"
     >
-      {/* Selection indicator */}
-      <View
-        className={`w-6 h-6 rounded-full border-2 items-center justify-center mr-md flex-shrink-0 ${
-          isSelected ? 'border-green bg-green' : 'border-border'
-        }`}
-      >
-        {isSelected && <Check size={14} color="white" />}
-      </View>
-
-      {/* Label + description */}
-      <View className="flex-1">
-        <Text className={`text-body ${isSelected ? 'text-text-primary font-medium' : 'text-text-primary'}`}>
-          {label}
-        </Text>
-        {description && (
-          <Text className="text-caption-md text-text-muted mt-xs">{description}</Text>
-        )}
-      </View>
-
-      {/* Price delta */}
-      {price && (
-        <Text className="text-body-md font-medium text-text-primary ml-md">{price}</Text>
+      {({ pressed }) => (
+        <View
+          className={`min-h-[56px] rounded-lg px-[16px] py-[12px] flex-row items-center gap-[14px] ${isSelected ? 'border-2 border-accent' : `border ${pressed ? 'border-text-tertiary' : 'border-border'}`}`}
+          style={isSelected ? undefined : { margin: 1 }}
+        >
+          <View className={`w-[22px] h-[22px] rounded-full items-center justify-center ${isSelected ? 'bg-accent' : 'border border-border'}`}>
+            {isSelected ? <Check size={14} color={kitColors.inverse} strokeWidth={3} /> : null}
+          </View>
+          <View className="flex-1">
+            <Text className={`text-body-md text-text-primary ${isSelected ? 'font-medium' : ''}`}>{label}</Text>
+            {description ? <Text className="text-body-sm text-text-tertiary mt-[2px]">{description}</Text> : null}
+          </View>
+          <Text className={`text-body-sm ${priceDelta > 0 ? 'font-medium text-text-primary' : 'text-text-tertiary'}`} style={{ fontVariant: ['tabular-nums'] }}>{price}</Text>
+        </View>
       )}
     </Pressable>
   );
@@ -103,24 +91,17 @@ function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      accessibilityLabel={`${displayLabel}${colour.price > 0 ? `, +$${(colour.price / 100).toFixed(2)}` : ''}`}
-      className={`items-center p-sm rounded-lg ${isSelected ? 'bg-green/10' : ''}`}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: isSelected }}
+      accessibilityLabel={`${displayLabel}, ${priceLabel}`}
+      className="items-center w-[72px] gap-[4px]"
     >
-      <View
-        className={`w-12 h-12 rounded-full border-4 mb-xs ${
-          isSelected ? 'border-green' : 'border-transparent'
-        }`}
-        style={{
-          backgroundColor: colour.hexStart,
-          // Gradient not natively supported — show start colour; hexEnd is visual only
-        }}
-      />
-      <Text className="text-caption-md text-text-primary text-center" numberOfLines={2} style={{ maxWidth: 56 }}>
-        {displayLabel}
-      </Text>
-      <Text className="text-caption-md text-text-muted text-center">{priceLabel}</Text>
+      <View className={`w-[52px] h-[52px] rounded-full items-center justify-center ${isSelected ? 'border-2 border-accent' : 'border border-border'}`}>
+        {/* Swatch colour is product data (the lens tint), not a UI colour. */}
+        <View className="w-[42px] h-[42px] rounded-full" style={{ backgroundColor: colour.hexStart }} />
+      </View>
+      <Text className="text-body-sm text-text-primary text-center" numberOfLines={2}>{displayLabel}</Text>
+      <Text className="text-body-sm text-text-tertiary">{priceLabel}</Text>
     </Pressable>
   );
 }
@@ -152,14 +133,10 @@ function GroupSection({
   const selectedIds = selections[group.id] ?? [];
 
   return (
-    <View className="mb-xl">
-      <View className="flex-row items-center mb-md">
-        <Text className="text-heading-xl text-text-primary flex-1">
-          {group.label?.en ?? group.code}
-        </Text>
-        {group.isRequired && (
-          <Text className="text-caption-md text-error ml-sm">Required</Text>
-        )}
+    <View className="mb-[24px]">
+      <View className="flex-row items-center gap-[8px] mb-[10px]">
+        <Text className="text-heading-lg text-text-primary">{group.label?.en ?? group.code}</Text>
+        {group.isRequired ? <Badge>Required</Badge> : <Text className="text-body-sm text-text-tertiary">Optional</Text>}
       </View>
 
       {groupChoices.map((choice) => {
@@ -181,10 +158,10 @@ function GroupSection({
               />
               {/* Colour swatches below selected colour choice */}
               {isSelected && colours.length > 0 && (
-                <View className="ml-xl mb-md">
-                  <Text className="text-caption-md text-text-muted mb-sm">Select colour:</Text>
+                <View className="ml-[36px] mb-[12px]">
+                  <Text className="text-body-sm text-text-tertiary mb-[8px]">Tint</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View className="flex-row flex-wrap" style={{ gap: 0 }}>
+                    <View className="flex-row" style={{ gap: 8 }}>
                       {colours.map((colour) => (
                         <ColourSwatch
                           key={colour.id}
@@ -239,71 +216,35 @@ function SummaryStep({
   const choiceMap = new Map(allChoices.map((c) => [c.id, c]));
   const colourMap = new Map(lensColours.map((c) => [c.id, c]));
 
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <Text className="text-displayMd text-text-primary mb-xl">Review your selection</Text>
-
+    <View className="gap-[16px]">
       {steps.map((step, stepIdx) => (
-        <View key={step.id} className="mb-lg">
-          <View className="flex-row items-center justify-between mb-sm">
-            <Text className="text-heading-xl text-text-primary">{step.name?.en}</Text>
-            <Pressable onPress={() => onGoToStep(stepIdx)} className="min-h-[44px] justify-center px-sm">
-              <Text className="text-body-md text-navy">Edit</Text>
-            </Pressable>
-          </View>
-
-          {step.groups.map((group) => {
-            const selectedIds = selections[group.id] ?? [];
-            if (!selectedIds.length) return null;
-            return (
-              <View key={group.id} className="mb-sm">
-                <Text className="text-caption-md text-text-muted">{group.label?.en}</Text>
-                {selectedIds.map((choiceId) => {
-                  const choice = choiceMap.get(choiceId);
-                  if (!choice) return null;
-                  const colourKey = `${group.id}:${choiceId}:colour`;
-                  const selectedColourId = colourSelections[colourKey];
-                  const colour = selectedColourId ? colourMap.get(selectedColourId) : null;
-                  return (
-                    <Text key={choiceId} className="text-body-md text-text-primary">
-                      {choice.label?.en ?? choice.code}
-                      {colour && ` — ${resolveLensColourLabel(colour.label)}`}
-                    </Text>
-                  );
-                })}
-              </View>
-            );
-          })}
-        </View>
+        <Section key={step.id} title={step.name?.en ?? `Step ${stepIdx + 1}`} action={{ label: 'Change', onPress: () => onGoToStep(stepIdx) }}>
+          <KeyValue
+            rows={step.groups.map((group) => {
+              const ids = selections[group.id] ?? [];
+              const labels = ids.map((cid) => {
+                const choice = choiceMap.get(cid);
+                const colour = colourMap.get(colourSelections[`${group.id}:${cid}:colour`] ?? '');
+                return `${choice?.label?.en ?? choice?.code ?? ''}${colour ? ` · ${resolveLensColourLabel(colour.label)}` : ''}`;
+              });
+              return { label: group.label?.en ?? group.code, value: labels.join(', ') || null };
+            })}
+          />
+        </Section>
       ))}
-
-      {/* Price breakdown */}
-      <View className="bg-bg-surface rounded-lg border border-border p-lg mt-md">
-        <Text className="text-heading-xl text-text-primary mb-md">Price breakdown</Text>
-        {priceSummary.basePrice > 0 && (
-          <View className="flex-row justify-between py-xs">
-            <Text className="text-body-md text-text-primary">Frame</Text>
-            <Text className="text-body-md text-text-primary">
-              ${(priceSummary.basePrice / 100).toFixed(2)}
-            </Text>
-          </View>
-        )}
-        {priceSummary.pricingLines.map((line) => (
-          <View key={line.code} className="flex-row justify-between py-xs">
-            <Text className="text-body-md text-text-muted">{line.label}</Text>
-            <Text className="text-body-md text-text-primary">
-              +${(line.amount / 100).toFixed(2)}
-            </Text>
-          </View>
-        ))}
-        <View className="flex-row justify-between pt-md border-t border-border mt-md">
-          <Text className="text-heading-xl text-text-primary">Total</Text>
-          <Text className="text-heading-xl text-text-primary">
-            ${(priceSummary.total / 100).toFixed(2)}
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
+      <Section title="Price">
+        <KeyValue
+          mono
+          rows={[
+            ...(priceSummary.basePrice > 0 ? [{ label: 'Frame', value: money(priceSummary.basePrice) }] : []),
+            ...priceSummary.pricingLines.map((l) => ({ label: l.label, value: `+${money(l.amount)}` })),
+            { label: 'Total', value: <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{money(priceSummary.total)}</Text> },
+          ]}
+        />
+      </Section>
+    </View>
   );
 }
 
@@ -477,171 +418,81 @@ export function ConfiguratorSheet({
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const money = (c: number) => `$${(c / 100).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const total = basePrice + priceDelta;
+  const frameOnly = () => onComplete({ attributes: [], addonLines: [], pricingLines: [] } as unknown as CartResult, { basePrice, addons: 0, total: basePrice, pricingLines: [] });
+
+  const footer = isLoading ? undefined : !hasConfigurator ? (
+    <View className="flex-1 flex-row justify-end gap-[8px]">
+      <Button label="Cancel" variant="ghost" onPress={handleClose} />
+      <Button label="Order frame only" variant="primary" onPress={frameOnly} />
+    </View>
+  ) : (
+    <View className="flex-1 flex-row items-center gap-[8px]">
+      {currentStepIdx > 0 ? <Button label="Back" icon={ChevronLeft} variant="ghost" onPress={handleBack} /> : <Button label="Cancel" variant="ghost" onPress={handleClose} />}
+      <View className="flex-1 items-end pr-[8px]">
+        <Text className="text-body-sm text-text-tertiary">{basePrice > 0 ? 'Total' : 'Lens options'}</Text>
+        <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{money(basePrice > 0 ? total : priceDelta)}</Text>
+      </View>
+      {isSummaryStep ? (
+        <Button label="Continue to order" variant="primary" onPress={handleComplete} />
+      ) : (
+        <Button label={currentStepIdx === steps.length - 1 ? 'Review' : 'Next'} icon={ChevronRight} variant="primary" onPress={handleNext} disabled={!currentStepComplete} />
+      )}
+    </View>
+  );
+
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      wide
+      title={`Lenses · ${productName}`}
+      subtitle={isLoading ? 'Loading lens options…' : !hasConfigurator ? undefined : isSummaryStep ? 'Review before ordering' : `Step ${currentStepIdx + 1} of ${steps.length}`}
+      footer={footer}
     >
-      <View className="flex-1 bg-bg-page">
-        {/* Top bar */}
-        <View className="flex-row items-center px-xl pt-xl pb-md border-b border-border">
-          <View className="flex-1">
-            <Text className="text-caption-md text-text-muted">Configure lenses for</Text>
-            <Text className="text-heading-xl text-text-primary" numberOfLines={1}>
-              {productName}
-            </Text>
+      {isLoading ? (
+        <View className="py-[48px] items-center"><ActivityIndicator color={kitColors.primary} /></View>
+      ) : !hasConfigurator ? (
+        <Text className="text-body-md text-text-secondary">This frame has no lens options set up. You can order the frame on its own.</Text>
+      ) : (
+        <View className="gap-[20px]">
+          <View className="flex-row flex-wrap gap-[8px]">
+            {[...steps.map((st) => st.name?.en ?? 'Step'), 'Review'].map((name, idx) => {
+              const done = idx < currentStepIdx;
+              const on = idx === currentStepIdx;
+              return (
+                <Pressable key={`${name}-${idx}`} onPress={() => (done ? handleGoToStep(idx) : undefined)} disabled={!done} accessibilityRole="tab" accessibilityState={{ selected: on }}>
+                  <View className={`flex-row items-center gap-[6px] rounded-full px-[12px] min-h-[32px] border ${on ? 'bg-accent border-accent' : done ? 'bg-bg-page border-border' : 'bg-bg-page border-border opacity-60'}`}>
+                    {done ? <Check size={14} color={kitColors.text} /> : <Text className={`text-body-sm ${on ? 'text-accent-text' : 'text-text-tertiary'}`}>{idx + 1}</Text>}
+                    <Text className={`text-body-sm font-medium ${on ? 'text-accent-text' : 'text-text-primary'}`}>{name}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
-          <Pressable
-            onPress={handleClose}
-            className="w-[44px] h-[44px] items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel="Close configurator"
-          >
-            <X size={24} color="#2B2B2B" />
-          </Pressable>
-        </View>
-
-        {/* Loading */}
-        {isLoading && (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color="#0A153D" />
-            <Text className="text-body-md text-text-muted mt-md">Loading lens options…</Text>
-          </View>
-        )}
-
-        {/* No configurator for this product */}
-        {!isLoading && !hasConfigurator && (
-          <View className="flex-1 items-center justify-center p-xl">
-            <Text className="text-heading-xl text-text-primary text-center mb-md">
-              No lens options available
-            </Text>
-            <Text className="text-body-md text-text-muted text-center mb-xl">
-              This frame doesn't have a lens configuration. It can be ordered as-is.
-            </Text>
-            <Button variant="dark" onPress={handleClose}>Close</Button>
-          </View>
-        )}
-
-        {/* Configurator flow */}
-        {!isLoading && hasConfigurator && (
-          <>
-            {/* Progress bar */}
-            <View className="px-xl pt-md pb-sm">
-              <View className="flex-row items-center gap-xs">
-                {steps.map((step, idx) => (
-                  <Pressable
-                    key={step.id}
-                    onPress={() => idx < currentStepIdx ? handleGoToStep(idx) : undefined}
-                    className="flex-1 h-1.5 rounded-full overflow-hidden"
-                    accessibilityRole="progressbar"
-                    accessibilityLabel={`Step ${idx + 1}: ${step.name?.en}`}
-                    accessibilityHint={idx < currentStepIdx ? "Double-tap to return to this step" : undefined}
-                  >
-                    <View
-                      className={`h-full rounded-full ${
-                        idx < currentStepIdx
-                          ? 'bg-green'
-                          : idx === currentStepIdx
-                          ? 'bg-navy'
-                          : 'bg-warmGrey'
-                      }`}
-                    />
-                  </Pressable>
-                ))}
-                {/* Summary dot */}
-                <View className={`w-3 h-3 rounded-full ${isSummaryStep ? 'bg-green' : 'bg-warmGrey'}`} />
-              </View>
-              <Text className="text-caption-md text-text-muted mt-xs">
-                {isSummaryStep
-                  ? 'Summary'
-                  : `Step ${currentStepIdx + 1} of ${steps.length}: ${currentStep?.name?.en}`}
-              </Text>
-            </View>
-
-            {/* Running price */}
-            {priceDelta > 0 && (
-              <View className="px-xl pb-sm">
-                <Text className="text-caption-md text-text-muted">
-                  Lens options: <Text className="text-body-md font-medium text-text-primary">+${(priceDelta / 100).toFixed(2)}</Text>
-                </Text>
-              </View>
-            )}
-
-            {/* Step content */}
-            <ScrollView className="flex-1 px-xl" showsVerticalScrollIndicator={false}>
-              {isSummaryStep ? (
-                <SummaryStep
-                  steps={steps}
-                  allChoices={allChoices}
+          {isSummaryStep ? (
+            <SummaryStep steps={steps} allChoices={allChoices} selections={selections} colourSelections={colourSelections} lensColours={lensColoursRaw} priceSummary={priceSummary} onGoToStep={handleGoToStep} />
+          ) : (
+            <View>
+              {currentStep?.description?.en ? <Text className="text-body-md text-text-secondary mb-[16px]">{currentStep.description.en}</Text> : null}
+              {currentStep?.groups.map((group) => (
+                <GroupSection
+                  key={group.id}
+                  group={group}
+                  choices={allChoices.filter((c) => c.groupId === group.id)}
                   selections={selections}
                   colourSelections={colourSelections}
-                  lensColours={lensColoursRaw}
-                  priceSummary={priceSummary}
-                  onGoToStep={handleGoToStep}
+                  priceRuleMap={priceRuleMap}
+                  lensColoursBySet={lensColoursBySet}
+                  onToggleChoice={handleToggleChoice}
+                  onSelectColour={handleSelectColour}
                 />
-              ) : (
-                <View className="pt-md pb-2xl">
-                  {currentStep?.description?.en && (
-                    <Text className="text-body-md text-text-muted mb-lg">
-                      {currentStep.description.en}
-                    </Text>
-                  )}
-                  {currentStep?.groups.map((group) => (
-                    <GroupSection
-                      key={group.id}
-                      group={group}
-                      choices={allChoices.filter((c) => c.groupId === group.id)}
-                      selections={selections}
-                      colourSelections={colourSelections}
-                      priceRuleMap={priceRuleMap}
-                      lensColoursBySet={lensColoursBySet}
-                      onToggleChoice={handleToggleChoice}
-                      onSelectColour={handleSelectColour}
-                    />
-                  ))}
-                </View>
-              )}
-            </ScrollView>
-
-            {/* Bottom navigation */}
-            <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-surface">
-              {currentStepIdx > 0 && (
-                <Pressable
-                  onPress={handleBack}
-                  className="min-h-[44px] min-w-[44px] items-center justify-center"
-                  accessibilityRole="button"
-                  accessibilityLabel="Go back"
-                >
-                  <ChevronLeft size={24} color="#2B2B2B" />
-                </Pressable>
-              )}
-
-              <View className="flex-1">
-                {isSummaryStep ? (
-                  <Button variant="primary" onPress={handleComplete}>
-                    Confirm configuration
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    onPress={handleNext}
-                    disabled={!currentStepComplete}
-                  >
-                    <View className="flex-row items-center gap-xs justify-center">
-                      <Text className="text-text-inverse text-body-md font-medium">
-                        {currentStepIdx === steps.length - 1 ? 'Review' : 'Next'}
-                      </Text>
-                      <ChevronRight size={18} color="white" />
-                    </View>
-                  </Button>
-                )}
-              </View>
+              ))}
             </View>
-          </>
-        )}
-      </View>
-    </Modal>
+          )}
+        </View>
+      )}
+    </Sheet>
   );
 }

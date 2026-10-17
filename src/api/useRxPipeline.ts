@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import { toRxOrderCreate, type RxOrderInput } from './rxOrderMapping';
 import { toRxPipelineCounts } from './rxMapping';
 import { toOrderItem, type FoundryRxOrderRow, type OrderItem } from './ordersMapping';
-import type { RxOrder, RxPipelineCounts, CreateRxOrderPayload, UpdateRxOrderPayload } from './rx-pipeline.types';
+import type { RxOrder, RxPipelineCounts, UpdateRxOrderPayload } from './rx-pipeline.types';
 
 export function useRxPipelineOrders(params?: { state?: string; clientId?: string; limit?: number; offset?: number }) {
   // Convert to string params, filtering out undefined values
@@ -55,8 +56,9 @@ export function useRxPipelineCounts() {
 export function useCreateRxOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateRxOrderPayload) =>
-      api.post<RxOrder>('/api/admin/rx-pipeline/orders', payload),
+    // Foundry requires customerId (Zod); sending clientId failed every order.
+    mutationFn: (input: RxOrderInput) =>
+      api.post<RxOrder>('/api/admin/rx-pipeline/orders', toRxOrderCreate(input)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rx-pipeline'] });
     },

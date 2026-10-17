@@ -63,16 +63,16 @@ export default function AppLayout() {
           tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0 },
         }}
       >
-        {/* V2 tabs (plan §4): Floor · Clients · Orders · Follow-ups · Review · Profile */}
+        {/* V2 tabs (plan §4): Floor · Clients · Frames · Orders · Follow-ups · Review · Profile */}
         <Tabs.Screen name="home" options={{ title: 'Floor' }} />
         <Tabs.Screen name="clients" options={{ title: 'Clients' }} />
+        <Tabs.Screen name="products" options={{ title: 'Frames' }} />
         <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
         <Tabs.Screen name="follow-ups" options={{ title: 'Follow-ups' }} />
         <Tabs.Screen name="review" options={{ title: 'Review' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
-        {/* Not tabs: reached from Floor (schedule, catalogue) and Profile (tools) */}
+        {/* Not tabs: Schedule is reached from Floor; tools from Profile */}
         <Tabs.Screen name="appointments" options={{ href: null }} />
-        <Tabs.Screen name="products" options={{ href: null }} />
         <Tabs.Screen name="more" options={{ href: null }} />
       </Tabs>
     </View>

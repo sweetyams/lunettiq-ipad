@@ -43,7 +43,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D4 | Clients: list, profile + tabs, new client, profile sheets | ✅ | `D4.1`–`D4.4` done. New client is blocked on Foundry (no create endpoint; see handoff §"Missing / mismatched client endpoints") |
 | D5 | Visit: workspace, fitting, handed mode, end visit | ✅ | Rebuilt on the kit; handed-mode exit now PIN-gated. To verify on device: double-tap exit → PIN, End visit sheet |
 | D6 | Schedule + appointment sheets | ✅ | Today / Week / Staff + detail inspector, one-page booking, reschedule, real walk-in. Foundry: roster + holds filters (handoff) |
-| D7 | Products + configurator | ⬜ | |
+| D7 | Products + configurator | ✅ | Frames tab restored; catalogue, detail, scanner, configurator, order summary on the kit. Orders now reach Foundry (customerId + configuration) |
 | D8 | Orders, Follow-ups, Review | ✅ | Kit: PageHeader, FilterChips, Section, ListRow, Badge. Follow-ups grouped Call today / In the sequence; Review anomalies as danger badges, Claim next as the primary |
 | D9 | Profile, settings, auth, store picker, side paths | ⬜ | |
 | D10 | States, toasts, confirmations; no `Alert.alert` | ⬜ | Absorbs 0.5 |

@@ -1,117 +1,78 @@
 import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
-import { FitBadge } from './FitBadge';
-import { StockDot } from './StockDot';
+import { Badge } from '@/src/ui/kit/Badge';
+import { elevation } from '@/src/ui/kit/elevation';
 import type { Product } from '@/src/api/products.types';
 
 interface ProductCardProps {
   product: Product;
   onPress: (id: string) => void;
+  onLongPress?: (id: string) => void;
+  /** Suggestion score from Foundry (≥5 good fit, ≥3 close). */
   fitScore?: number | null;
   fitReasons?: string[];
   stockStatus?: 'in' | 'low' | 'out';
-  isOwned?: boolean;
 }
 
-export function ProductCard({
-  product,
-  onPress,
-  fitScore = null,
-  fitReasons,
-  stockStatus,
-  isOwned = false,
-}: ProductCardProps) {
-  const mode = usePrivacyStore((s) => s.mode);
-  const image = product.images[0];
-  const title = typeof product.title === 'string'
-    ? product.title
-    : product.title?.en ?? product.title?.fr ?? '';
+export const productTitle = (p: Pick<Product, 'title'>) =>
+  typeof p.title === 'string' ? p.title : p.title?.en ?? p.title?.fr ?? '';
 
-  const resolvedStockStatus = stockStatus ?? product.viewHints?.stockBucket;
+export function formatPrice(v: string | number | null | undefined): string | null {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  return `$${n.toLocaleString('en-CA', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * ProductCard — Builder canvas tile: photography first on white, then name,
+ * colours and (staff only) price. Stock and fit are small badges, never
+ * coloured slabs.
+ */
+export function ProductCard({ product, onPress, onLongPress, fitScore = null, fitReasons, stockStatus }: ProductCardProps) {
+  const staff = usePrivacyStore((s) => s.mode) === 'staff';
+  const image = product.images[0];
+  const title = productTitle(product);
+  const stock = stockStatus ?? product.viewHints?.stockBucket;
+  const colourOption = product.options?.find((o) => /^colou?r$/i.test(o.name));
+  const colours = colourOption?.values?.length ?? (product.variantCount > 1 ? product.variantCount : 0);
+  const price = staff ? formatPrice(product.priceMin) : null;
+  const id = product.shopifyId ?? product.id ?? '';
+  const fit = fitScore != null && fitScore >= 5 ? 'Good fit' : fitScore != null && fitScore >= 3 ? 'Close fit' : null;
 
   return (
     <Pressable
-      onPress={() => onPress(product.shopifyId ?? product.id)}
+      onPress={() => onPress(id)}
+      onLongPress={onLongPress ? () => onLongPress(id) : undefined}
       accessibilityRole="button"
-      accessibilityLabel={`${title}${product.vendor ? `, ${product.vendor}` : ''}${mode === 'staff' && product.priceMin ? `, $${product.priceMin}` : ''}${isOwned ? ', owned' : ''}`}
-      className={`bg-bg-surface rounded-lg border border-border overflow-hidden ${isOwned ? 'opacity-70' : ''}`}
-      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.96 : 1 }] })}
+      accessibilityLabel={[title, colours > 1 ? `${colours} colours` : null, price, stock === 'out' ? 'out of stock' : stock === 'low' ? 'low stock' : null, fit].filter(Boolean).join(', ')}
+      accessibilityHint={fitReasons?.length ? fitReasons.join(', ') : undefined}
     >
-      {/* Image container */}
-      <View className="aspect-square bg-bg-surface items-center justify-center relative">
-        {image ? (
-          <Image
-            source={{ uri: image.url }}
-            contentFit="cover"
-            style={{ width: '100%', height: '100%' }}
-            accessibilityLabel={image.alt ?? title}
-          />
-        ) : (
-          <View className="w-full h-full bg-bg-surface items-center justify-center">
-            <Text className="text-text-mutedtext-caption-md">No image</Text>
+      {({ pressed }) => (
+        <View className={`bg-bg-page border rounded-lg overflow-hidden ${pressed ? 'border-text-tertiary' : 'border-border'}`} style={elevation.raised}>
+          <View className="items-center justify-center bg-bg-page" style={{ aspectRatio: 4 / 3 }}>
+            {image ? (
+              <Image source={{ uri: image.url }} contentFit="contain" style={{ width: '88%', height: '88%' }} accessibilityIgnoresInvertColors />
+            ) : (
+              <Text className="text-body-sm text-text-dim">No photo</Text>
+            )}
+            {stock === 'out' || stock === 'low' || fit ? (
+              <View className="absolute top-[8px] right-[8px] items-end gap-[4px]" pointerEvents="none">
+                {stock === 'out' ? <Badge tone="danger">Out of stock</Badge> : stock === 'low' ? <Badge tone="warning">Low stock</Badge> : null}
+                {fit ? <Badge tone="success" dot>{fit}</Badge> : null}
+              </View>
+            ) : null}
           </View>
-        )}
-
-        {/* StockDot — top-right corner */}
-        {resolvedStockStatus && (
-          <View className="absolute top-2 right-2">
-            <StockDot status={resolvedStockStatus} />
+          <View className="px-[14px] py-[12px] border-t border-border gap-[2px]">
+            <Text className="text-body-md font-medium text-text-primary" numberOfLines={1}>{title}</Text>
+            <View className="flex-row items-center justify-between gap-[8px]">
+              <Text className="text-body-sm text-text-tertiary" numberOfLines={1}>{colours > 1 ? `${colours} colours` : product.vendor ?? ''}</Text>
+              {price ? <Text className="text-body-sm font-medium text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{price}</Text> : null}
+            </View>
           </View>
-        )}
-
-        {/* Owned badge — top-left corner */}
-        {isOwned && (
-          <View className="absolute top-2 left-2 bg-brand/80 rounded-full px-sm py-xs">
-            <Text className="text-brand-text text-caption-md font-medium">Owned</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Meta */}
-      <View className="p-sm">
-        <Text className="text-text-primary text-body-md font-medium" numberOfLines={1}>
-          {title}
-        </Text>
-        {product.vendor && (
-          <Text className="text-text-muted text-caption-md mt-xs" numberOfLines={1}>
-            {product.vendor}
-          </Text>
-        )}
-
-        <View className="flex-row items-center justify-between mt-sm">
-          {/* Price — hidden in client mode */}
-          {mode === 'staff' && product.priceMin && (
-            <Text className="text-text-primary text-body-md font-medium">
-              ${product.priceMin}
-            </Text>
-          )}
-          {mode === 'client' && (
-            <Text className="text-text-muted text-caption-md border border-border rounded-full px-sm py-xs">
-              Tap for price
-            </Text>
-          )}
-          {/* Colour count — use options if available, fall back to variantCount */}
-          {(() => {
-            const colourOption = product.options?.find(
-              (opt) => opt.name.toLowerCase() === 'color' || opt.name.toLowerCase() === 'colour'
-            );
-            const colourCount = colourOption?.values?.length ?? (product.variantCount > 1 ? product.variantCount : 0);
-            return colourCount > 1 ? (
-              <Text className="text-text-mutedtext-caption-md">
-                {colourCount} colours
-              </Text>
-            ) : null;
-          })()}
         </View>
-
-        {/* FitBadge */}
-        {fitScore !== null && (
-          <View className="mt-xs">
-            <FitBadge score={fitScore} reasons={fitReasons} />
-          </View>
-        )}
-      </View>
+      )}
     </Pressable>
   );
 }

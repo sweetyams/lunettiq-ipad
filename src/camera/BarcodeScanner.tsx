@@ -1,298 +1,50 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, Animated } from 'react-native';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { X, ScanLine, Package } from 'lucide-react-native';
-import { api } from '@/src/api/client';
-
-interface Product {
-  id: string;
-  name: string;
-  familyName?: string;
-  collection?: string;
-  sku?: string;
-}
+import { useRef } from 'react';
+import { View, Text } from 'react-native';
+import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
+import { ScanLine } from 'lucide-react-native';
+import { Button } from '@/src/ui/kit/Button';
+import { kitColors } from '@/src/ui/kit/colors';
 
 interface BarcodeScannerProps {
-  onScan: (product: Product) => void;
-  onClose: () => void;
-  onError?: (error: string) => void;
+  /** Raw code (QR or barcode). Debounced; ignored while `paused`. */
+  onCode: (code: string) => void;
+  paused?: boolean;
 }
 
-export function BarcodeScanner({ onScan, onClose, onError }: BarcodeScannerProps) {
+/** Camera that reads QR codes and barcodes and reports the raw value. Resolution is the caller's job. */
+export function BarcodeScanner({ onCode, paused }: BarcodeScannerProps) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [isScanning, setIsScanning] = useState(true);
-  const [lastScanTime, setLastScanTime] = useState(0);
-  const [isResolving, setIsResolving] = useState(false);
-  const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
-  
-  // Animated reticle
-  const reticleScale = useRef(new Animated.Value(1)).current;
-  const reticleOpacity = useRef(new Animated.Value(0.8)).current;
+  const last = useRef<{ code: string; at: number }>({ code: '', at: 0 });
 
-  React.useEffect(() => {
-    // Animate the scanning reticle
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(reticleScale, {
-            toValue: 1.1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(reticleOpacity, {
-            toValue: 0.4,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(reticleScale, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(reticleOpacity, {
-            toValue: 0.8,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    );
-
-    if (isScanning && !isResolving) {
-      pulseAnimation.start();
-    } else {
-      pulseAnimation.stop();
-    }
-
-    return () => pulseAnimation.stop();
-  }, [isScanning, isResolving, reticleScale, reticleOpacity]);
-
-  const handlePermissionRequest = async () => {
-    const result = await requestPermission();
-    if (!result.granted && onError) {
-      onError('Camera permission is required for barcode scanning');
-    }
-  };
-
-  const resolveBarcode = async (barcode: string): Promise<Product | null> => {
-    try {
-      setIsResolving(true);
-      
-      // Call Foundry API to resolve barcode to product
-      const response = await api.post<Product>('/api/inventory/scan/resolve', {
-        barcode,
-        scanContext: 'fitting',
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Error resolving barcode:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Failed to identify product';
-      if (onError) {
-        onError(errorMessage);
-      }
-      
-      return null;
-    } finally {
-      setIsResolving(false);
-    }
-  };
-
-  const handleBarcodeScanned = async ({ type, data }: BarcodeScanningResult) => {
+  const onScanned = ({ data }: BarcodeScanningResult) => {
+    if (paused || !data) return;
     const now = Date.now();
-    
-    // Debounce scanning to prevent multiple rapid scans
-    if (now - lastScanTime < 2000) {
-      return;
-    }
-    
-    setLastScanTime(now);
-    setIsScanning(false);
-    
-    console.log('Barcode scanned:', { type, data });
-    
-    // Resolve the barcode to a product
-    const product = await resolveBarcode(data);
-    
-    if (product) {
-      setScannedProduct(product);
-      // Auto-confirm after showing product for 1.5 seconds
-      setTimeout(() => {
-        onScan(product);
-      }, 1500);
-    } else {
-      // Re-enable scanning on error
-      setIsScanning(true);
-    }
+    if (data === last.current.code && now - last.current.at < 3000) return;
+    last.current = { code: data, at: now };
+    onCode(data.trim());
   };
 
-  const handleManualConfirm = () => {
-    if (scannedProduct) {
-      onScan(scannedProduct);
-    }
-  };
-
-  const handleRescan = () => {
-    setScannedProduct(null);
-    setIsScanning(true);
-    setLastScanTime(0);
-  };
-
-  // Show permission request if not granted
-  if (!permission) {
-    return (
-      <View className="flex-1 bg-black justify-center items-center">
-        <Text className="text-text-inverse text-body-md mb-lg">Loading camera...</Text>
-      </View>
-    );
-  }
-
+  if (!permission) return <View className="flex-1 bg-chrome-bg" />;
   if (!permission.granted) {
     return (
-      <View className="flex-1 bg-black justify-center items-center px-xl">
-        <ScanLine size={48} color="white" className="mb-lg" />
-        <Text className="text-text-inverse text-heading-xl text-center mb-md">
-          Camera Permission Required
-        </Text>
-        <Text className="text-text-inverse text-body-md text-center mb-lg opacity-80">
-          This app needs camera access to scan barcodes
-        </Text>
-        <Pressable
-          onPress={handlePermissionRequest}
-          className="bg-accent rounded-md px-lg py-sm"
-          accessibilityRole="button"
-          accessibilityLabel="Grant camera permission"
-        >
-          <Text className="text-text-inverse text-body-md font-medium">Grant Permission</Text>
-        </Pressable>
+      <View className="flex-1 items-center justify-center gap-[12px] px-[32px] bg-bg-page">
+        <ScanLine size={32} color={kitColors.iconMuted} />
+        <Text className="text-heading-lg text-text-primary">Camera access needed</Text>
+        <Text className="text-body-md text-text-tertiary text-center">To scan frame tags and shelf codes.</Text>
+        <Button label="Allow camera" variant="primary" onPress={requestPermission} />
       </View>
     );
   }
-
   return (
-    <View className="flex-1 bg-black">
-      {/* Camera view */}
+    <View className="flex-1 bg-chrome-bg">
       <CameraView
+        style={{ flex: 1 }}
         facing="back"
-        barcodeScannerSettings={{
-          barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'],
-        }}
-        onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
-        className="flex-1"
+        barcodeScannerSettings={{ barcodeTypes: ['qr', 'ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'] }}
+        onBarcodeScanned={paused ? undefined : onScanned}
       />
-
-      {/* Top bar */}
-      <View className="absolute top-0 left-0 right-0 pt-12 pb-4 px-6 bg-black/50">
-        <View className="flex-row justify-between items-center">
-          <Pressable
-            onPress={onClose}
-            className="w-11 h-11 justify-center items-center"
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Cancel scan"
-          >
-            <X size={24} color="white" />
-          </Pressable>
-          
-          <Text className="text-text-inverse text-body-md font-medium">Scan Product Barcode</Text>
-          
-          <View className="w-11" />
-        </View>
-      </View>
-
-      {/* Scanning reticle */}
-      {isScanning && !isResolving && (
-        <View className="absolute inset-0 justify-center items-center pointer-events-none">
-          <Animated.View
-            style={{
-              transform: [{ scale: reticleScale }],
-              opacity: reticleOpacity,
-            }}
-            className="w-64 h-64 border-2 border-accent rounded-lg"
-          >
-            {/* Corner markers */}
-            <View className="absolute -top-1 -left-1 w-8 h-8 border-l-4 border-t-4 border-accent rounded-tl-lg" />
-            <View className="absolute -top-1 -right-1 w-8 h-8 border-r-4 border-t-4 border-accent rounded-tr-lg" />
-            <View className="absolute -bottom-1 -left-1 w-8 h-8 border-l-4 border-b-4 border-accent rounded-bl-lg" />
-            <View className="absolute -bottom-1 -right-1 w-8 h-8 border-r-4 border-b-4 border-accent rounded-br-lg" />
-            
-            {/* Center crosshair */}
-            <View className="absolute inset-0 justify-center items-center">
-              <View className="w-8 h-0.5 bg-accent" />
-              <View className="w-0.5 h-8 bg-accent absolute" />
-            </View>
-          </Animated.View>
-        </View>
-      )}
-
-      {/* Bottom instructions */}
-      <View className="absolute bottom-0 left-0 right-0 pb-12 px-6">
-        {isScanning && !isResolving && !scannedProduct && (
-          <View className="bg-black/70 rounded-lg p-4">
-            <Text className="text-text-inverse text-body-md text-center">
-              Position the barcode within the frame
-            </Text>
-            <Text className="text-text-inverse text-caption-md text-center mt-2 opacity-80">
-              The camera will scan automatically
-            </Text>
-          </View>
-        )}
-
-        {isResolving && (
-          <View className="bg-black/70 rounded-lg p-4">
-            <Text className="text-text-inverse text-body-md font-medium text-center">
-              Identifying product...
-            </Text>
-          </View>
-        )}
-
-        {scannedProduct && (
-          <View className="bg-accent/90 rounded-lg p-4">
-            <View className="flex-row items-center justify-center mb-2">
-              <Package size={20} color="white" className="mr-2" />
-              <Text className="text-text-inverse text-body-md font-medium">Product Found</Text>
-            </View>
-            
-            <Text className="text-text-inverse text-heading-xl text-center mb-1">
-              {scannedProduct.familyName || scannedProduct.name}
-            </Text>
-            
-            {scannedProduct.collection && (
-              <Text className="text-text-inverse text-body-md text-center opacity-90">
-                {scannedProduct.collection}
-              </Text>
-            )}
-            
-            {scannedProduct.sku && (
-              <Text className="text-text-inverse text-caption-md text-center mt-1 opacity-80">
-                SKU: {scannedProduct.sku}
-              </Text>
-            )}
-            
-            <View className="flex-row justify-center mt-4 space-x-4">
-              <Pressable
-                onPress={handleRescan}
-                className="bg-bg-surface/20 rounded-md px-4 py-2"
-                accessibilityRole="button"
-                accessibilityLabel="Scan again"
-              >
-                <Text className="text-text-inverse text-body-md font-medium">Rescan</Text>
-              </Pressable>
-              
-              <Pressable
-                onPress={handleManualConfirm}
-                className="bg-bg-surface rounded-md px-6 py-2"
-                accessibilityRole="button"
-                accessibilityLabel="Confirm product selection"
-              >
-                <Text className="text-accent text-body-md font-medium">Confirm</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
+      <View pointerEvents="none" className="absolute inset-0 items-center justify-center">
+        <View className="w-[280px] h-[280px] rounded-lg border-2 border-bg-page opacity-80" />
       </View>
     </View>
   );

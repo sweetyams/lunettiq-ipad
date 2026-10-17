@@ -1,21 +1,19 @@
 /**
- * OrderSummarySheet — shown after configurator completes.
- *
- * Lets the SA review the configured product + pricing,
- * optionally link a prescription, and create an Rx pipeline order.
+ * OrderSummarySheet — after the configurator: review lenses and price, link
+ * a prescription, and create the Rx order (with the full configuration).
  */
-import { View, Text, ScrollView, Pressable } from 'react-native';
-import { Modal } from '@/src/ui/Modal';
-import { useState, useCallback } from 'react';
-import { X, FileText, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { View, Text, Pressable } from 'react-native';
+import { useState } from 'react';
+import { Check } from 'lucide-react-native';
 import { useCreateRxOrder } from '@/src/api/useRxPipeline';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
-import { Button } from '@/src/ui/Button';
+import { Field, KeyValue, Section, Sheet, TextField, Badge, formatDate, kitColors } from '@/src/ui/kit';
+import { rxStatus } from '@/src/features/client-profile/tabs/rxFormat';
 import { toast } from '@/src/ui/useToastStore';
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 
 const CONFIG_LABELS: Record<string, string> = {
-  _lensType: 'Lens Type',
+  _lensType: 'Lens type',
   _lensIndex: 'Material',
   _coatings: 'Coatings',
   _sunTint: 'Tint',
@@ -26,9 +24,12 @@ const CONFIG_LABELS: Record<string, string> = {
 
 function formatAttrValue(key: string, value: string): string | null {
   if (!value || value === 'false' || value === 'none') return null;
+  if (value === 'true') return 'Yes';
   if (key === '_coatings') return value.split(',').map((s) => s.trim()).join(', ');
-  return value;
+  return value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ');
 }
+
+const money = (c: number) => `$${(c / 100).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 interface OrderSummarySheetProps {
   visible: boolean;
@@ -44,233 +45,94 @@ interface OrderSummarySheetProps {
 }
 
 export function OrderSummarySheet({
-  visible,
-  productId,
-  productName,
-  variantId,
-  cartResult,
-  priceSummary,
-  clientId,
-  sessionId,
-  onClose,
-  onOrderCreated,
+  visible, productId, productName, variantId, cartResult, priceSummary, clientId, onClose, onOrderCreated,
 }: OrderSummarySheetProps) {
-  const [selectedPrescriptionId, setSelectedPrescriptionId] = useState<string | null>(null);
-  const [showPrescriptions, setShowPrescriptions] = useState(false);
+  const [rxId, setRxId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
-
   const createOrder = useCreateRxOrder();
-  const { data: prescriptions = [] } = usePrescriptions(
-    clientId ? { clientId } : undefined
-  );
+  const { data: prescriptions = [] } = usePrescriptions(clientId ? { clientId } : undefined);
 
-  // Config attributes to display (filter internal ones)
-  const displayAttrs = cartResult.attributes.filter(
-    (a) => a.key.startsWith('_') && !a.key.endsWith('Price')
-  );
+  const lensRows = cartResult.attributes
+    .filter((a) => a.key.startsWith('_') && !a.key.endsWith('Price'))
+    .map((a) => ({ label: CONFIG_LABELS[a.key] ?? a.key.replace(/^_/, ''), value: formatAttrValue(a.key, a.value) }))
+    .filter((r) => r.value);
+  const addons = cartResult.addonLines.map((l) => l.attributes.find((a) => a.key === '_addonLabel')?.value ?? 'Add-on');
 
-  const handleCreateOrder = useCallback(async () => {
-    if (!clientId) {
-      toast.error('No client', 'Start a session to create an Rx order');
-      return;
-    }
-
+  const create = async () => {
+    if (!clientId) return;
     try {
       const order = await createOrder.mutateAsync({
-        clientId,
-        productId,
-        prescriptionId: selectedPrescriptionId ?? undefined,
-        notes: [
-          notes.trim(),
-          variantId ? `variantId:${variantId}` : null,
-        ].filter(Boolean).join(' | ') || undefined,
-        measurements: undefined,
+        clientId, productId, productName, variantId, prescriptionId: rxId, notes, cart: cartResult, price: priceSummary,
       });
-
-      toast.success('Order created', `Rx order for ${productName}`);
       onOrderCreated(order.id);
     } catch {
-      toast.error('Failed to create order', 'Please try again');
+      toast.error('Couldn’t create the order', 'Check the connection and try again. Nothing was lost.');
     }
-  }, [clientId, productId, variantId, selectedPrescriptionId, notes, createOrder, productName, onOrderCreated]);
+  };
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={onClose}
+      wide
+      title={`Order · ${productName}`}
+      subtitle={clientId ? `Total ${money(priceSummary.total)}` : 'Start a visit to create an order.'}
+      secondary={{ label: 'Back', onPress: onClose }}
+      primary={{ label: 'Create order', onPress: create, disabled: !clientId, loading: createOrder.isPending }}
+      footerNote={rxId ? 'Prescription linked' : clientId ? 'No prescription linked' : undefined}
     >
-      <View className="flex-1 bg-bg-page">
-        {/* Header */}
-        <View className="flex-row items-center px-xl pt-xl pb-md border-b border-border">
-          <View className="flex-1">
-            <Text className="text-caption-md text-text-muted">Order summary</Text>
-            <Text className="text-heading-xl text-text-primary" numberOfLines={1}>
-              {productName}
-            </Text>
-          </View>
-          <Pressable
-            onPress={onClose}
-            className="w-[44px] h-[44px] items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel="Close order summary"
-          >
-            <X size={24} color="#2B2B2B" />
-          </Pressable>
-        </View>
-
-        <ScrollView className="flex-1 px-xl pt-lg" showsVerticalScrollIndicator={false}>
-          {/* Lens configuration */}
-          <View className="bg-bg-surface rounded-lg border border-border p-lg mb-lg">
-            <Text className="text-heading-xl text-text-primary mb-md">Lens configuration</Text>
-            {displayAttrs.length > 0 ? (
-              displayAttrs.map((attr) => {
-                const label = CONFIG_LABELS[attr.key] ?? attr.key.replace(/^_/, '');
-                const value = formatAttrValue(attr.key, attr.value);
-                if (!value) return null;
-                return (
-                  <View key={attr.key} className="flex-row justify-between py-xs">
-                    <Text className="text-body-md text-text-muted">{label}</Text>
-                    <Text className="text-body-md text-text-primary capitalize">{value}</Text>
-                  </View>
-                );
-              })
+      <View className="flex-row gap-[20px] items-start">
+        <View className="flex-1 gap-[16px]">
+          <Section title="Lenses">
+            {lensRows.length || addons.length ? (
+              <KeyValue rows={[...lensRows.map((r) => ({ label: r.label, value: r.value })), ...addons.map((a, i) => ({ label: i ? '' : 'Add-ons', value: a }))]} />
             ) : (
-              <Text className="text-body-md text-text-muted">Standard configuration</Text>
+              <Text className="text-body-md text-text-tertiary">Frame only, no lens options.</Text>
             )}
-
-            {/* Addon lines */}
-            {cartResult.addonLines.length > 0 && (
-              <View className="mt-md pt-md border-t border-border">
-                <Text className="text-caption-md text-text-muted mb-xs">Add-ons</Text>
-                {cartResult.addonLines.map((addon, i) => {
-                  const label = addon.attributes.find((a) => a.key === '_addonLabel')?.value;
+          </Section>
+          <Section title="Price">
+            <KeyValue mono rows={[
+              ...(priceSummary.basePrice > 0 ? [{ label: 'Frame', value: money(priceSummary.basePrice) }] : []),
+              ...priceSummary.pricingLines.map((l) => ({ label: l.label, value: `+${money(l.amount)}` })),
+              { label: 'Total', value: <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{money(priceSummary.total)}</Text> },
+            ]} />
+          </Section>
+        </View>
+        <View className="flex-1 gap-[16px]">
+          {clientId ? (
+            <Field label="Prescription" hint={prescriptions.length ? 'Unverified prescriptions are checked by an optician before the lab.' : 'None on file. Add one on the client’s Clinical tab, or order without for sun / plano.'}>
+              <View className="border border-border rounded-md overflow-hidden">
+                {[{ id: null as string | null, title: 'No prescription', sub: 'Sunglasses or plano lenses', badge: null as null | ReturnType<typeof rxStatus> },
+                  ...prescriptions.map((rx) => ({
+                    id: rx.id as string | null,
+                    title: rx.prescribedAt ? `Exam ${formatDate(rx.prescribedAt)}` : 'Prescription',
+                    sub: [rx.prescribedBy, rx.clinicName].filter(Boolean).join(' · ') || 'Prescriber not recorded',
+                    badge: rxStatus(rx),
+                  }))].map((o, i) => {
+                  const on = rxId === o.id;
                   return (
-                    <Text key={i} className="text-body-md text-text-primary">
-                      {label ?? 'Add-on'}
-                    </Text>
+                    <Pressable key={o.id ?? 'none'} onPress={() => setRxId(o.id)} accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={`${o.title}, ${o.sub}`}>
+                      {({ pressed }) => (
+                        <View className={`flex-row items-center gap-[12px] px-[16px] min-h-[60px] py-[10px] ${i ? 'border-t border-border' : ''} ${on || pressed ? 'bg-bg-subtle' : ''}`}>
+                          <View className={`w-[22px] h-[22px] rounded-full items-center justify-center ${on ? 'bg-accent' : 'border border-border'}`}>
+                            {on ? <Check size={14} color={kitColors.inverse} strokeWidth={3} /> : null}
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-body-md font-medium text-text-primary">{o.title}</Text>
+                            <Text className="text-body-sm text-text-tertiary">{o.sub}</Text>
+                          </View>
+                          {o.badge ? <Badge tone={o.badge.tone}>{o.badge.label}</Badge> : null}
+                        </View>
+                      )}
+                    </Pressable>
                   );
                 })}
               </View>
-            )}
-          </View>
-
-          {/* Prescription linking */}
-          {clientId && (
-            <View className="bg-bg-surface rounded-lg border border-border p-lg mb-lg">
-              <Pressable
-                onPress={() => setShowPrescriptions(!showPrescriptions)}
-                className="flex-row items-center min-h-[44px]"
-                accessibilityRole="button"
-                accessibilityLabel={`${showPrescriptions ? 'Hide' : 'Show'} prescription options`}
-              >
-                <FileText size={18} color="#2B2B2B" />
-                <Text className="text-heading-xl text-text-primary ml-sm flex-1">
-                  {selectedPrescriptionId
-                    ? `Rx linked`
-                    : 'Link prescription (optional)'}
-                </Text>
-                {showPrescriptions ? (
-                  <ChevronUp size={18} color="#6B6B6B" />
-                ) : (
-                  <ChevronDown size={18} color="#6B6B6B" />
-                )}
-              </Pressable>
-
-              {showPrescriptions && (
-                <View className="mt-md">
-                  <Pressable
-                    onPress={() => setSelectedPrescriptionId(null)}
-                    className={`py-sm px-md rounded-md mb-sm min-h-[44px] justify-center ${
-                      !selectedPrescriptionId ? 'bg-green/10 border border-green' : 'bg-bg-surface'
-                    }`}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: !selectedPrescriptionId }}
-                    accessibilityLabel="No prescription"
-                  >
-                    <Text className="text-body-md text-text-primary">No prescription (sunglasses / plano)</Text>
-                  </Pressable>
-                  {prescriptions.map((rx) => (
-                    <Pressable
-                      key={rx.id}
-                      onPress={() => setSelectedPrescriptionId(rx.id)}
-                      className={`py-sm px-md rounded-md mb-sm min-h-[44px] justify-center ${
-                        selectedPrescriptionId === rx.id
-                          ? 'bg-green/10 border border-green'
-                          : 'bg-bg-surface'
-                      }`}
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selectedPrescriptionId === rx.id }}
-                      accessibilityLabel={`${rx.type ? rx.type.replace('_', ' ') + ' ' : ''}prescription from ${rx.prescribedAt
-                        ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                        : 'unknown date'}${rx.prescribedBy ? ` by ${rx.prescribedBy}` : ''}`}
-                    >
-                      <Text className="text-body-md text-text-primary">
-                        {rx.type ? rx.type.replace('_', ' ') : 'Prescription'} — {rx.prescribedAt
-                          ? new Date(rx.prescribedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-                          : 'No date'}
-                      </Text>
-                      {rx.prescribedBy && (
-                        <Text className="text-caption-md text-text-muted">{rx.prescribedBy}</Text>
-                      )}
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Price breakdown */}
-          <View className="bg-bg-surface rounded-lg border border-border p-lg mb-xl">
-            <Text className="text-heading-xl text-text-primary mb-md">Price</Text>
-            {priceSummary.basePrice > 0 && (
-              <View className="flex-row justify-between py-xs">
-                <Text className="text-body-md text-text-muted">Frame</Text>
-                <Text className="text-body-md text-text-primary">
-                  ${(priceSummary.basePrice / 100).toFixed(2)}
-                </Text>
-              </View>
-            )}
-            {priceSummary.pricingLines.map((line) => (
-              <View key={line.code} className="flex-row justify-between py-xs">
-                <Text className="text-body-md text-text-muted">{line.label}</Text>
-                <Text className="text-body-md text-text-primary">
-                  +${(line.amount / 100).toFixed(2)}
-                </Text>
-              </View>
-            ))}
-            <View className="flex-row justify-between pt-md border-t border-border mt-sm">
-              <Text className="text-heading-xl text-text-primary">Total</Text>
-              <Text className="text-heading-xl text-text-primary">
-                ${(priceSummary.total / 100).toFixed(2)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Bottom padding */}
-          <View className="h-28" />
-        </ScrollView>
-
-        {/* Action bar */}
-        <View className="flex-row items-center px-xl py-md border-t border-border gap-md bg-bg-surface">
-          <View className="flex-1">
-            {clientId ? (
-              <Button
-                variant="primary"
-                onPress={handleCreateOrder}
-                disabled={createOrder.isPending}
-              >
-                {createOrder.isPending ? 'Creating order…' : 'Create Rx order'}
-              </Button>
-            ) : (
-              <View className="items-center">
-                <Text className="text-body-md text-text-muted">Start a session to create an order</Text>
-              </View>
-            )}
-          </View>
+            </Field>
+          ) : null}
+          <TextField label="Notes for the lab" value={notes} onChangeText={setNotes} placeholder="e.g. Match the current pair’s segment height" multiline />
         </View>
       </View>
-    </Modal>
+    </Sheet>
   );
 }

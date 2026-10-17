@@ -1,333 +1,159 @@
-import { View, Text, FlatList, Pressable, useWindowDimensions, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TextInput, useWindowDimensions, RefreshControl } from 'react-native';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { ScanLine, SlidersHorizontal } from 'lucide-react-native';
+import { ScanLine, Search, SlidersHorizontal } from 'lucide-react-native';
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useFilters } from '@/src/api/useFilters';
-import { useClient } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
-import { ProductCard, SearchBar, FilterPillRow, LoadingState, ErrorState, EmptyState, Button } from '@/src/ui';
+import { ProductCard } from '@/src/ui/ProductCard';
 import { FilterSheet } from '@/src/ui/FilterSheet';
+import { LoadingState } from '@/src/ui/LoadingState';
+import { ErrorState } from '@/src/ui/ErrorState';
+import { EmptyState } from '@/src/ui/EmptyState';
+import { Badge, Button, FilterChips, PageHeader, kitColors } from '@/src/ui/kit';
 import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
 
-// --- Sort options ---
+type Sort = 'newest' | 'best-match' | 'price-asc' | 'price-desc';
+const PAGE = 50;
 
-const SORT_OPTIONS = [
-  { key: 'sort-newest', label: 'Newest', value: 'newest' },
-  { key: 'sort-price-asc', label: 'Price ↑', value: 'price-asc' },
-  { key: 'sort-price-desc', label: 'Price ↓', value: 'price-desc' },
-  { key: 'sort-best', label: 'Best match', value: 'best-match' },
-];
-
-// --- Screen ---
-
-export default function ProductsScreen() {
+/** Frames — the catalogue, for stock checks and browsing outside (or during) a visit. */
+export default function FramesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const numColumns = width > 1000 ? 4 : 3;
+  const numColumns = width > 1100 ? 4 : 3;
+  const { activeClientId, activeClientName, mode } = useSessionStore();
+  const inVisit = mode !== 'idle' && !!activeClientId;
 
-  // Session context
-  const activeClientId = useSessionStore((s) => s.activeClientId);
+  const [query, setQuery] = useState('');
+  const [debounced, setDebounced] = useState('');
+  const [sort, setSort] = useState<Sort>(inVisit ? 'best-match' : 'newest');
+  const [stock, setStock] = useState<string[]>([]);
+  const [facets, setFacets] = useState<Record<string, string[]>>({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [limit, setLimit] = useState(PAGE);
 
-  // Get client name for session header
-  const { data: activeClient } = useClient(activeClientId ?? '');
+  useEffect(() => {
+    const t = setTimeout(() => { setDebounced(query.trim()); setLimit(PAGE); }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
+  useEffect(() => { setSort((s) => (inVisit ? (s === 'newest' ? 'best-match' : s) : s === 'best-match' ? 'newest' : s)); }, [inVisit]);
 
-  // Fetch filter taxonomy from API
+  const params: ProductListParams = useMemo(() => ({
+    q: debounced || undefined,
+    stock: stock.length === 1 ? (stock[0] as 'in' | 'low' | 'out') : undefined,
+    limit,
+    offset: 0,
+  }), [debounced, stock, limit]);
+  const { data, isLoading, error, refetch, isRefetching } = useProducts(params);
   const { data: filterData } = useFilters();
+  const { data: suggestions } = useSuggestions(inVisit ? activeClientId : null, { limit: 50 });
 
-  // Search state (SearchBar already debounces internally before calling onChangeText)
-  const [searchQuery, setSearchQuery] = useState('');
+  const scores = useMemo(() => new Map((suggestions ?? []).map((s) => [s.productId, s])), [suggestions]);
 
-  // Filter state
-  const [selectedStock, setSelectedStock] = useState<string[]>([]);
-  const [selectedSort, setSelectedSort] = useState<string>('newest');
-  const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
-  const [showFilterSheet, setShowFilterSheet] = useState(false);
-  const [offset, setOffset] = useState(0);
-
-  // Reset pagination when search changes
-  useEffect(() => {
-    setOffset(0);
-  }, [searchQuery]);
-
-  // Build query params
-  const queryParams: ProductListParams = useMemo(() => ({
-    q: searchQuery || undefined,
-    stock: selectedStock.length === 1 ? selectedStock[0] as 'in' | 'low' | 'out' : undefined,
-    limit: 50,
-    offset,
-  }), [searchQuery, selectedStock, offset]);
-
-  // Fetch products
-  const {
-    data: productsResponse,
-    isLoading,
-    error,
-    refetch,
-    isRefetching,
-    dataUpdatedAt,
-  } = useProducts(queryParams);
-
-  // Fetch suggestions when session active
-  const { data: suggestions } = useSuggestions(activeClientId, { limit: 50 });
-
-  // Build score map from suggestions
-  const scoreMap = useMemo(() => {
-    const map = new Map<string, { score: number; reasons: string[] }>();
-    if (!suggestions) return map;
-    for (const s of suggestions) {
-      map.set(s.productId, { score: s.score, reasons: s.matchReasons });
-    }
-    return map;
-  }, [suggestions]);
-
-  // Derive owned product set from suggestions (scored with negative means owned in the algorithm)
-  const ownedSet = useMemo(() => {
-    const set = new Set<string>();
-    // Products with very low scores and no match reasons are likely owned/penalized
-    // The API doesn't explicitly expose ownedProductIds, so we infer from score=0
-    // This is a best-effort approach
-    return set;
-  }, []);
-
-  // Process and sort products
   const products = useMemo(() => {
-    const raw = productsResponse?.data ?? [];
-    if (!raw.length) return [];
-
-    // Apply faceted filters locally using the product→filter mapping
-    let filtered = raw;
-    const hasActiveFacets = Object.values(selectedFacets).some((v) => v.length > 0);
-
-    if (hasActiveFacets && filterData?.products) {
-      filtered = raw.filter((product) => {
-        const productId = product.shopifyId ?? product.id;
-        const productFilters = filterData.products[productId];
-        if (!productFilters) return false; // Product not in filter map → exclude
-
-        return Object.entries(selectedFacets).every(([groupCode, values]) => {
-          if (values.length === 0) return true; // No selection in this group
-          const productValues = productFilters[groupCode] ?? [];
-          return values.some((v) => productValues.includes(v));
-        });
+    let list = data?.data ?? [];
+    // Multi-stock selections and facets are filtered here (the API takes one stock value).
+    if (stock.length > 1) list = list.filter((p) => stock.includes(p.viewHints?.stockBucket ?? 'in'));
+    const active = Object.entries(facets).filter(([, v]) => v.length);
+    if (active.length && filterData?.products) {
+      list = list.filter((p) => {
+        const map = filterData.products[productKey(p)];
+        return !!map && active.every(([g, vals]) => vals.some((v) => (map[g] ?? []).includes(v)));
       });
     }
-
-    let sorted = [...filtered];
-
-    if (selectedSort === 'best-match' && scoreMap.size > 0) {
-      sorted.sort((a, b) => {
-        const scoreA = scoreMap.get(productKey(a))?.score ?? 0;
-        const scoreB = scoreMap.get(productKey(b))?.score ?? 0;
-        return scoreB - scoreA;
-      });
-    } else if (selectedSort === 'price-asc') {
-      sorted.sort((a, b) => (parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0')));
-    } else if (selectedSort === 'price-desc') {
-      sorted.sort((a, b) => (parseFloat(b.priceMin ?? '0') - parseFloat(a.priceMin ?? '0')));
-    }
-    // 'newest' is the default server sort
-
+    const sorted = [...list];
+    if (sort === 'best-match') sorted.sort((a, b) => (scores.get(productKey(b))?.score ?? 0) - (scores.get(productKey(a))?.score ?? 0));
+    if (sort === 'price-asc') sorted.sort((a, b) => parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0'));
+    if (sort === 'price-desc') sorted.sort((a, b) => parseFloat(b.priceMin ?? '0') - parseFloat(a.priceMin ?? '0'));
     return sorted;
-  }, [productsResponse, selectedSort, scoreMap, selectedFacets, filterData]);
+  }, [data, stock, facets, filterData, sort, scores]);
 
-  // Filter pills (combine stock + sort)
-  const sortFilters = useMemo(() => {
-    // Only show "Best match" when session is active
-    if (activeClientId) return SORT_OPTIONS;
-    return SORT_OPTIONS.filter((o) => o.value !== 'best-match');
-  }, [activeClientId]);
+  const total = data?.meta?.total ?? products.length;
+  const activeFilters = stock.length + Object.values(facets).reduce((n, v) => n + v.length, 0);
+  const clear = useCallback(() => { setQuery(''); setStock([]); setFacets({}); }, []);
 
-  // Auto-switch to "Best match" when session starts
-  useEffect(() => {
-    if (activeClientId && selectedSort === 'newest') {
-      setSelectedSort('best-match');
-    }
-    if (!activeClientId && selectedSort === 'best-match') {
-      setSelectedSort('newest');
-    }
-  }, [activeClientId]);
-
-  const handleStockToggle = useCallback((value: string) => {
-    setSelectedStock((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [value]
-    );
-    setOffset(0);
-  }, []);
-
-  const handleSortToggle = useCallback((value: string) => {
-    setSelectedSort(value);
-  }, []);
-
-  const handleFacetToggle = useCallback((groupCode: string, value: string) => {
-    setSelectedFacets((prev) => {
-      const current = prev[groupCode] ?? [];
-      const updated = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value];
-      return { ...prev, [groupCode]: updated };
+  const toggleFacet = useCallback((group: string, value: string) => {
+    setFacets((f) => {
+      const cur = f[group] ?? [];
+      return { ...f, [group]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] };
     });
-    setOffset(0);
   }, []);
 
-  const handleProductPress = useCallback((id: string) => {
-    router.push(`/products/${id}`);
-  }, [router]);
-
-  const handleLoadMore = useCallback(() => {
-    const total = productsResponse?.meta?.total ?? 0;
-    if (products.length < total) {
-      setOffset((prev) => prev + 50);
-    }
-  }, [productsResponse, products.length]);
-
-  const handleClearFilters = useCallback(() => {
-    setSearchQuery('');
-    setSelectedStock([]);
-    setSelectedSort('newest');
-    setSelectedFacets({});
-    setOffset(0);
-  }, []);
-
-  // Render product card
-  const renderProduct = useCallback(({ item }: { item: Product }) => {
-    const scoreData = scoreMap.get(productKey(item));
+  const renderItem = useCallback(({ item }: { item: Product }) => {
+    const s = scores.get(productKey(item));
     return (
-      <View className="flex-1 p-sm">
-        <ProductCard
-          product={item}
-          onPress={handleProductPress}
-          fitScore={scoreData?.score ?? null}
-          fitReasons={scoreData?.reasons}
-          stockStatus={item.viewHints?.stockBucket}
-          isOwned={ownedSet.has(productKey(item))}
-        />
+      <View style={{ width: `${100 / numColumns}%` }} className="p-[8px]">
+        <ProductCard product={item} onPress={(id) => router.push(`/products/${id}`)} fitScore={inVisit ? s?.score ?? null : null} fitReasons={s?.matchReasons} />
       </View>
     );
-  }, [scoreMap, ownedSet, handleProductPress]);
-
-  // Key extractor
-  const keyExtractor = useCallback((item: Product) => productKey(item), []);
-
-  // Stale data indicator
-  const isStale = dataUpdatedAt > 0 && Date.now() - dataUpdatedAt > 10 * 60 * 1000;
-  const staleLabel = isStale && dataUpdatedAt > 0
-    ? `As of ${new Date(dataUpdatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : null;
-
-  // Active filter count for badge
-  const activeFilterCount = useMemo(() => {
-    const facetCount = Object.values(selectedFacets).reduce((sum, v) => sum + v.length, 0);
-    return selectedStock.length + facetCount;
-  }, [selectedStock, selectedFacets]);
-
-  // --- Render ---
-
-  if (isLoading && !productsResponse) return <LoadingState />;
-  if (error && !productsResponse) return <ErrorState error={error} onRetry={refetch} />;
+  }, [scores, numColumns, router, inVisit]);
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Header */}
-      <View className="px-xl pt-2xl pb-md border-b border-border">
-        {activeClientId && activeClient ? (
-          <Text className="text-display-lg text-text-primary">
-            Browsing for {activeClient.firstName ?? 'client'}
-          </Text>
-        ) : (
-          <Text className="text-display-lg text-text-primary">Products</Text>
-        )}
-        {productsResponse?.meta && (
-          <Text className="text-caption-md text-text-muted mt-xs">
-            {productsResponse.meta.total} products
-            {staleLabel && ` · ${staleLabel}`}
-          </Text>
-        )}
-      </View>
-
-      {/* Search + Filter bar — single row */}
-      <View className="px-xl py-sm border-b border-border flex-row items-center gap-sm">
-        <View className="flex-1">
-          <SearchBar
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search products..."
+      <PageHeader
+        title={inVisit ? `Frames for ${activeClientName?.split(' ')[0] ?? 'the client'}` : 'Frames'}
+        subtitle={`${total} frames${inVisit ? ' · best matches first' : ''}`}
+        meta={inVisit ? <Badge tone="success" dot>Visit open</Badge> : undefined}
+        actions={<Button label="Scan" icon={ScanLine} onPress={() => router.push('/products/scanner')} />}
+      />
+      <View className="flex-row items-center gap-[12px] px-[32px] pt-[16px]">
+        <View className="flex-1 flex-row items-center gap-[10px] border border-border rounded-md px-[12px] min-h-[44px]">
+          <Search size={18} color={kitColors.iconMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search by name, shape or colour"
+            placeholderTextColor={kitColors.iconMuted}
+            className="flex-1 text-body-md text-text-primary"
+            autoCapitalize="none"
+            autoCorrect={false}
+            accessibilityLabel="Search frames"
           />
         </View>
-        {/* Scan button */}
-        <Pressable
-          onPress={() => router.push('/products/scanner')}
-          className="w-[44px] h-[44px] items-center justify-center border border-border rounded-md bg-bg-surface"
-          accessibilityRole="button"
-          accessibilityLabel="Scan barcode"
-        >
-          <ScanLine size={20} color="#2B2B2B" />
-        </Pressable>
-        {/* Filter button with active count badge */}
-        <Pressable
-          onPress={() => setShowFilterSheet(true)}
-          className={`min-h-[44px] px-md rounded-md flex-row items-center gap-xs border ${
-            activeFilterCount > 0 ? 'bg-brand border-brand' : 'border-border bg-bg-surface'
-          }`}
-          accessibilityRole="button"
-          accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''}`}
-        >
-          <SlidersHorizontal size={16} color={activeFilterCount > 0 ? '#FFFFFF' : '#2B2B2B'} />
-          <Text className={`text-caption font-medium ${activeFilterCount > 0 ? 'text-text-inverse' : 'text-text-primary'}`}>
-            {activeFilterCount > 0 ? `Filters · ${activeFilterCount}` : 'Filter'}
-          </Text>
-        </Pressable>
+        <Button label={activeFilters ? `Filters · ${activeFilters}` : 'Filters'} icon={SlidersHorizontal} variant={activeFilters ? 'primary' : 'secondary'} onPress={() => setShowFilters(true)} />
       </View>
-
-      {/* Sort pills — single row, always visible */}
-      <View className="border-b border-border">
-        <FilterPillRow
-          filters={sortFilters}
-          selected={[selectedSort]}
-          onToggle={handleSortToggle}
+      <View className="px-[32px] pt-[12px]">
+        <FilterChips<Sort>
+          value={sort}
+          onChange={setSort}
+          options={[
+            ...(inVisit ? [{ key: 'best-match' as const, label: 'Best match' }] : []),
+            { key: 'newest', label: 'Newest' },
+            { key: 'price-asc', label: 'Price: low to high' },
+            { key: 'price-desc', label: 'Price: high to low' },
+          ]}
         />
       </View>
 
-      {/* Filter sheet */}
-      <FilterSheet
-        visible={showFilterSheet}
-        onClose={() => setShowFilterSheet(false)}
-        filterData={filterData}
-        selectedFacets={selectedFacets}
-        selectedStock={selectedStock}
-        onFacetToggle={handleFacetToggle}
-        onStockToggle={handleStockToggle}
-        onClear={() => {
-          setSelectedFacets({});
-          setSelectedStock([]);
-        }}
-        activeCount={activeFilterCount}
-      />
-
-      {/* Grid */}
-      {products.length === 0 && !isLoading ? (
-        <EmptyState
-          message="Nothing matches — clear filters?"
-          actionLabel="Clear filters"
-          onAction={handleClearFilters}
-        />
+      {isLoading && !data ? <LoadingState /> : error && !data ? <ErrorState error={error} onRetry={refetch} /> : products.length === 0 ? (
+        <EmptyState message={debounced || activeFilters ? 'No frames match. Try fewer filters.' : 'No frames in the catalogue yet.'} actionLabel={debounced || activeFilters ? 'Clear search and filters' : undefined} onAction={debounced || activeFilters ? clear : undefined} />
       ) : (
         <FlatList
           key={`grid-${numColumns}`}
           data={products}
-          keyExtractor={keyExtractor}
-          renderItem={renderProduct}
+          keyExtractor={(p) => productKey(p)}
           numColumns={numColumns}
-          contentContainerStyle={{ padding: 8 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 140 }}
+          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          onEndReached={() => { if ((data?.data?.length ?? 0) < total) setLimit((l) => l + PAGE); }}
+          onEndReachedThreshold={0.6}
+          ListFooterComponent={(data?.data?.length ?? 0) < total ? <Text className="text-body-sm text-text-tertiary text-center py-[16px]">Loading more…</Text> : null}
         />
       )}
+
+      <FilterSheet
+        visible={showFilters}
+        onClose={() => setShowFilters(false)}
+        filterData={filterData}
+        selectedFacets={facets}
+        selectedStock={stock}
+        onFacetToggle={toggleFacet}
+        onStockToggle={(v) => setStock((s) => (s.includes(v) ? s.filter((x) => x !== v) : [...s, v]))}
+        onClear={() => { setStock([]); setFacets({}); }}
+        activeCount={activeFilters}
+      />
     </View>
   );
 }
