@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-10-17] — Phase D11: visual QA
+
+### Added
+- `docs/v2/qa/`: 16 screenshots of every main screen on the kit, with notes and the open items found.
+
+### Changed
+- **Floor:** primary action is **Walk-in** (works today); "Week schedule" → "Schedule". New client stays on Clients (it can't succeed until Foundry adds a create endpoint).
+
+### Found
+- Two more shell customers were created by one test visit; added to the Foundry handoff (P0 #4).
+
 ## [2026-10-17] — i18n scaffold (task 0.4) and French client-facing screens
 
 ### Added

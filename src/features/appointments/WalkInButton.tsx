@@ -17,7 +17,7 @@ const nameOf = (c: Client) => [c.firstName, c.lastName].filter(Boolean).join(' '
  * arrived and opens the visit. (Previously it created a client-less
  * appointment and sent staff to a Clients mode that didn't exist.)
  */
-export function WalkInButton() {
+export function WalkInButton({ variant = 'secondary' }: { variant?: 'primary' | 'secondary' } = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -55,7 +55,7 @@ export function WalkInButton() {
 
   return (
     <>
-      <Button label="Walk-in" icon={DoorOpen} onPress={() => setOpen(true)} />
+      <Button label="Walk-in" icon={DoorOpen} variant={variant} onPress={() => setOpen(true)} />
       <Sheet visible={open} onClose={() => setOpen(false)} title="Walk-in" subtitle="Find them, then start the visit. It’s logged on today’s schedule.">
         <View className="gap-[12px]">
           <TextField label="Client" value={query} onChangeText={setQuery} placeholder="Name or email" autoCapitalize="none" autoCorrect={false} autoFocus />

@@ -2,7 +2,8 @@ import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { Calendar, UserPlus } from 'lucide-react-native';
+import { Calendar } from 'lucide-react-native';
+import { WalkInButton } from '@/src/features/appointments/WalkInButton';
 import { useTodayAppointments } from '@/src/api/useAppointments';
 import { useVisitActions } from '@/src/features/appointments/useVisitActions';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
@@ -73,8 +74,8 @@ export default function HomeScreen() {
         subtitle={subtitle}
         actions={
           <>
-            <Button label="Week schedule" icon={Calendar} onPress={() => router.push('/appointments')} />
-            <Button label="New client" icon={UserPlus} variant="primary" onPress={() => router.push('/clients/new')} />
+            <Button label="Schedule" icon={Calendar} onPress={() => router.push('/appointments')} />
+            <WalkInButton variant="primary" />
           </>
         }
       />
