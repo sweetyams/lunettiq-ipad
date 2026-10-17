@@ -4,7 +4,8 @@ import { Image } from 'expo-image';
 import { X } from 'lucide-react-native';
 import { Modal } from '@/src/ui/Modal';
 import { Wordmark } from '@/src/ui/Wordmark';
-import { VerdictPicker, kitColors } from '@/src/ui/kit';
+import { ChoiceChips, VerdictPicker, kitColors } from '@/src/ui/kit';
+import { useLangStore, useT, type Lang } from '@/src/i18n';
 import { useFittingStore } from './useFittingStore';
 import { useSessionStore } from '../session/useSessionStore';
 import { useHandedMode } from './useHandedMode';
@@ -22,6 +23,10 @@ export function HandedToClientView() {
   const { timedOut, exitGesture, reclaim, handleClientVerdict } = useHandedMode();
   const [enlarged, setEnlarged] = useState<SessionPhoto | null>(null);
   const { width } = useWindowDimensions();
+  const tr = useT('client');
+  const clientLang = useLangStore((st) => st.clientLang);
+  const setClientLang = useLangStore((st) => st.setClientLang);
+  const verdictLabels = { loved: tr('handed.love'), unsure: tr('handed.maybe'), rejected: tr('handed.no') };
 
   if (timedOut) return <HandedTimeout onReclaim={reclaim} />;
 
@@ -37,22 +42,25 @@ export function HandedToClientView() {
         onPress={exitGesture}
         className="min-h-[44px] items-center justify-center border-b border-border"
         accessibilityRole="button"
-        accessibilityLabel="Staff: double-tap to take the iPad back"
+        accessibilityLabel={tr('handed.staffBarA11y')}
       >
-        <Text className="text-body-sm text-text-dim">Staff: double-tap here to take back</Text>
+        <Text className="text-body-sm text-text-dim">{tr('handed.staffBar')}</Text>
       </Pressable>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 32, paddingTop: 32, paddingBottom: 64, alignItems: 'center' }}>
         <Wordmark size="md" />
-        <Text className="text-display-lg text-text-primary text-center mt-[28px]">
-          {firstName ? `${firstName}, which ones do you love?` : 'Which ones do you love?'}
+        <View className="mt-[20px]">
+          <ChoiceChips options={[{ key: 'en', label: 'English' }, { key: 'fr', label: 'Français' }]} value={clientLang} onChange={(l: Lang | null) => l && setClientLang(l)} />
+        </View>
+        <Text className="text-display-lg text-text-primary text-center mt-[24px]">
+          {firstName ? tr('handed.titleNamed', { name: firstName }) : tr('handed.title')}
         </Text>
         <Text className="text-body-lg text-text-tertiary text-center mt-[8px]">
-          {loved ? `${loved} loved so far. ` : ''}Take your time. We’ll keep your favourites for you.
+          {loved ? `${tr('handed.lovedSoFar', { count: loved })} ` : ''}{tr('handed.reassure')}
         </Text>
 
         {framesTried.length === 0 && clientPhotos.length === 0 ? (
-          <Text className="text-body-lg text-text-tertiary text-center mt-[48px]">Nothing to show yet. Hand the iPad back to your advisor.</Text>
+          <Text className="text-body-lg text-text-tertiary text-center mt-[48px]">{tr('handed.nothing')}</Text>
         ) : null}
 
         <View className="flex-row flex-wrap gap-[24px] mt-[32px] justify-center" style={{ maxWidth: 1280 }}>
@@ -63,7 +71,7 @@ export function HandedToClientView() {
               </View>
               <View className="p-[20px] gap-[14px] border-t border-border">
                 <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{f.productName}</Text>
-                <VerdictPicker size="lg" value={f.verdict} onChange={(v) => updateFrameVerdict(f.id, v)} label={f.productName} />
+                <VerdictPicker size="lg" labels={verdictLabels} value={f.verdict} onChange={(v) => updateFrameVerdict(f.id, v)} label={f.productName} />
               </View>
             </View>
           ))}
@@ -73,8 +81,8 @@ export function HandedToClientView() {
                 <Image source={{ uri: p.thumbnailUri || p.localUri }} contentFit="cover" style={{ width: '100%', aspectRatio: 4 / 3 }} />
               </Pressable>
               <View className="p-[20px] gap-[14px] border-t border-border">
-                <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{p.productName ?? 'Your photo'}</Text>
-                <VerdictPicker size="lg" value={p.verdict} onChange={(v) => v && handleClientVerdict(p.id, v)} label={p.productName ?? 'photo'} />
+                <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{p.productName ?? tr('handed.yourPhoto')}</Text>
+                <VerdictPicker size="lg" labels={verdictLabels} value={p.verdict} onChange={(v) => v && handleClientVerdict(p.id, v)} label={p.productName ?? 'photo'} />
               </View>
             </View>
           ))}
@@ -84,7 +92,7 @@ export function HandedToClientView() {
       <Modal visible={!!enlarged} transparent animationType="fade" onRequestClose={() => setEnlarged(null)}>
         <View className="flex-1 bg-bg-page items-center justify-center">
           {enlarged ? <Image source={{ uri: enlarged.localUri }} contentFit="contain" style={{ width: '100%', height: '100%' }} /> : null}
-          <Pressable onPress={() => setEnlarged(null)} className="absolute top-[32px] right-[32px] w-[56px] h-[56px] rounded-full border border-border bg-bg-page items-center justify-center" accessibilityRole="button" accessibilityLabel="Close photo">
+          <Pressable onPress={() => setEnlarged(null)} className="absolute top-[32px] right-[32px] w-[56px] h-[56px] rounded-full border border-border bg-bg-page items-center justify-center" accessibilityRole="button" accessibilityLabel={tr('handed.closePhoto')}>
             <X size={24} color={kitColors.text} />
           </Pressable>
         </View>

@@ -17,6 +17,7 @@ import { useInitialSync } from '@/src/sync/useInitialSync';
 import { useSyncStore } from '@/src/sync/useSyncStore';
 import { getDatabaseStats, resetDatabase } from '@/src/db';
 import { Avatar } from '@/src/ui/Avatar';
+import { useLangStore, useT, type Lang } from '@/src/i18n';
 import { toast } from '@/src/ui/useToastStore';
 import { Badge, Button, ChoiceChips, KeyValue, ListRow, PageHeader, Section, StatusDot, kitColors } from '@/src/ui/kit';
 
@@ -56,6 +57,9 @@ export default function ProfileScreen() {
   const [dbStats, setDbStats] = useState<Record<string, number>>({});
   useEffect(() => { getDatabaseStats().then(setDbStats).catch(() => {}); }, []);
 
+  const uiLang = useLangStore((s) => s.uiLang);
+  const setUiLang = useLangStore((s) => s.setUiLang);
+  const tr = useT();
   const [locationOpen, setLocationOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [armed, setArmed] = useState<'signout' | 'switch' | 'reset' | null>(null);
@@ -109,6 +113,11 @@ export default function ProfileScreen() {
                   variant="danger"
                   onPress={() => (armed === 'signout' ? (setArmed(null), void signOut()) : setArmed('signout'))}
                 />
+              </View>
+              <View className="mt-[20px] pt-[16px] border-t border-border gap-[8px]">
+                <Text className="text-body-md font-medium text-text-primary">{tr('profile.language')}</Text>
+                <ChoiceChips options={[{ key: 'en', label: 'English' }, { key: 'fr', label: 'Français' }]} value={uiLang} onChange={(l: Lang | null) => l && setUiLang(l)} />
+                <Text className="text-body-sm text-text-tertiary">{tr('profile.languageHint')}</Text>
               </View>
               {armed === 'signout' ? <Text className="text-body-sm text-text-tertiary mt-[8px]">Signing out removes this iPad’s cached data for {activeProject?.name ?? 'the store'}.</Text> : null}
             </Section>

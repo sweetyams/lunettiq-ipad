@@ -16,18 +16,21 @@ const CHOICES: Array<{ key: PickedVerdict; label: string; Icon: typeof Heart }> 
  * (staff) or larger touch targets (`size="lg"`, client-facing). "liked" from
  * older data reads as Love.
  */
-export function VerdictPicker({ value, onChange, size = 'md', label }: {
+export function VerdictPicker({ value, onChange, size = 'md', label, labels }: {
   value: string | null | undefined;
   onChange: (v: PickedVerdict | undefined) => void;
   size?: 'md' | 'lg';
   /** Frame name, for accessibility. */
   label: string;
+  /** Translated button labels (client-facing). */
+  labels?: Partial<Record<PickedVerdict, string>>;
 }) {
   const current = value === 'liked' ? 'loved' : value;
   const lg = size === 'lg';
   return (
     <View className="flex-row gap-[6px]" accessibilityRole="radiogroup" accessibilityLabel={`Reaction to ${label}`}>
-      {CHOICES.map(({ key, label: text, Icon }) => {
+      {CHOICES.map(({ key, label: fallback, Icon }) => {
+        const text = labels?.[key] ?? fallback;
         const on = current === key;
         return (
           <Pressable

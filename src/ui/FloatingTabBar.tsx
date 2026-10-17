@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home, Users, ClipboardList, PhoneCall, FileCheck, Lock, Glasses } from 'lucide-react-native';
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { useUser } from '@clerk/clerk-expo';
+import { t as translate, useLangStore, type TKey } from '@/src/i18n';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { useDesignTokens } from '@/src/features/design';
 import { kitColors } from '@/src/ui/kit/colors';
@@ -57,6 +58,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
   const insets = useSafeAreaInsets();
 
   const { user } = useUser();
+  const uiLang = useLangStore((st) => st.uiLang);
   // No operator = the device owner unlocked (Face ID); show the signed-in user.
   const operatorName = activeOperator?.name || user?.fullName || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || '';
   const initials = operatorName
@@ -119,7 +121,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
                 onLongPress={onLongPress}
                 accessibilityRole="button"
                 accessibilityState={isFocused ? { selected: true } : {}}
-                accessibilityLabel={(descriptor?.options?.tabBarAccessibilityLabel as string) ?? tabItem.label}
+                accessibilityLabel={(descriptor?.options?.tabBarAccessibilityLabel as string) ?? translate(uiLang, `tabs.${tabItem.key}` as TKey)}
                 style={({ pressed }) => ({
                   opacity: pressed ? 0.6 : 1,
                   transform: [{ scale: pressed ? 0.9 : 1 }],

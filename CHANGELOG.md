@@ -1,5 +1,16 @@
 # Changelog
 
+## [2026-10-17] — i18n scaffold (task 0.4) and French client-facing screens
+
+### Added
+- `src/i18n`: typed EN/FR dictionaries (`fr.ts` must implement every key: enforced by the type and a test), `t(lang, key, vars)`, `useT('staff' | 'client')`, persisted UI language and per-visit client language. Device language from `Intl`. No new dependencies (avoids touching `package.json`, and `expo-localization` would need a native rebuild).
+- **Handed mode** in English or French with an EN / FR switch for the client; verdict buttons translated (J'adore / Peut-être / Non).
+- **Timeout screen** and **consent script** follow the client's language (the consent sheet's staff copy stays in the staff language).
+- **App language** switch in Profile; tab accessibility labels translated.
+
+### Notes
+- Staff screens are still English; extraction continues screen by screen (Floor and the Visit spine first).
+
 ## [2026-10-17] — Phase D10: states, toasts and confirmations
 
 ### Changed
