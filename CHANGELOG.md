@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-10-17] — Phase D9: Profile, sign-in and store picker on the kit
+
+### Fixed
+- **Email sign-in without a password promised a code that was never sent** (`signIn.create({ identifier })` alone sends nothing). Now prepares Clerk's `email_code` factor, shows a code step (one-time-code autofill, resend), and verifies it. Errors show inline instead of native alerts.
+- **Tab-bar avatar showed "?"** after a Face ID (device-owner) unlock; it now falls back to the signed-in user.
+- **Store picker failed silently** when a store couldn't be opened; it now says so.
+- Profile rows that did nothing ("Notifications", "Privacy & Security") removed; Rx Pipeline / Approvals duplicates of tabs removed; Second Sight and Custom Design unlinked (V3/V4).
+- Changing store and signing out use two-tap confirms instead of `Alert`s; unsynced changes are stated on the Change store row.
+
+### Changed
+- **Profile** is one Builder settings page: You (avatar, email, role, Set or change PIN, Sign out), Store (store, change store, this iPad's location, Auto-lock as 2 / 5 / 10 min / Never chips; manager-gated), Sync (status, last syncs, auto-sync and Wi-Fi-only switches, Sync now), About, Developer (DEV only: cached rows, clear cache).
+- **PIN setup** is a kit Sheet (`PinSetupSheet`) with weak-PIN rules; `PinPad` light colours moved to Found UI.
+- **Sign-in:** kit fields and buttons (Google primary, email secondary), code step.
+- **Store picker:** Builder list with brand marks, Demo / Current badges.
+
+### Removed
+- Old Settings and More screens (folded into Profile), `QuickSwitchLockScreen`, `OperatorBar` (unused).
+
 ## [2026-10-17] — Phase D7: Frames (catalogue), product detail, scanner and ordering
 
 ### Fixed

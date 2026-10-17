@@ -5,7 +5,6 @@ export { AuthProvider, useAuthContext, admitAfterClerkLogin } from './AuthProvid
 export { useStaffProfile } from './useStaffProfile';
 export { useOperatorStore } from './useOperatorStore';
 export type { Operator } from './useOperatorStore';
-export { QuickSwitchLockScreen } from './QuickSwitchLockScreen';
 export { PinLockScreen } from './PinLockScreen';
 export { TouchActivityProvider } from './TouchActivityProvider';
 export { useDeviceSettings } from './useDeviceSettings';

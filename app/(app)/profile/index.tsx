@@ -1,377 +1,226 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import {
-  User,
-  Settings,
-  LogOut,
-  ArrowUpDown,
-  Palette,
-  ClipboardList,
-  FileCheck,
-  ChevronRight,
-  Bell,
-  Shield,
-  Store,
-  MapPin,
-  Lock,
-} from 'lucide-react-native';
+import * as Application from 'expo-application';
+import { KeyRound, LogOut, RefreshCw } from 'lucide-react-native';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
-import { SyncIndicator } from '@/src/ui/SyncIndicator';
+import { useStaffProfile } from '@/src/features/auth/useStaffProfile';
+import { PinSetupSheet } from '@/src/features/auth/PinSetupSheet';
 import { useTenantStore, type Project } from '@/src/features/tenant/useTenantStore';
 import { switchProject } from '@/src/features/tenant/switchProject';
 import { useDeviceLocationStore, useDeviceLocationId } from '@/src/features/tenant/useDeviceLocationStore';
 import { useLocations, locationName } from '@/src/api/useLocations';
 import { LocationPickerSheet } from '@/src/features/client-profile/LocationPickerSheet';
 import { useDeviceSettings, type LockTimeout } from '@/src/features/auth/useDeviceSettings';
-
-const LOCK_TIMEOUTS: LockTimeout[] = [2, 5, 10, 'never'];
-
-/** Tap cycles through the options: 2 → 5 → 10 min → Never → 2. */
-function nextLockTimeout(current: LockTimeout): LockTimeout {
-  const i = LOCK_TIMEOUTS.indexOf(current);
-  return LOCK_TIMEOUTS[(i + 1) % LOCK_TIMEOUTS.length] ?? 2;
-}
-
-function lockTimeoutLabel(timeout: LockTimeout): string {
-  return timeout === 'never'
-    ? 'Never locks. Use only on test devices'
-    : `Locks after ${timeout} min idle. Tap to change`;
-}
 import { useInitialSync } from '@/src/sync/useInitialSync';
 import { useSyncStore } from '@/src/sync/useSyncStore';
+import { getDatabaseStats, resetDatabase } from '@/src/db';
+import { Avatar } from '@/src/ui/Avatar';
+import { toast } from '@/src/ui/useToastStore';
+import { Badge, Button, ChoiceChips, KeyValue, ListRow, PageHeader, Section, StatusDot, kitColors } from '@/src/ui/kit';
 
-/**
- * Profile screen — User identity, settings, and secondary navigation.
- *
- * Replaces the old "More" tab. Consolidates:
- * - User identity + avatar
- * - Notification preferences
- * - Settings navigation
- * - Secondary feature access (Second Sight, Custom Design, Rx Pipeline, etc.)
- * - Sign out
- */
+const AUTO_LOCK: Array<{ key: string; label: string }> = [
+  { key: '2', label: '2 min' }, { key: '5', label: '5 min' }, { key: '10', label: '10 min' }, { key: 'never', label: 'Never' },
+];
+
+function ago(ts: number | null): string | null {
+  if (!ts) return null;
+  const min = Math.round((Date.now() - ts) / 60_000);
+  if (min < 1) return 'Just now';
+  if (min < 60) return `${min} min ago`;
+  return new Date(ts).toLocaleString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+/** Profile and device settings (Builder settings panel): you, store, sync, about. */
 export default function ProfileScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { user } = useUser();
   const { activeOperator } = useOperatorStore();
+  const { staffId: ownerStaffId } = useStaffProfile();
 
   const activeProject = useTenantStore((s) => s.activeProject);
   const knownProjects = useTenantStore((s) => s.knownProjects);
-  const { startSync } = useInitialSync();
-  // Only stores the device can actually use, excluding the current one.
-  const switchableStores = knownProjects.filter(
-    (p) => p.slug !== activeProject?.slug && p.ipadReady !== false
-  );
-  const canChangeStore = switchableStores.length > 0;
+  const switchable = knownProjects.filter((p) => p.slug !== activeProject?.slug && p.ipadReady !== false);
+  const isManager = activeProject?.role === 'admin' || activeProject?.role === 'owner';
 
-  // Device-bound location.
   const deviceLocationId = useDeviceLocationId();
   const setDeviceLocation = useDeviceLocationStore((s) => s.setLocation);
   const { data: locations } = useLocations();
-  const [locationSheetOpen, setLocationSheetOpen] = useState(false);
-  // Changing the device location is a manager action.
-  const canManageLocation = activeProject?.role === 'admin' || activeProject?.role === 'owner';
   const lockTimeout = useDeviceSettings((s) => s.lockTimeout);
   const setLockTimeout = useDeviceSettings((s) => s.setLockTimeout);
-  const currentLocation = locations?.find((l) => l.id === deviceLocationId);
-  const currentLocationLabel = currentLocation
-    ? locationName(currentLocation)
-    : deviceLocationId
-      ? 'Selected location'
-      : 'Not set';
 
-  const handleSelectLocation = (locationId: string): void => {
-    if (activeProject) setDeviceLocation(activeProject.slug, locationId);
-  };
+  const sync = useSyncStore();
+  const { startSync, status: syncStatus, message: syncMessage } = useInitialSync();
+  const [dbStats, setDbStats] = useState<Record<string, number>>({});
+  useEffect(() => { getDatabaseStats().then(setDbStats).catch(() => {}); }, []);
 
-  const performChange = async (target: Project): Promise<void> => {
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [armed, setArmed] = useState<'signout' | 'switch' | 'reset' | null>(null);
+
+  const name = activeOperator?.name || user?.fullName || 'Staff member';
+  const [first, ...rest] = name.split(' ');
+  const email = activeOperator?.email || user?.primaryEmailAddress?.emailAddress || '';
+  const role = (activeOperator?.role ?? activeProject?.role ?? 'staff').replace(/_/g, ' ');
+  const location = locations?.find((l) => l.id === deviceLocationId);
+  const pending = sync.pendingWrites + sync.pendingUploads;
+  const syncing = syncStatus === 'syncing';
+
+  const changeStore = async (target: Project) => {
     try {
       await switchProject(target);
       await startSync();
       router.replace('/(app)/home');
     } catch {
-      Alert.alert('Could not change store', 'Something went wrong. Please try again.');
+      toast.error('Couldn’t change store', 'Check the connection and try again.');
     }
   };
-
-  const promptChangeStore = (): void => {
-    if (!canChangeStore) return;
-
-    const { pendingWrites, pendingUploads } = useSyncStore.getState();
-    const pending = pendingWrites + pendingUploads;
-
-    const proceed = (): void => {
-      if (switchableStores.length === 1) {
-        Alert.alert(
-          'Change store',
-          `Switch to ${switchableStores[0]!.name}? This device will reload that store's data.`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Switch', style: 'destructive', onPress: () => void performChange(switchableStores[0]!) },
-          ]
-        );
-      } else {
-        router.push('/select-project');
-      }
-    };
-
-    if (pending > 0) {
-      Alert.alert(
-        'Unsynced changes',
-        `You have ${pending} change${pending > 1 ? 's' : ''} that haven't synced yet. ` +
-          'Changing store now may delay syncing them until you return. Continue?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Change anyway', style: 'destructive', onPress: proceed },
-        ]
-      );
-    } else {
-      proceed();
-    }
+  const onChangeStore = () => {
+    if (switchable.length > 1) { router.push('/select-project'); return; }
+    if (armed !== 'switch') { setArmed('switch'); return; }
+    setArmed(null);
+    void changeStore(switchable[0]!);
   };
 
-  const displayName = activeOperator?.name ?? user?.fullName ?? 'Staff Member';
-  const email = user?.primaryEmailAddress?.emailAddress ?? '';
-  const role = activeOperator?.role ?? 'sales_associate';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const cachedRows = Object.entries(dbStats).filter(([, n]) => n > 0).map(([table, n]) => ({ label: table.replace(/_/g, ' '), value: n.toLocaleString() }));
 
   return (
-    <ScrollView className="flex-1 bg-bg-page" contentContainerStyle={{ paddingBottom: 120 }}>
-      {/* Profile header */}
-      <View className="items-center pt-xl pb-lg border-b border-border mx-lg">
-        {/* Avatar circle */}
-        <View className="w-[72px] h-[72px] rounded-full bg-brand items-center justify-center mb-md">
-          <Text className="text-brand-text text-[24px] font-semibold">
-            {initials}
-          </Text>
-        </View>
-        <Text className="text-text-primary text-heading-lg font-medium">
-          {displayName}
-        </Text>
-        <Text className="text-text-secondary text-body-sm mt-xs">
-          {email}
-        </Text>
-        <View className="mt-sm px-md py-xs rounded-full bg-bg-muted">
-          <Text className="text-text-muted text-caption-md capitalize">
-            {role.replace(/_/g, ' ')}
-          </Text>
-        </View>
-      </View>
-
-      {/* Sync status */}
-      <View className="mx-lg mt-lg">
-        <SyncIndicator />
-      </View>
-
-      {/* Store */}
-      {activeProject && (
-        <View className="mx-lg mt-lg">
-          <Text className="text-text-muted text-caption-md uppercase tracking-wider mb-sm px-sm">
-            Store
-          </Text>
-          <View className="bg-bg-surface rounded-lg border border-border overflow-hidden">
-            <View className="flex-row items-center px-md py-md min-h-[52px] border-b border-border">
-              <View className="w-[36px] h-[36px] rounded-md bg-brand items-center justify-center">
-                {activeProject.brandMark ? (
-                  <Text className="text-brand-text text-body-md font-bold">
-                    {activeProject.brandMark}
-                  </Text>
-                ) : (
-                  <Store size={20} color="#FFFFFF" />
-                )}
-              </View>
-              <View className="flex-1 ml-md">
-                <Text className="text-text-primary text-body-md font-medium">
-                  {activeProject.name}
-                </Text>
-                <Text className="text-text-muted text-caption-md capitalize">
-                  {activeProject.env === 'demo' ? 'Demo store · ' : ''}
-                  {activeProject.role}
-                </Text>
-              </View>
-            </View>
-            {canChangeStore ? (
-              <MenuRow
-                icon={<ArrowUpDown size={20} color="#737373" />}
-                label="Change store"
-                description="Switch to another store you have access to"
-                onPress={promptChangeStore}
-              />
-            ) : (
-              <View className="px-md py-md border-b border-border">
-                <Text className="text-text-muted text-caption-md">
-                  This is the only store you have access to.
-                </Text>
-              </View>
-            )}
-            {/* Device location — the branch this iPad is at. Manager-gated. */}
-            {canManageLocation ? (
-              <MenuRow
-                icon={<MapPin size={20} color="#737373" />}
-                label="Location"
-                description={`This device: ${currentLocationLabel}`}
-                onPress={() => setLocationSheetOpen(true)}
-              />
-            ) : (
-              <View className="flex-row items-center px-md py-md min-h-[52px]">
-                <View className="w-[36px] h-[36px] rounded-md bg-bg-muted items-center justify-center">
-                  <MapPin size={20} color="#737373" />
-                </View>
-                <View className="flex-1 ml-md">
-                  <Text className="text-text-primary text-body-md font-medium">Location</Text>
-                  <Text className="text-text-muted text-caption-md">
-                    This device: {currentLocationLabel}
-                  </Text>
+    <View className="flex-1 bg-bg-page">
+      <PageHeader title="Profile" subtitle={activeProject ? `${activeProject.name}${location ? ` · ${locationName(location)}` : ''}` : undefined} />
+      <ScrollView contentContainerStyle={{ padding: 32, paddingBottom: 140 }}>
+        <View className="flex-row gap-[24px] items-start">
+          <View className="flex-1 gap-[20px]">
+            <Section title="You">
+              <View className="flex-row items-center gap-[16px]">
+                <Avatar firstName={first ?? ''} lastName={rest.join(' ')} size="lg" />
+                <View className="flex-1 gap-[4px]">
+                  <Text className="text-heading-lg text-text-primary">{name}</Text>
+                  {email ? <Text className="text-body-md text-text-tertiary">{email}</Text> : null}
+                  <View className="flex-row"><Badge>{role.charAt(0).toUpperCase() + role.slice(1)}</Badge></View>
                 </View>
               </View>
-            )}
-            {/* Auto-lock — how long this iPad stays unlocked when idle. Manager-gated. */}
-            {canManageLocation && (
-              <MenuRow
-                icon={<Lock size={20} color="#737373" />}
-                label="Auto-lock"
-                description={lockTimeoutLabel(lockTimeout)}
-                onPress={() => setLockTimeout(nextLockTimeout(lockTimeout))}
-                isLast
-              />
-            )}
+              <View className="flex-row flex-wrap gap-[8px] mt-[20px]">
+                <Button label="Set or change PIN" icon={KeyRound} onPress={() => setPinOpen(true)} />
+                <Button
+                  label={armed === 'signout' ? 'Tap again to sign out' : 'Sign out'}
+                  icon={LogOut}
+                  variant="danger"
+                  onPress={() => (armed === 'signout' ? (setArmed(null), void signOut()) : setArmed('signout'))}
+                />
+              </View>
+              {armed === 'signout' ? <Text className="text-body-sm text-text-tertiary mt-[8px]">Signing out removes this iPad’s cached data for {activeProject?.name ?? 'the store'}.</Text> : null}
+            </Section>
+
+            {activeProject ? (
+              <Section title="Store" padded={false}>
+                <ListRow
+                  divider={false}
+                  title={activeProject.name}
+                  subtitle={activeProject.env === 'demo' ? 'Demo store. Changes don’t reach real clients.' : `You are ${activeProject.role}`}
+                  trailing={activeProject.env === 'demo' ? <Badge tone="warning" dot>Demo</Badge> : undefined}
+                />
+                {switchable.length ? (
+                  <ListRow
+                    title={armed === 'switch' ? `Tap again to switch to ${switchable[0]!.name}` : 'Change store'}
+                    subtitle={pending ? `${pending} change${pending > 1 ? 's' : ''} not synced yet; they’ll wait until you’re back.` : switchable.length > 1 ? `${switchable.length} other stores` : `Switch to ${switchable[0]!.name}`}
+                    onPress={onChangeStore}
+                    chevron
+                  />
+                ) : null}
+                <ListRow
+                  title="This iPad’s location"
+                  subtitle={location ? locationName(location) : deviceLocationId ? 'Selected location' : 'Not set'}
+                  onPress={isManager ? () => setLocationOpen(true) : undefined}
+                  chevron={isManager}
+                  trailing={isManager ? undefined : <Text className="text-body-sm text-text-tertiary">Managers can change</Text>}
+                />
+                <View className="px-[20px] py-[14px] border-t border-border gap-[10px]">
+                  <View className="flex-row items-baseline justify-between">
+                    <Text className="text-body-md font-medium text-text-primary">Auto-lock</Text>
+                    <Text className="text-body-sm text-text-tertiary">{lockTimeout === 'never' ? 'Test devices only' : 'After idle'}</Text>
+                  </View>
+                  {isManager ? (
+                    <ChoiceChips
+                      options={AUTO_LOCK}
+                      value={String(lockTimeout)}
+                      onChange={(k: string | null) => k && setLockTimeout((k === 'never' ? 'never' : Number(k)) as LockTimeout)}
+                    />
+                  ) : (
+                    <Text className="text-body-sm text-text-tertiary">{lockTimeout === 'never' ? 'Never' : `${lockTimeout} min`} · managers can change</Text>
+                  )}
+                </View>
+              </Section>
+            ) : null}
+          </View>
+
+          <View className="flex-1 gap-[20px]">
+            <Section title="Sync">
+              <View className="flex-row items-center gap-[8px] mb-[8px]">
+                <StatusDot tone={!sync.isOnline ? 'danger' : pending ? 'warning' : 'success'} />
+                <Text className="text-body-md text-text-primary flex-1">
+                  {!sync.isOnline ? 'Offline. Changes are saved on this iPad.' : syncing ? syncMessage || 'Syncing…' : pending ? `${pending} change${pending > 1 ? 's' : ''} waiting to sync` : 'Up to date'}
+                </Text>
+              </View>
+              <KeyValue rows={[
+                { label: 'Last sync', value: ago(sync.lastSyncAt) },
+                { label: 'Last full sync', value: ago(sync.lastFullSyncAt) },
+              ]} />
+              <View className="flex-row items-center justify-between min-h-[48px] border-t border-border">
+                <Text className="text-body-md text-text-primary">Sync automatically</Text>
+                <Switch value={sync.autoSyncEnabled} onValueChange={sync.setAutoSyncEnabled} accessibilityLabel="Sync automatically" trackColor={{ true: kitColors.primary, false: kitColors.border }} />
+              </View>
+              <View className="flex-row items-center justify-between min-h-[48px] border-t border-border">
+                <Text className="text-body-md text-text-primary">Upload photos on Wi-Fi only</Text>
+                <Switch value={sync.wifiOnlyUploads} onValueChange={sync.setWifiOnlyUploads} accessibilityLabel="Upload photos on Wi-Fi only" trackColor={{ true: kitColors.primary, false: kitColors.border }} />
+              </View>
+              <View className="mt-[12px] flex-row">
+                <Button label={syncing ? 'Syncing…' : 'Sync now'} icon={RefreshCw} onPress={async () => { await startSync(); getDatabaseStats().then(setDbStats).catch(() => {}); }} disabled={syncing || !sync.isOnline} />
+              </View>
+            </Section>
+
+            <Section title="About">
+              <KeyValue rows={[
+                { label: 'App version', value: Application.nativeApplicationVersion ?? null },
+                { label: 'Build', value: Application.nativeBuildVersion ?? null },
+                { label: 'Store', value: activeProject ? `${activeProject.slug}${activeProject.env ? ` (${activeProject.env})` : ''}` : null },
+              ]} />
+            </Section>
+
+            {__DEV__ ? (
+              <Section title="Developer">
+                {cachedRows.length ? <KeyValue mono rows={cachedRows} /> : <Text className="text-body-sm text-text-tertiary">Nothing cached.</Text>}
+                <View className="mt-[12px] flex-row">
+                  <Button
+                    label={armed === 'reset' ? 'Tap again to clear' : 'Clear local cache'}
+                    variant="danger"
+                    size="sm"
+                    onPress={async () => {
+                      if (armed !== 'reset') { setArmed('reset'); return; }
+                      setArmed(null);
+                      await resetDatabase();
+                      setDbStats(await getDatabaseStats());
+                      toast.info('Cache cleared', 'Sync to reload data.');
+                    }}
+                  />
+                </View>
+              </Section>
+            ) : null}
           </View>
         </View>
-      )}
-
-      {/* Navigation sections */}
-      <View className="mx-lg mt-lg">
-        <Text className="text-text-muted text-caption-md uppercase tracking-wider mb-sm px-sm">
-          Tools
-        </Text>
-        <View className="bg-bg-surface rounded-lg border border-border overflow-hidden">
-          <MenuRow
-            icon={<ArrowUpDown size={20} color="#737373" />}
-            label="Second Sight"
-            description="Trade-in intake"
-            onPress={() => router.push('/(app)/more/second-sight')}
-          />
-          <MenuRow
-            icon={<Palette size={20} color="#737373" />}
-            label="Custom Design"
-            description="Design capture"
-            onPress={() => router.push('/(app)/more/custom-design')}
-          />
-          <MenuRow
-            icon={<ClipboardList size={20} color="#737373" />}
-            label="Rx Pipeline"
-            description="Prescription orders"
-            onPress={() => router.push('/orders')}
-          />
-          <MenuRow
-            icon={<FileCheck size={20} color="#737373" />}
-            label="Rx Approvals"
-            description="Review queue"
-            onPress={() => router.push('/review')}
-            isLast
-          />
-        </View>
-      </View>
-
-      <View className="mx-lg mt-lg">
-        <Text className="text-text-muted text-caption-md uppercase tracking-wider mb-sm px-sm">
-          Preferences
-        </Text>
-        <View className="bg-bg-surface rounded-lg border border-border overflow-hidden">
-          <MenuRow
-            icon={<Bell size={20} color="#737373" />}
-            label="Notifications"
-            description="Push & in-app alerts"
-            onPress={() => {}}
-          />
-          <MenuRow
-            icon={<Shield size={20} color="#737373" />}
-            label="Privacy & Security"
-            description="Lock timeout, biometrics"
-            onPress={() => {}}
-          />
-          <MenuRow
-            icon={<Settings size={20} color="#737373" />}
-            label="Settings"
-            description="App configuration"
-            onPress={() => router.push('/(app)/more/settings')}
-            isLast
-          />
-        </View>
-      </View>
-
-      {/* Sign out */}
-      <View className="mx-lg mt-lg">
-        <Pressable
-          onPress={() => signOut()}
-          className="flex-row items-center justify-center py-md bg-bg-surface rounded-lg border border-border min-h-[52px]"
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-        >
-          <LogOut size={18} color="#B42318" />
-          <Text className="text-error text-body-md font-medium ml-sm">
-            Sign out
-          </Text>
-        </Pressable>
-      </View>
+      </ScrollView>
 
       <LocationPickerSheet
-        isOpen={locationSheetOpen}
-        onClose={() => setLocationSheetOpen(false)}
-        onSelect={handleSelectLocation}
+        isOpen={locationOpen}
+        onClose={() => setLocationOpen(false)}
+        onSelect={(id) => activeProject && setDeviceLocation(activeProject.slug, id)}
         selectedLocationId={deviceLocationId}
-        title="Set device location"
+        title="This iPad’s location"
       />
-    </ScrollView>
-  );
-}
-
-function MenuRow({
-  icon,
-  label,
-  description,
-  badge,
-  onPress,
-  isLast = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  badge?: number;
-  onPress: () => void;
-  isLast?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`flex-row items-center px-md py-md min-h-[52px] ${
-        !isLast ? 'border-b border-border' : ''
-      }`}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-    >
-      <View className="w-[36px] h-[36px] rounded-md bg-bg-muted items-center justify-center">
-        {icon}
-      </View>
-      <View className="flex-1 ml-md">
-        <Text className="text-text-primary text-body-md font-medium">{label}</Text>
-        <Text className="text-text-muted text-caption-md">{description}</Text>
-      </View>
-      {badge != null && badge > 0 && (
-        <View className="mr-sm min-w-[20px] h-[20px] rounded-full bg-error items-center justify-center px-[4px]">
-          <Text className="text-[11px] font-bold text-text-inverse">{badge}</Text>
-        </View>
-      )}
-      <ChevronRight size={16} color="#A3A3A3" />
-    </Pressable>
+      {pinOpen ? (
+        <PinSetupSheet visible onClose={() => setPinOpen(false)} staffId={activeOperator?.staffId ?? ownerStaffId ?? null} name={first ?? 'you'} />
+      ) : null}
+    </View>
   );
 }

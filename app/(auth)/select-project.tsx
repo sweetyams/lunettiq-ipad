@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Store, ChevronRight } from 'lucide-react-native';
+import { Store } from 'lucide-react-native';
+import { Badge, Button, ListRow, Section, kitColors } from '@/src/ui/kit';
 import { useTenantStore, type Project } from '@/src/features/tenant/useTenantStore';
 import { switchProject } from '@/src/features/tenant/switchProject';
 import { useInitialSync } from '@/src/sync/useInitialSync';
@@ -22,133 +23,77 @@ export default function SelectProjectScreen() {
   const activeProject = useTenantStore((s) => s.activeProject);
   const { startSync, status, message } = useInitialSync();
   const [selectingSlug, setSelectingSlug] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const isBusy = selectingSlug !== null;
   // Reached via "Change store" (a store is already active) → allow backing out.
   const canCancel = activeProject != null;
 
   const handleSelect = async (project: Project): Promise<void> => {
-    if (isBusy) return;
-    if (project.ipadReady === false) return; // not usable on iPad
-    // Selecting the current store is a no-op — just go back.
+    if (isBusy || project.ipadReady === false) return;
     if (project.slug === activeProject?.slug) {
       router.replace('/(app)/home');
       return;
     }
     setSelectingSlug(project.slug);
+    setError(null);
     try {
       await switchProject(project);
       await startSync();
       router.replace('/(app)/home');
     } catch {
-      // switchProject/sync failure — reset so the user can retry.
       setSelectingSlug(null);
+      setError(`Couldn’t open ${project.name}. Check the connection and try again.`);
     }
   };
 
   return (
     <View className="flex-1 bg-bg-page">
-      <ScrollView contentContainerClassName="px-8 py-2xl items-center">
-        <View className="w-full max-w-[440px]">
-          <View className="items-center mb-xl">
-            <Text className="text-heading-xl text-text-primary">Choose a store</Text>
-            <Text className="text-body-md text-text-muted mt-xs text-center">
-              Your account has access to more than one store. Pick which one to work in.
-            </Text>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 32, paddingVertical: 64, alignItems: 'center' }}>
+        <View className="w-full max-w-[520px] gap-[20px]">
+          <View className="gap-[4px]">
+            <Text className="text-display-lg text-text-primary">Choose a store</Text>
+            <Text className="text-body-md text-text-tertiary">Your account works in more than one store. Pick the one this iPad is in.</Text>
           </View>
 
-          <View className="gap-md">
-            {knownProjects.map((project) => (
-              <ProjectCard
-                key={project.slug}
-                project={project}
-                busy={selectingSlug === project.slug}
-                disabled={isBusy && selectingSlug !== project.slug}
-                onPress={() => handleSelect(project)}
-              />
-            ))}
-          </View>
+          <Section padded={false}>
+            {knownProjects.map((project, i) => {
+              const notReady = project.ipadReady === false;
+              const busy = selectingSlug === project.slug;
+              const current = project.slug === activeProject?.slug;
+              return (
+                <ListRow
+                  key={project.slug}
+                  divider={i > 0}
+                  onPress={notReady || (isBusy && !busy) ? undefined : () => handleSelect(project)}
+                  accessibilityLabel={`${project.name}${project.env === 'demo' ? ', demo store' : ''}${notReady ? ', not available on iPad' : ''}`}
+                  leading={
+                    <View className={`w-[44px] h-[44px] rounded-md bg-brand items-center justify-center ${notReady ? 'opacity-40' : ''}`}>
+                      {project.brandMark ? <Text className="text-brand-text text-heading-lg">{project.brandMark}</Text> : <Store size={22} color={kitColors.inverse} />}
+                    </View>
+                  }
+                  title={
+                    <View className="flex-row items-center gap-[8px]">
+                      <Text className={`text-body-lg font-medium ${notReady ? 'text-text-tertiary' : 'text-text-primary'}`}>{project.name}</Text>
+                      {project.env === 'demo' ? <Badge tone="warning">Demo</Badge> : null}
+                      {current ? <Badge tone="success" dot>Current</Badge> : null}
+                    </View>
+                  }
+                  subtitle={notReady ? 'Not available on iPad yet' : `You are ${project.role}`}
+                  trailing={busy ? <ActivityIndicator color={kitColors.primary} /> : undefined}
+                  chevron={!notReady && !busy}
+                />
+              );
+            })}
+          </Section>
 
-          {isBusy && (
-            <Text className="text-body-sm text-text-muted mt-lg text-center">
-              {status === 'syncing' && message ? message : 'Opening store…'}
-            </Text>
-          )}
-
-          {canCancel && !isBusy && (
-            <Pressable
-              onPress={() => router.replace('/(app)/home')}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-              className="mt-lg min-h-[44px] items-center justify-center"
-            >
-              <Text className="text-body-md text-text-secondary font-medium">Cancel</Text>
-            </Pressable>
-          )}
+          {isBusy ? <Text className="text-body-sm text-text-tertiary">{status === 'syncing' && message ? message : 'Opening store…'}</Text> : null}
+          {error ? <Text className="text-body-sm text-error">{error}</Text> : null}
+          {canCancel && !isBusy ? (
+            <View className="flex-row"><Button label="Cancel" variant="ghost" onPress={() => router.replace('/(app)/home')} /></View>
+          ) : null}
         </View>
       </ScrollView>
     </View>
-  );
-}
-
-interface ProjectCardProps {
-  project: Project;
-  busy: boolean;
-  disabled: boolean;
-  onPress: () => void;
-}
-
-function ProjectCard({ project, busy, disabled, onPress }: ProjectCardProps) {
-  const isDemo = project.env === 'demo';
-  const notReady = project.ipadReady === false;
-  const subtitle = notReady ? 'Not available on iPad' : project.role;
-
-  const a11yLabel = `${project.name}, ${notReady ? 'not available on iPad' : `role ${project.role}`}${
-    isDemo ? ', demo store' : ''
-  }`;
-
-  const isDisabled = disabled || busy || notReady;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={isDisabled}
-      accessibilityRole="button"
-      accessibilityLabel={a11yLabel}
-      className={`flex-row items-center gap-md bg-bg-surface rounded-lg border border-border p-md min-h-[44px] ${
-        disabled || notReady ? 'opacity-40' : ''
-      }`}
-      style={({ pressed }) => ({ opacity: pressed && !isDisabled ? 0.8 : undefined })}
-    >
-      <View className="w-11 h-11 rounded-md bg-brand items-center justify-center">
-        {project.brandMark ? (
-          <Text className="text-brand-text text-heading-sm font-bold">{project.brandMark}</Text>
-        ) : (
-          <Store size={22} color="#FFFFFF" />
-        )}
-      </View>
-
-      <View className="flex-1">
-        <View className="flex-row items-center gap-sm">
-          <Text className="text-heading-sm text-text-primary">{project.name}</Text>
-          {isDemo && (
-            <View className="px-[8px] py-[2px] rounded-sm bg-warning">
-              <Text className="text-caption-sm text-text-inverse uppercase tracking-[0.08em]">
-                Demo
-              </Text>
-            </View>
-          )}
-        </View>
-        <Text className="text-body-sm text-text-muted mt-xs capitalize">
-          {subtitle}
-        </Text>
-      </View>
-
-      {busy ? (
-        <ActivityIndicator size="small" color="#1D1F21" />
-      ) : notReady ? null : (
-        <ChevronRight size={20} color="#737373" />
-      )}
-    </Pressable>
   );
 }

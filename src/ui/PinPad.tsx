@@ -9,20 +9,21 @@ import { Delete } from 'lucide-react-native';
  * 'dark'  — used on bg-inverse / chrome (lock screen, dark panels)
  *
  * Values sourced from tailwind.config.js tokens:
- *   Light: text-primary=#1D1F21, border=rgba(17,17,17,0.18), bg-surface=#F8F6F7
+ *   Light: Found UI neutrals (#0A0A0A text, #E4E4E7 hairline, white keys)
  *   Dark:  text-inverse=#FFFFFF, border-inverse=rgba(255,255,255,0.18), bg-inverse=#111111
  */
 const SCHEME = {
   light: {
-    text: '#1D1F21',
-    textMuted: 'rgba(29,31,33,0.45)',
-    border: 'rgba(17,17,17,0.18)',
-    buttonBg: '#F8F6F7',
-    dotFilled: '#1D1F21',     // brand
-    dotEmpty: '#F8F6F7',      // bg-surface
-    dotBorder: 'rgba(17,17,17,0.18)',
-    error: '#B42318',
-    warning: '#B54708',
+    // Found UI neutrals (see src/ui/kit/colors.ts)
+    text: '#0A0A0A',
+    textMuted: '#71717A',
+    border: '#E4E4E7',
+    buttonBg: '#FFFFFF',
+    dotFilled: '#171717',
+    dotEmpty: '#FFFFFF',
+    dotBorder: '#A1A1AA',
+    error: '#E7000B',
+    warning: '#C76A18',
   },
   dark: {
     text: '#FFFFFF',

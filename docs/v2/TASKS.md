@@ -45,7 +45,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D6 | Schedule + appointment sheets | ✅ | Today / Week / Staff + detail inspector, one-page booking, reschedule, real walk-in. Foundry: roster + holds filters (handoff) |
 | D7 | Products + configurator | ✅ | Frames tab restored; catalogue, detail, scanner, configurator, order summary on the kit. Orders now reach Foundry (customerId + configuration) |
 | D8 | Orders, Follow-ups, Review | ✅ | Kit: PageHeader, FilterChips, Section, ListRow, Badge. Follow-ups grouped Call today / In the sequence; Review anomalies as danger badges, Claim next as the primary |
-| D9 | Profile, settings, auth, store picker, side paths | ⬜ | |
+| D9 | Profile, settings, auth, store picker, side paths | ✅ | Profile + Settings merged; sign-in email-code flow real; store picker errors shown; tab avatar fixed. Side paths (Second Sight, Custom Design) left unlinked for V3/V4 |
 | D10 | States, toasts, confirmations; no `Alert.alert` | ⬜ | Absorbs 0.5 |
 | D11 | Enforcement in `audit:design` + before/after QA | ⬜ | |
 
