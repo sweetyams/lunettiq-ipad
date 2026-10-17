@@ -156,6 +156,29 @@ const CHECKS = [
     },
   },
   {
+    id: 'no-native-alert',
+    severity: 'error' as const,
+    description: "Native Alert (use a kit Sheet, two-tap confirm, inline error or toast)",
+    // Second Sight / Custom Design are parked V3/V4 side paths.
+    excludeFiles: ['audit-', 'second-sight', 'custom-design', 'SecondSight', 'CustomDesign', '__tests__'],
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const m = line.match(/\bAlert\.(alert|prompt)\s*\(/);
+      return m ? m[0] : null;
+    },
+  },
+  {
+    id: 'no-unknown-color-class',
+    severity: 'error' as const,
+    description: "'color-*' class (not a token: renders unstyled) — use text-text-primary, bg-bg-page, border-border…",
+    excludeFiles: ['audit-', 'useDesignTokens', 'second-sight', 'custom-design', 'SecondSight', 'CustomDesign'],
+    test(line: string): string | null {
+      if (isComment(line)) return null;
+      const m = line.match(/\b(?:text|bg|border)-color-[a-z-]+/);
+      return m ? m[0] : null;
+    },
+  },
+  {
     id: 'warn-hex-in-code',
     severity: 'warn' as const,
     description: 'Hex color literal in code (verify it\'s not a hardcoded color)',

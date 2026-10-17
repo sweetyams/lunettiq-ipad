@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-10-17] — Phase D10: states, toasts and confirmations
+
+### Changed
+- **Loading:** a quiet centred spinner with a label (the old skeleton rendered as empty white boxes).
+- **Empty:** hairline icon, one sentence, optional action (no emoji).
+- **Errors:** plain-language title and next step chosen by what went wrong (offline, signed out, no access, not found, changed elsewhere, Foundry problem); raw messages only in dev builds. `describeError` (tested).
+- **Toasts:** Builder style: white card, hairline, float shadow, coloured icon only.
+- All confirmations are kit Sheets, two-tap buttons, inline errors or toasts. No native `Alert` remains outside the parked Second Sight / Custom Design paths.
+
+### Added
+- Design audit rules (errors): native `Alert`, and `color-*` class names (not tokens; they rendered unstyled and hid several bugs this phase). Both proven with a probe file.
+
+### Fixed
+- `EnvGate` (config error screen) used non-existent `color-*` classes.
+
+### Removed
+- `AiStylistPanel` (unused).
+
 ## [2026-10-17] — Phase D9: Profile, sign-in and store picker on the kit
 
 ### Fixed

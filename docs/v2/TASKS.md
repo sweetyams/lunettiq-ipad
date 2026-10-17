@@ -46,7 +46,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D7 | Products + configurator | ✅ | Frames tab restored; catalogue, detail, scanner, configurator, order summary on the kit. Orders now reach Foundry (customerId + configuration) |
 | D8 | Orders, Follow-ups, Review | ✅ | Kit: PageHeader, FilterChips, Section, ListRow, Badge. Follow-ups grouped Call today / In the sequence; Review anomalies as danger badges, Claim next as the primary |
 | D9 | Profile, settings, auth, store picker, side paths | ✅ | Profile + Settings merged; sign-in email-code flow real; store picker errors shown; tab avatar fixed. Side paths (Second Sight, Custom Design) left unlinked for V3/V4 |
-| D10 | States, toasts, confirmations; no `Alert.alert` | ⬜ | Absorbs 0.5 |
+| D10 | States, toasts, confirmations; remove all `Alert.alert` | ✅ | Kit Loading / Empty / Error (plain-language errors by status), Builder toasts; no native Alerts outside parked side paths (audit-enforced) |
 | D11 | Enforcement in `audit:design` + before/after QA | ⬜ | |
 
 Baseline (Oct 16): 288 grey fills · 305 hex colours · 266 sub-14px text · 85 brand-blue buttons · 79 non-existent classes · 30 `Alert.alert` · 10 left-edge status bars · no custom font loaded.

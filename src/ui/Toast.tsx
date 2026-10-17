@@ -2,38 +2,17 @@ import { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated } from 'react-native';
 import { X, AlertCircle, CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
 import { useToastStore, type ToastMessage, type ToastType } from './useToastStore';
+import { kitColors } from './kit/colors';
+import { elevation } from './kit/elevation';
 
 const TOAST_DURATION_DEFAULT = 4000;
 
-const typeConfig: Record<ToastType, { bg: string; border: string; icon: typeof AlertCircle; iconColor: string; titleColor: string }> = {
-  error: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    icon: AlertCircle,
-    iconColor: '#B42318',
-    titleColor: 'text-color-error',
-  },
-  success: {
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    icon: CheckCircle,
-    iconColor: '#067647',
-    titleColor: 'text-color-success',
-  },
-  warning: {
-    bg: 'bg-yellow-50',
-    border: 'border-yellow-200',
-    icon: AlertTriangle,
-    iconColor: '#B54708',
-    titleColor: 'text-color-warning',
-  },
-  info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    icon: Info,
-    iconColor: '#023891',
-    titleColor: 'text-color-brand',
-  },
+// Builder toast: white card + hairline + float shadow; colour only on the icon.
+const typeConfig: Record<ToastType, { icon: typeof AlertCircle; iconColor: string }> = {
+  error: { icon: AlertCircle, iconColor: kitColors.danger },
+  success: { icon: CheckCircle, iconColor: kitColors.success },
+  warning: { icon: AlertTriangle, iconColor: kitColors.warning },
+  info: { icon: Info, iconColor: kitColors.info },
 };
 
 interface ToastItemProps {
@@ -86,8 +65,8 @@ function ToastItem({ toast: toastData, onDismiss }: ToastItemProps) {
 
   return (
     <Animated.View
-      style={{ opacity, transform: [{ translateY }] }}
-      className={`flex-row items-start ${config.bg} ${config.border} border rounded-lg px-md py-sm mb-sm`}
+      style={[elevation.float, { opacity, transform: [{ translateY }] }]}
+      className="flex-row items-start bg-bg-page border border-border rounded-lg px-[16px] py-[12px] mb-[8px]"
       accessibilityRole="alert"
       accessibilityLiveRegion="assertive"
     >
@@ -95,7 +74,7 @@ function ToastItem({ toast: toastData, onDismiss }: ToastItemProps) {
         <Icon size={20} color={config.iconColor} />
       </View>
       <View className="flex-1 mr-sm">
-        <Text className={`${config.titleColor} text-body-md font-medium`}>
+        <Text className="text-text-primary text-body-md font-medium">
           {toastData.title}
         </Text>
         {toastData.message && (
