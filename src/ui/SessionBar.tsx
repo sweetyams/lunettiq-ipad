@@ -1,278 +1,79 @@
 import { View, Text, Pressable } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'expo-router';
-import { Clock, Play, Square, ArrowRight, Camera, User, Sparkles, RefreshCw } from 'lucide-react-native';
+import { ChevronRight, RefreshCw } from 'lucide-react-native';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { useClient } from '@/src/api/useClients';
 import { useOperatorStore } from '@/src/features/auth/useOperatorStore';
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
+import { Badge, Button, StatusDot, kitColors } from '@/src/ui/kit';
+
+function useElapsed(startedAt: number | null) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!startedAt) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [startedAt]);
+  if (!startedAt) return '0:00';
+  const s = Math.max(0, Math.floor((now - startedAt) / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` : `${m}:${String(s % 60).padStart(2, '0')}`;
+}
 
 /**
- * SessionBar — persistent top bar that shows when a session is active.
- * Renders across all tabs so the SA always knows a session is running.
- *
- * Design: elevated white surface with brand text — visually distinct from
- * ModeStrip above and content below. Shows pertinent client details
- * (tier, last visit) alongside session timer and actions.
+ * SessionBar — shows on every tab while a visit is open, so staff can jump
+ * back to it or end it. Hidden on the visit and fitting screens (they have
+ * their own header).
  */
 export function SessionBar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { activeClientId, activeClientName, mode, sessionStartedAt, framesTried, endSession } = useSessionStore();
-  const [duration, setDuration] = useState('0:00');
-  const [showEndSession, setShowEndSession] = useState(false);
+  const { activeClientId, activeClientName, mode, sessionStartedAt, framesTried } = useSessionStore();
+  const [showEnd, setShowEnd] = useState(false);
   const { activeOperator } = useOperatorStore();
-  const { lock } = useAuthContext();
-
-  // Fetch client data for pertinent details (tier, last visit, etc.)
+  const { lock, pinEnabled } = useAuthContext();
   const { data: client } = useClient(activeClientId ?? '');
+  const elapsed = useElapsed(sessionStartedAt);
 
-  // Live timer
-  useEffect(() => {
-    if (!sessionStartedAt) {
-      setDuration('0:00');
-      return;
-    }
-
-    const updateDuration = () => {
-      const elapsed = Math.floor((Date.now() - sessionStartedAt) / 1000);
-      const hours = Math.floor(elapsed / 3600);
-      const minutes = Math.floor((elapsed % 3600) / 60);
-      const seconds = elapsed % 60;
-      if (hours > 0) {
-        setDuration(`${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-      } else {
-        setDuration(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      }
-    };
-
-    updateDuration();
-    const interval = setInterval(updateDuration, 1000);
-    return () => clearInterval(interval);
-  }, [sessionStartedAt]);
-
-  // Don't render if no active session
   if (mode === 'idle' || !activeClientId) return null;
+  if (pathname?.includes(`/clients/${activeClientId}/session`) || pathname?.includes(`/clients/${activeClientId}/fitting`)) return null;
 
-  // Navigation context - must be declared before use
-  const isOnSessionScreen = pathname?.includes(`/clients/${activeClientId}/session`);
-  const isOnFittingScreen = pathname?.includes(`/clients/${activeClientId}/fitting`);
-
-  // Don't render on session workspace or fitting — those screens have their own topbar
-  if (isOnSessionScreen || isOnFittingScreen) return null;
-
-  // Derive client details
-  const tier = client?.tags?.find((tag: string) =>
-    ['CULT', 'VAULT'].includes(tag.toUpperCase())
-  )?.toUpperCase() || null;
-
-  const lastVisit = client?.updatedAt
-    ? formatRelativeDate(client.updatedAt)
-    : null;
-
-  const orderCount = client?.orderCount ?? 0;
-  const isFitting = mode === 'fitting';
-
-  const handleGoToSession = () => {
-    if (!isOnSessionScreen) {
-      router.push(`/clients/${activeClientId}/session`);
-    }
-  };
-
-  const handleGoToProfile = () => {
-    router.push(`/clients/${activeClientId}`);
-  };
-
-  const handleStartFitting = () => {
-    if (!isOnFittingScreen) {
-      router.push(`/clients/${activeClientId}/fitting`);
-    }
-  };
-
-  const handleEndSession = () => {
-    setShowEndSession(true);
-  };
-
-  const handleEndSessionDismiss = () => {
-    // Just hide the sheet, keep session active
-    setShowEndSession(false);
-  };
-
-  const handleEndSessionComplete = () => {
-    // Flow completed successfully - end session and navigate
-    setShowEndSession(false);
-    endSession();
-    router.replace('/(app)/home');
-  };
+  const tier = client?.tags?.find((t) => t.startsWith('member-'))?.replace('member-', '').toUpperCase();
+  const loved = framesTried.filter((f) => f.verdict === 'loved' || f.verdict === 'liked').length;
+  const openVisit = () => router.push(`/clients/${activeClientId}/session`);
 
   return (
     <>
-      <View className="flex-row h-[52px] items-center px-lg bg-bg-surface border-b border-border">
-        {/* Left: Live indicator + Client info */}
+      <View className="flex-row items-center gap-[12px] h-[60px] px-[32px] bg-bg-page border-b border-border">
         <Pressable
-          onPress={handleGoToSession}
+          onPress={openVisit}
           accessibilityRole="button"
-          accessibilityLabel={`Active session with ${activeClientName}. ${duration} elapsed. Tap to go to session workspace.`}
-          className="flex-row items-center flex-1 min-h-[44px]"
+          accessibilityLabel={`Visit with ${activeClientName ?? 'client'} in progress, ${elapsed}. Open the visit.`}
+          className="flex-row items-center gap-[10px] flex-1 min-h-[44px]"
         >
-          {/* Live pulse dot */}
-          <View className="w-[8px] h-[8px] rounded-full bg-success mr-sm" />
-
-          {/* Client name */}
-          <Text className="text-text-primary text-body-md font-semibold mr-sm" numberOfLines={1}>
-            {activeClientName ?? 'Client'}
+          <StatusDot tone="success" />
+          <Text className="text-body-md font-medium text-text-primary" numberOfLines={1}>{activeClientName ?? 'Client'}</Text>
+          {tier ? <Badge tone="info">{tier}</Badge> : null}
+          <Text className="text-body-sm text-text-tertiary" style={{ fontVariant: ['tabular-nums'] }} numberOfLines={1}>
+            Visit · {elapsed}{framesTried.length ? ` · ${framesTried.length} tried` : ''}{loved ? ` · ${loved} loved` : ''}{mode === 'fitting' ? ' · fitting' : ''}
           </Text>
-
-          {/* Tier badge */}
-          {tier && <TierPill tier={tier} />}
-
-          {/* Separator */}
-          <View className="w-[1px] h-[20px] bg-border mx-sm" />
-
-          {/* Timer */}
-          <Clock color="#1D1F21" size={14} />
-          <Text className="text-text-secondary text-body-sm ml-xs">
-            {duration}
-          </Text>
-
-          {/* Client details — compact pertinent info */}
-          {(orderCount > 0 || lastVisit) && (
-            <>
-              <View className="w-[1px] h-[20px] bg-border mx-sm" />
-              {orderCount > 0 && (
-                <Text className="text-text-muted text-body-sm mr-sm">
-                  {orderCount} order{orderCount !== 1 ? 's' : ''}
-                </Text>
-              )}
-              {lastVisit && (
-                <Text className="text-text-muted text-body-sm">
-                  Last: {lastVisit}
-                </Text>
-              )}
-            </>
-          )}
-
-          {/* Frames tried count */}
-          {framesTried.length > 0 && (
-            <>
-              <View className="w-[1px] h-[20px] bg-border mx-sm" />
-              <Sparkles color="#023891" size={13} />
-              <Text className="text-accent text-body-sm font-medium ml-xs">
-                {framesTried.length} tried
-              </Text>
-            </>
-          )}
-
-          {/* Fitting mode indicator */}
-          {isFitting && (
-            <View className="ml-sm flex-row items-center px-sm py-xs rounded-full bg-accent">
-              <Camera color="#FFFFFF" size={12} />
-              <Text className="text-text-inverse text-caption-sm ml-xs font-medium">
-                Fitting
-              </Text>
-            </View>
-          )}
-
-          {/* Arrow to indicate tappable */}
-          {!isOnSessionScreen && !isOnFittingScreen && (
-            <ArrowRight color="rgba(29,31,33,0.35)" size={14} className="ml-xs" />
-          )}
+          <ChevronRight size={16} color={kitColors.iconMuted} />
         </Pressable>
-
-        {/* Right: Actions */}
-        <View className="flex-row items-center gap-sm">
-          {/* Operator badge — shows who's using the device */}
-          {activeOperator && (
-            <Pressable
-              onPress={lock}
-              accessibilityRole="button"
-              accessibilityLabel={`Signed in as ${activeOperator.name}. Tap to switch user.`}
-              className="flex-row items-center min-h-[36px] px-sm py-xs rounded-md border border-border gap-xs"
-            >
-              <RefreshCw color="#1D1F21" size={12} />
-              <Text className="text-text-secondary text-body-sm" numberOfLines={1}>
-                {activeOperator.name.split(' ')[0]}
-              </Text>
-            </Pressable>
-          )}
-
-          {/* View profile */}
-          <Pressable
-            onPress={handleGoToProfile}
-            accessibilityRole="button"
-            accessibilityLabel="View client profile"
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-md"
-          >
-            <User color="#1D1F21" size={18} />
-          </Pressable>
-
-          {/* Start fitting — only if not already fitting */}
-          {!isFitting && (
-            <Pressable
-              onPress={handleStartFitting}
-              accessibilityRole="button"
-              accessibilityLabel="Start fitting"
-              className="flex-row items-center min-h-[36px] px-md py-xs bg-accent rounded-md"
-            >
-              <Play color="#FFFFFF" size={13} />
-              <Text className="text-accent-text text-body-sm font-medium ml-xs">
-                Start fitting
-              </Text>
-            </Pressable>
-          )}
-
-          {/* End session */}
-          <Pressable
-            onPress={handleEndSession}
-            accessibilityRole="button"
-            accessibilityLabel="End session"
-            className="flex-row items-center min-h-[36px] px-md py-xs rounded-md border border-border"
-          >
-            <Square color="#B42318" size={12} fill="#B42318" />
-            <Text className="text-error text-body-sm font-medium ml-xs">
-              End
-            </Text>
-          </Pressable>
-        </View>
+        {activeOperator && pinEnabled ? (
+          <Button label={activeOperator.name.split(' ')[0] ?? 'Switch'} icon={RefreshCw} size="sm" variant="ghost" onPress={lock} accessibilityLabel={`Signed in as ${activeOperator.name}. Switch user.`} />
+        ) : null}
+        <Button label="Open visit" size="sm" onPress={openVisit} />
+        <Button label="End visit" size="sm" variant="ghost" onPress={() => setShowEnd(true)} />
       </View>
 
-      {/* End Session Sheet (modal) */}
       <EndSessionSheet
-        visible={showEndSession}
-        onDismiss={handleEndSessionDismiss}
-        onComplete={handleEndSessionComplete}
+        visible={showEnd}
+        onDismiss={() => setShowEnd(false)}
+        onComplete={() => { setShowEnd(false); router.replace('/(app)/home'); }}
       />
     </>
   );
-}
-
-/** Compact tier pill for the session bar */
-function TierPill({ tier }: { tier: string }) {
-  const config: Record<string, { bg: string; text: string }> = {
-    CULT: { bg: 'bg-brand', text: 'text-text-inverse' },
-    VAULT: { bg: 'bg-accent', text: 'text-text-inverse' },
-  };
-  const { bg, text } = config[tier] ?? { bg: 'bg-border', text: 'text-text-primary' };
-
-  return (
-    <View className={`${bg} px-sm py-[2px] rounded-full`}>
-      <Text className={`${text} text-caption-sm font-semibold`}>{tier}</Text>
-    </View>
-  );
-}
-
-/** Format a date string as relative (e.g. "3 days ago", "2 weeks ago") */
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return 'yesterday';
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
-  return `${Math.floor(diffDays / 365)}y ago`;
 }

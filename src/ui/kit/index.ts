@@ -17,3 +17,4 @@ export { Tabs } from './Tabs';
 export { Sheet } from './Sheet';
 export { Field, TextField } from './Field';
 export { ChoiceChips } from './ChoiceChips';
+export { VerdictPicker, type PickedVerdict } from './VerdictPicker';

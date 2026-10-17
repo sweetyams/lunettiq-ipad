@@ -10,6 +10,8 @@ export interface FrameTried {
   id: string;
   productId: string;
   productName: string;
+  /** Product photo, for the tray and the client's handed view. */
+  imageUrl?: string;
   variantId?: string;
   verdict?: 'loved' | 'liked' | 'unsure' | 'rejected';
   notes?: string;

@@ -1,11 +1,9 @@
-import { View, Text, Pressable, TextInput, Alert, ScrollView, Image, Vibration } from 'react-native';
-import { Modal } from '@/src/ui/Modal';
+import { View, Text, Switch, ScrollView } from 'react-native';
 import { useState, useEffect } from 'react';
-import { X, Link, Star, Trash2, BarChart3 } from 'lucide-react-native';
-import { VerdictControl } from './VerdictControl';
-import { Button } from '@/src/ui/Button';
-import { toast } from '@/src/ui/useToastStore';
-import type { SessionPhoto, Verdict } from './fitting.types';
+import { Image } from 'expo-image';
+import { Sheet, Field, TextField, ChoiceChips, VerdictPicker, Badge, kitColors, type BadgeTone } from '@/src/ui/kit';
+import { useSessionStore } from '@/src/features/session/useSessionStore';
+import type { SessionPhoto } from './fitting.types';
 
 interface FrameDetailPopoverProps {
   photo: SessionPhoto;
@@ -13,250 +11,72 @@ interface FrameDetailPopoverProps {
   onClose: () => void;
   onUpdatePhoto: (id: string, updates: Partial<SessionPhoto>) => void;
   onDelete: (id: string) => void;
-  onShortlist: (id: string) => void;
-  onRelink: (id: string) => void;
 }
 
-export function FrameDetailPopover({
-  photo,
-  visible,
-  onClose,
-  onUpdatePhoto,
-  onDelete,
-  onShortlist,
-  onRelink,
-}: FrameDetailPopoverProps) {
+const UPLOAD: Record<SessionPhoto['uploadStatus'], { tone: BadgeTone; label: string }> = {
+  pending: { tone: 'neutral', label: 'Waiting to upload' },
+  uploading: { tone: 'info', label: 'Uploading' },
+  uploaded: { tone: 'success', label: 'Uploaded' },
+  failed: { tone: 'danger', label: 'Upload failed' },
+};
+
+/** Photo detail: which frame it shows, the reaction, notes, client visibility. */
+export function FrameDetailPopover({ photo, visible, onClose, onUpdatePhoto, onDelete }: FrameDetailPopoverProps) {
+  const framesTried = useSessionStore((s) => s.framesTried);
   const [notes, setNotes] = useState(photo.notes);
-  const [isShortlisted, setIsShortlisted] = useState(false); // TODO: Get from actual shortlist state
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Sync local notes state with photo prop
+  useEffect(() => setNotes(photo.notes), [photo.notes]);
+  // Save notes after a pause in typing.
   useEffect(() => {
-    setNotes(photo.notes);
-  }, [photo.notes]);
-
-  // Auto-save notes after 1 second of no typing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (notes !== photo.notes) {
-        onUpdatePhoto(photo.id, { notes });
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
+    if (notes === photo.notes) return;
+    const t = setTimeout(() => onUpdatePhoto(photo.id, { notes }), 800);
+    return () => clearTimeout(t);
   }, [notes, photo.notes, photo.id, onUpdatePhoto]);
 
-  const handleVerdictChange = (verdict: Verdict) => {
-    // Haptic feedback for verdict selection
-    try {
-      Vibration.vibrate(50);
-    } catch (error) {
-      // Vibration not supported, continue silently
-    }
-    
-    onUpdatePhoto(photo.id, { verdict });
+  const frameOptions = [...new Map(framesTried.map((f) => [f.productId, { key: f.productId, label: f.productName }])).values()];
+  const linkFrame = (productId: string | null) => {
+    const f = framesTried.find((x) => x.productId === productId);
+    onUpdatePhoto(photo.id, { productId: f?.productId ?? null, productName: f?.productName ?? null });
   };
-
-  const handleShortlist = () => {
-    const now = new Date();
-    const holdUntil = new Date(now.getTime() + 48 * 60 * 60 * 1000); // 48 hours from now
-    const formattedDate = holdUntil.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    onShortlist(photo.id);
-    setIsShortlisted(true);
-    
-    // Show confirmation toast
-    toast.success('Added to Shortlist', `Held until ${formattedDate}`);
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Photo',
-      'Are you sure you want to delete this photo? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            onDelete(photo.id);
-            onClose();
-          }
-        }
-      ]
-    );
-  };
-
-  // Format the upload status for display
-  const getUploadStatusText = () => {
-    switch (photo.uploadStatus) {
-      case 'pending': return 'Queued for upload';
-      case 'uploading': return 'Uploading...';
-      case 'uploaded': return 'Uploaded';
-      case 'failed': return 'Upload failed';
-      default: return '';
-    }
-  };
-
-  const getUploadStatusColor = () => {
-    switch (photo.uploadStatus) {
-      case 'pending': return '#D4A017';
-      case 'uploading': return '#2D4A8A';
-      case 'uploaded': return '#005D23';
-      case 'failed': return '#C53030';
-      default: return '#6B6B6B';
-    }
-  };
+  const upload = UPLOAD[photo.uploadStatus];
 
   return (
-    <Modal
+    <Sheet
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
+      onClose={onClose}
+      wide
+      title={photo.productName ?? 'Fitting photo'}
+      subtitle={new Date(photo.capturedAt).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' })}
+      danger={{ label: confirmDelete ? 'Tap again to delete' : 'Delete photo', onPress: () => (confirmDelete ? (onDelete(photo.id), onClose()) : setConfirmDelete(true)) }}
+      secondary={{ label: 'Close', onPress: onClose }}
+      footer={undefined}
+      primary={{ label: 'Done', onPress: onClose }}
     >
-      <View className="flex-1 bg-bg-page">
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-lg py-md bg-bg-surface border-b border-border">
-          <Text className="text-heading-xl font-semibold text-text-primary">
-            Photo Detail
-          </Text>
-          <Pressable
-            onPress={onClose}
-            className="w-11 h-11 items-center justify-center rounded-full bg-border/30"
-            accessibilityRole="button"
-            accessibilityLabel="Close photo detail"
-          >
-            <X size={20} color="#2B2B2B" />
-          </Pressable>
+      <View className="flex-row gap-[24px]">
+        <View className="flex-1 border border-border rounded-lg overflow-hidden" style={{ aspectRatio: 3 / 4, maxHeight: 520 }}>
+          <ScrollView maximumZoomScale={3} minimumZoomScale={1} contentContainerStyle={{ flex: 1 }}>
+            <Image source={{ uri: photo.localUri }} contentFit="cover" style={{ width: '100%', height: '100%' }} accessibilityLabel={`Photo of ${photo.productName ?? 'a frame'}`} />
+          </ScrollView>
         </View>
-
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          {/* Large Photo */}
-          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border overflow-hidden">
-            <ScrollView
-              maximumZoomScale={3}
-              minimumZoomScale={1}
-              showsHorizontalScrollIndicator={false}
-              showsVerticalScrollIndicator={false}
-              className="w-full"
-              style={{ height: 400 }}
-            >
-              {photo.localUri.startsWith('mock://') ? (
-                // Mock photo placeholder
-                <View className="w-full h-full bg-gray-200 items-center justify-center">
-                  <BarChart3 size={48} color="#6B6B6B" />
-                  <Text className="text-text-muted text-body-md mt-sm">
-                    Photo {photo.localUri.split('_')[1]}
-                  </Text>
-                </View>
-              ) : (
-                <Image 
-                  source={{ uri: photo.localUri }} 
-                  className="w-full h-full"
-                  resizeMode="contain"
-                  accessibilityLabel={`Photo of ${photo.productName || 'frame'}`}
-                />
-              )}
-            </ScrollView>
-            
-            {/* Upload Status Indicator */}
-            <View className="absolute top-2 right-2 bg-black/70 px-sm py-xs rounded-md">
-              <Text 
-                className="text-caption-md text-text-inverse"
-                style={{ color: getUploadStatusColor() }}
-              >
-                {getUploadStatusText()}
-              </Text>
+        <View className="flex-1 gap-[20px]">
+          <Field label="Frame in the photo" hint={frameOptions.length ? undefined : 'Add frames to the visit tray first, then link them here.'}>
+            {frameOptions.length ? <ChoiceChips options={frameOptions} value={photo.productId} onChange={linkFrame} /> : null}
+          </Field>
+          <Field label="Reaction">
+            <VerdictPicker value={photo.verdict} onChange={(v) => onUpdatePhoto(photo.id, { verdict: v ?? null })} label={photo.productName ?? 'photo'} />
+          </Field>
+          <TextField label="Notes" value={notes} onChangeText={setNotes} placeholder="e.g. Sits low on the nose; try a smaller bridge" multiline />
+          <View className="flex-row items-center justify-between gap-[16px] border border-border rounded-md px-[16px] min-h-[56px]">
+            <View className="flex-1">
+              <Text className="text-body-md text-text-primary">Show to the client</Text>
+              <Text className="text-body-sm text-text-tertiary">In handed mode and the follow-up email.</Text>
             </View>
+            <Switch value={photo.clientVisible} onValueChange={(v) => onUpdatePhoto(photo.id, { clientVisible: v })} trackColor={{ true: kitColors.primary, false: kitColors.border }} accessibilityLabel="Show to the client" />
           </View>
-
-          {/* Product Link Section */}
-          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-caption-md font-medium text-text-muted mb-xs">PRODUCT</Text>
-                {photo.productName ? (
-                  <Text className="text-body-md text-text-primary">{photo.productName}</Text>
-                ) : (
-                  <Text className="text-body-md text-text-muted italic">Not linked</Text>
-                )}
-              </View>
-              <Pressable
-                onPress={() => onRelink(photo.id)}
-                className="flex-row items-center bg-brand px-md py-sm rounded-md min-h-[44px]"
-                accessibilityRole="button"
-                accessibilityLabel={photo.productName ? "Re-link product" : "Link product"}
-              >
-                <Link size={16} color="white" />
-                <Text className="text-body-md font-medium text-text-inverse ml-sm">
-                  {photo.productName ? 'Re-link' : 'Link Product'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Notes Section */}
-          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
-            <Text className="text-caption-md font-medium text-text-muted mb-sm">NOTES</Text>
-            <TextInput
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Add notes..."
-              multiline
-              numberOfLines={4}
-              className="text-body-md text-text-primary border border-border rounded-md p-sm min-h-[100px]"
-              style={{ textAlignVertical: 'top' }}
-              accessibilityLabel="Photo notes"
-            />
-          </View>
-
-          {/* Verdict Section */}
-          <View className="bg-bg-surface mx-lg mt-lg rounded-lg border border-border p-md">
-            <Text className="text-caption-md font-medium text-text-muted mb-sm">CLIENT'S VERDICT</Text>
-            <VerdictControl
-              value={photo.verdict}
-              onChange={handleVerdictChange}
-              size="medium"
-            />
-          </View>
-
-          {/* Actions Section */}
-          <View className="mx-lg mt-lg mb-lg space-y-md">
-            {/* Shortlist Button */}
-            <Button
-              variant={isShortlisted ? "ghost" : "dark"}
-              onPress={handleShortlist}
-              disabled={isShortlisted}
-              className="flex-row items-center justify-center"
-            >
-              <Star 
-                size={16} 
-                color={isShortlisted ? "#005D23" : "white"} 
-                fill={isShortlisted ? "#005D23" : "none"}
-              />
-              <Text className={`ml-sm ${isShortlisted ? 'text-accent' : 'text-text-inverse'}`}>
-                {isShortlisted ? 'Added to Shortlist' : 'Add to Shortlist'}
-              </Text>
-            </Button>
-
-            {/* Delete Button */}
-            <Button
-              variant="ghost"
-              onPress={handleDelete}
-              className="flex-row items-center justify-center border border-error"
-            >
-              <Trash2 size={16} color="#C53030" />
-              <Text className="text-error ml-sm">Delete Photo</Text>
-            </Button>
-          </View>
-        </ScrollView>
+          <View className="flex-row"><Badge tone={upload.tone} dot={upload.tone !== 'neutral'}>{upload.label}</Badge></View>
+        </View>
       </View>
-    </Modal>
+    </Sheet>
   );
 }

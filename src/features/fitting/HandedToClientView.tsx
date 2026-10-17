@@ -1,231 +1,92 @@
-import { View, Text, ScrollView, Pressable, Dimensions } from 'react-native';
-import { Modal } from '@/src/ui/Modal';
+import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useState } from 'react';
-import { Star, X } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { X } from 'lucide-react-native';
+import { Modal } from '@/src/ui/Modal';
+import { Wordmark } from '@/src/ui/Wordmark';
+import { VerdictPicker, kitColors } from '@/src/ui/kit';
 import { useFittingStore } from './useFittingStore';
 import { useSessionStore } from '../session/useSessionStore';
 import { useHandedMode } from './useHandedMode';
-import { VerdictControl } from './VerdictControl';
 import { HandedTimeout } from './HandedTimeout';
-import { Button } from '@/src/ui/Button';
 import type { SessionPhoto } from './fitting.types';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
+/**
+ * Handed to client — the client holds the iPad and reacts to the frames they
+ * tried (and any fitting photos). Client-facing: Lunettiq brand, large type,
+ * no staff data. Staff take it back with a double-tap on the top bar (PIN).
+ */
 export function HandedToClientView() {
-  const { activeClientName } = useSessionStore();
-  const { photos, setVerdict } = useFittingStore();
+  const { activeClientName, framesTried, updateFrameVerdict } = useSessionStore();
+  const { photos } = useFittingStore();
   const { timedOut, exitGesture, reclaim, handleClientVerdict } = useHandedMode();
-  const [selectedPhoto, setSelectedPhoto] = useState<SessionPhoto | null>(null);
-  const [enlargedPhoto, setEnlargedPhoto] = useState<SessionPhoto | null>(null);
+  const [enlarged, setEnlarged] = useState<SessionPhoto | null>(null);
+  const { width } = useWindowDimensions();
 
-  // Show timeout screen if 10 minutes have passed
-  if (timedOut) {
-    return <HandedTimeout onReclaim={reclaim} />;
-  }
+  if (timedOut) return <HandedTimeout onReclaim={reclaim} />;
 
-  // Filter photos that are client-visible (no staff-only photos)
-  const clientVisiblePhotos = photos.filter(photo => photo.clientVisible);
-
-  const handlePhotoTap = (photo: SessionPhoto) => {
-    setSelectedPhoto(photo);
-  };
-
-  const handleEnlarge = (photo: SessionPhoto) => {
-    setEnlargedPhoto(photo);
-  };
-
-  const handleShortlist = (photoId: string) => {
-    // Create shortlist action - simplified for client
-    // TODO: Integrate with actual shortlist system
-    console.log('Client shortlisted photo:', photoId);
-  };
-
-  const handleVerdictChange = (photoId: string, verdict: 'loved' | 'liked' | 'unsure' | 'rejected') => {
-    handleClientVerdict(photoId, verdict);
-  };
+  const firstName = activeClientName?.split(' ')[0];
+  const clientPhotos = photos.filter((p) => p.clientVisible);
+  const cols = width > 1100 ? 3 : 2;
+  const cardWidth = (Math.min(width, 1280) - 64 - (cols - 1) * 24) / cols;
+  const loved = framesTried.filter((f) => f.verdict === 'loved' || f.verdict === 'liked').length;
 
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Mode Strip - HANDED mode — EXIT GESTURE AREA */}
       <Pressable
         onPress={exitGesture}
-        onPressIn={() => console.log('[Handed] bar pressed')}
-        className="min-h-[44px] items-center justify-center bg-mode-client"
+        className="min-h-[44px] items-center justify-center border-b border-border"
         accessibilityRole="button"
-        accessibilityLabel="Double-tap to exit client mode"
-        accessibilityHint="Quickly tap twice to authenticate and exit client view"
+        accessibilityLabel="Staff: double-tap to take the iPad back"
       >
-        <Text className="text-text-inverse text-caption-sm font-bold tracking-wider">
-          DOUBLE-TAP TO EXIT
-        </Text>
+        <Text className="text-body-sm text-text-dim">Staff: double-tap here to take back</Text>
       </Pressable>
 
-      {/* Header */}
-      <View className="px-xl pt-lg pb-md bg-bg-surface border-b border-border">
-        <Text className="text-displayMd text-text-primary font-bold mb-xs">
-          Your Fitting Session
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 32, paddingTop: 32, paddingBottom: 64, alignItems: 'center' }}>
+        <Wordmark size="md" />
+        <Text className="text-display-lg text-text-primary text-center mt-[28px]">
+          {firstName ? `${firstName}, which ones do you love?` : 'Which ones do you love?'}
         </Text>
-        {activeClientName && (
-          <Text className="text-body-md text-text-muted">
-            Hi {activeClientName}, review your photos and let us know what you think!
-          </Text>
-        )}
-      </View>
+        <Text className="text-body-lg text-text-tertiary text-center mt-[8px]">
+          {loved ? `${loved} loved so far. ` : ''}Take your time. We’ll keep your favourites for you.
+        </Text>
 
-      {/* Photo Grid - Large thumbnails for client */}
-      <ScrollView className="flex-1 px-xl pt-lg" showsVerticalScrollIndicator={false}>
-        {clientVisiblePhotos.length === 0 ? (
-          /* Empty State */
-          <View className="flex-1 items-center justify-center py-2xl">
-            <Text className="text-heading-xl text-text-muted text-center mb-md">
-              No photos yet
-            </Text>
-            <Text className="text-body-md text-text-muted text-center max-w-sm">
-              Photos from your fitting session will appear here for you to review.
-            </Text>
-          </View>
-        ) : (
-          /* Photo Grid */
-          <View className="flex-row flex-wrap justify-between">
-            {clientVisiblePhotos.map((photo, index) => (
-              <Pressable
-                key={photo.id}
-                onPress={() => handlePhotoTap(photo)}
-                className={`
-                  w-[48%] aspect-square rounded-lg mb-lg bg-bg-surface border border-border overflow-hidden
-                  ${selectedPhoto?.id === photo.id ? 'border-accent border-2' : ''}
-                `}
-                accessibilityRole="button"
-                accessibilityLabel={`View photo ${index + 1}`}
-                style={{ minHeight: 44, minWidth: 44 }} // Ensure 44pt minimum
-              >
-                {/* Mock photo - replace with actual Image component */}
-                <View className="flex-1 bg-border items-center justify-center">
-                  <Text className="text-text-mutedtext-caption-md">Photo {index + 1}</Text>
-                </View>
-                
-                {/* Product name if available */}
-                {photo.productName && (
-                  <View className="absolute bottom-0 left-0 right-0 bg-black/50 p-sm">
-                    <Text className="text-text-inverse text-caption-md font-medium" numberOfLines={1}>
-                      {photo.productName}
-                    </Text>
-                  </View>
-                )}
-                
-                {/* Verdict indicator */}
-                {photo.verdict && (
-                  <View className="absolute top-sm right-sm">
-                    <View className="bg-bg-surface rounded-full p-xs border border-border">
-                      <Text className="text-xs">
-                        {photo.verdict === 'loved' ? '❤️' : 
-                         photo.verdict === 'liked' ? '👍' :
-                         photo.verdict === 'unsure' ? '🤔' : '❌'}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-              </Pressable>
-            ))}
-          </View>
-        )}
+        {framesTried.length === 0 && clientPhotos.length === 0 ? (
+          <Text className="text-body-lg text-text-tertiary text-center mt-[48px]">Nothing to show yet. Hand the iPad back to your advisor.</Text>
+        ) : null}
 
-        {/* Selected Photo Details */}
-        {selectedPhoto && (
-          <View className="bg-bg-surface rounded-lg border border-border p-lg mb-xl">
-            <View className="flex-row items-center justify-between mb-lg">
-              <Text className="text-heading-xl text-text-primary font-bold flex-1">
-                {selectedPhoto.productName || 'Frame Details'}
-              </Text>
-              <Pressable
-                onPress={() => handleEnlarge(selectedPhoto)}
-                className="bg-bg-page px-md py-sm rounded-md min-h-[44px] min-w-[44px] items-center justify-center"
-                accessibilityRole="button"
-                accessibilityLabel="View larger photo"
-              >
-                <Text className="text-body-md font-medium text-text-primary">View Large</Text>
-              </Pressable>
-            </View>
-
-            {/* Verdict Control - Client Voice Mode */}
-            <View className="mb-lg">
-              <Text className="text-body-md font-medium text-text-primary mb-sm">How do you feel about this one?</Text>
-              <VerdictControl
-                value={selectedPhoto.verdict}
-                onChange={(verdict) => handleVerdictChange(selectedPhoto.id, verdict)}
-                size="large"
-                clientVoice={true}
-              />
-            </View>
-
-            <View className="flex-row gap-md">
-              <View 
-                accessibilityRole="button"
-                accessibilityLabel="Add to shortlist"
-                accessibilityHint="Double-tap to add this frame to your shortlist"
-              >
-                <Button
-                  variant="primary"
-                  onPress={() => handleShortlist(selectedPhoto.id)}
-                  className="flex-1"
-                >
-                  <View className="flex-row items-center justify-center gap-xs">
-                    <Star size={16} color="white" />
-                    <Text className="text-text-inverse text-body-md font-medium">This One!</Text>
-                  </View>
-                </Button>
+        <View className="flex-row flex-wrap gap-[24px] mt-[32px] justify-center" style={{ maxWidth: 1280 }}>
+          {framesTried.map((f) => (
+            <View key={f.id} style={{ width: cardWidth }} className="border border-border rounded-lg overflow-hidden bg-bg-page">
+              <View className="w-full items-center justify-center" style={{ aspectRatio: 4 / 3 }}>
+                {f.imageUrl ? <Image source={{ uri: f.imageUrl }} contentFit="contain" style={{ width: '90%', height: '90%' }} accessibilityLabel={f.productName} /> : null}
+              </View>
+              <View className="p-[20px] gap-[14px] border-t border-border">
+                <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{f.productName}</Text>
+                <VerdictPicker size="lg" value={f.verdict} onChange={(v) => updateFrameVerdict(f.id, v)} label={f.productName} />
               </View>
             </View>
-          </View>
-        )}
-
-        {/* Instructions */}
-        <View className="bg-accent/10 rounded-lg p-lg mb-2xl">
-          <Text className="text-body-md font-medium text-accent mb-sm">How to use:</Text>
-          <Text className="text-body-md text-text-primary leading-relaxed">
-            • Tap any photo to select and rate it{'\n'}
-            • Use the rating buttons to share your thoughts{'\n'}
-            • Tap "This One!" to add favorites to your shortlist{'\n'}
-            • Double-tap the green bar at the top when you're done
-          </Text>
+          ))}
+          {clientPhotos.map((p) => (
+            <View key={p.id} style={{ width: cardWidth }} className="border border-border rounded-lg overflow-hidden bg-bg-page">
+              <Pressable onPress={() => setEnlarged(p)} accessibilityRole="imagebutton" accessibilityLabel={`Enlarge photo${p.productName ? ` of ${p.productName}` : ''}`}>
+                <Image source={{ uri: p.thumbnailUri || p.localUri }} contentFit="cover" style={{ width: '100%', aspectRatio: 4 / 3 }} />
+              </Pressable>
+              <View className="p-[20px] gap-[14px] border-t border-border">
+                <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{p.productName ?? 'Your photo'}</Text>
+                <VerdictPicker size="lg" value={p.verdict} onChange={(v) => v && handleClientVerdict(p.id, v)} label={p.productName ?? 'photo'} />
+              </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
-      {/* Enlarged Photo Modal */}
-      <Modal
-        visible={!!enlargedPhoto}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setEnlargedPhoto(null)}
-      >
-        <View className="flex-1 bg-black/80 items-center justify-center p-xl">
-          <View className="relative bg-bg-surface rounded-lg overflow-hidden" style={{ maxWidth: screenWidth * 0.8, maxHeight: screenHeight * 0.8 }}>
-            {/* Close button */}
-            <Pressable
-              onPress={() => setEnlargedPhoto(null)}
-              className="absolute top-md right-md z-10 bg-black/50 rounded-full p-sm"
-              accessibilityRole="button"
-              accessibilityLabel="Close enlarged photo"
-              style={{ minHeight: 44, minWidth: 44 }}
-            >
-              <X size={20} color="white" />
-            </Pressable>
-
-            {/* Large photo placeholder */}
-            <View className="w-full aspect-square bg-border items-center justify-center">
-              <Text className="text-text-mutedtext-body-md">Large Photo View</Text>
-            </View>
-
-            {/* Photo info */}
-            {enlargedPhoto?.productName && (
-              <View className="p-lg">
-                <Text className="text-heading-xl text-text-primary font-bold">
-                  {enlargedPhoto.productName}
-                </Text>
-              </View>
-            )}
-          </View>
+      <Modal visible={!!enlarged} transparent animationType="fade" onRequestClose={() => setEnlarged(null)}>
+        <View className="flex-1 bg-bg-page items-center justify-center">
+          {enlarged ? <Image source={{ uri: enlarged.localUri }} contentFit="contain" style={{ width: '100%', height: '100%' }} /> : null}
+          <Pressable onPress={() => setEnlarged(null)} className="absolute top-[32px] right-[32px] w-[56px] h-[56px] rounded-full border border-border bg-bg-page items-center justify-center" accessibilityRole="button" accessibilityLabel="Close photo">
+            <X size={24} color={kitColors.text} />
+          </Pressable>
         </View>
       </Modal>
     </View>

@@ -1,26 +1,12 @@
 /**
- * EndSessionSheet — full-screen pageSheet modal for the 3-step end session flow.
- *
- * Flow:
- *   Step 1: Outcome — "How did it go?" with 4 large option cards
- *   Step 2: Summary email — toggle, language, preview
- *   Step 3: Internal notes — free text + quick tag chips
- *
- * Design: presentationStyle="pageSheet" (native iOS sheet, same as ConfiguratorSheet).
- * No transparent overlay — a real system-presented modal.
+ * EndSessionSheet — "End visit": one page, outcome first (Found UI selectable
+ * tiles), then order number / follow-up email / notes. Saves the visit, frames
+ * and verdicts to Foundry; "Booked next visit" opens the booking sheet after.
  */
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, TextInput, Switch, ActivityIndicator } from 'react-native';
-import { Modal } from '@/src/ui/Modal';
-import {
-  X,
-  ShoppingBag,
-  Calendar,
-  Star,
-  DoorOpen,
-  ChevronLeft,
-  ScanLine,
-} from 'lucide-react-native';
+import { View, Text, Pressable, Switch } from 'react-native';
+import { ShoppingBag, Calendar, Star, DoorOpen } from 'lucide-react-native';
+import { Sheet, Field, TextField, ChoiceChips, Badge, kitColors } from '@/src/ui/kit';
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
 import { useEndSession } from '@/src/api/useSessions';
@@ -33,7 +19,6 @@ import type { QuickTag } from '@/src/api/sessions.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Step = 1 | 2 | 3;
 type OutcomeTag = 'purchased' | 'booked_next_visit' | 'shortlist_emailed' | 'left_empty_handed';
 type Language = 'en' | 'fr';
 
@@ -90,7 +75,6 @@ const QUICK_TAGS: { key: QuickTag; label: string }[] = [
 
 export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSheetProps) {
   // ─── State ────────────────────────────────────────────────────────────────
-  const [step, setStep] = useState<Step>(1);
   const [outcome, setOutcome] = useState<OutcomeTag | null>(null);
   const [orderRef, setOrderRef] = useState('');
   const [sendSummary, setSendSummary] = useState(true);
@@ -121,17 +105,17 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
   const isSubmitting = endSessionMutation.isPending || batchInteractionsMutation.isPending;
   const consentCaptured = consentStatus === 'granted';
 
-  // Shortlisted frames for email preview
-  const shortlistedFrames = useMemo(
-    () => photos.filter((p) => p.verdict === 'loved' || p.verdict === 'liked'),
-    [photos]
+  // Frames the client loved: what the follow-up email is about.
+  const lovedFrames = useMemo(
+    () => framesTried.filter((f) => f.verdict === 'loved' || f.verdict === 'liked'),
+    [framesTried]
   );
+  const photoCount = photos.length;
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
   const handleClose = useCallback(() => {
     // Reset local state so re-open starts fresh
-    setStep(1);
     setOutcome(null);
     setOrderRef('');
     setSendSummary(true);
@@ -175,16 +159,6 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     }
   }, [activeClientId, sessionId, appointmentId, locationId, framesTried, endSessionMutation, resetSession, resetFitting, onComplete]);
 
-  const handleOutcomeSelect = useCallback((selected: OutcomeTag) => {
-    setOutcome(selected);
-    setStep(2);
-  }, []);
-
-  const handleTagToggle = useCallback((tag: QuickTag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!activeClientId || !sessionId || !outcome) {
@@ -282,135 +256,97 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  const tried = framesTried.length;
+  const summary = [
+    `${tried} ${tried === 1 ? 'frame' : 'frames'} tried`,
+    lovedFrames.length ? `${lovedFrames.length} loved` : null,
+    photoCount ? `${photoCount} ${photoCount === 1 ? 'photo' : 'photos'}` : null,
+  ].filter(Boolean).join(' · ');
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
-      <View className="flex-1 bg-color-bg-page">
-        {/* ─── Header ─────────────────────────────────────────────────── */}
-        <View className="flex-row items-center px-xl pt-xl pb-md border-b border-color-border">
-          {/* Back button (steps 2-3) */}
-          {step > 1 ? (
-            <Pressable
-              onPress={() => setStep((s) => (s - 1) as Step)}
-              className="w-[44px] h-[44px] items-center justify-center mr-sm"
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <ChevronLeft size={24} color="#171717" />
-            </Pressable>
-          ) : (
-            <View className="w-[44px]" />
-          )}
-
-          {/* Title + step indicator */}
-          <View className="flex-1 items-center">
-            <Text className="text-heading-lg text-color-text-primary">
-              {step === 1 ? 'End session' : step === 2 ? 'Summary email' : 'Internal notes'}
-            </Text>
-            {/* Step dots */}
-            <View className="flex-row items-center mt-sm gap-sm">
-              {[1, 2, 3].map((s) => (
-                <View
-                  key={s}
-                  className={`h-1.5 rounded-full ${
-                    s === step ? 'w-6 bg-color-brand' : s < step ? 'w-3 bg-color-success' : 'w-3 bg-color-bg-muted'
-                  }`}
-                />
-              ))}
+    <>
+      <Sheet
+        visible={visible && !showFollowUpSheet}
+        onClose={handleClose}
+        wide
+        title={`End visit${activeClientName ? ` with ${activeClientName}` : ''}`}
+        subtitle={summary}
+        footerNote={outcome === 'left_empty_handed' && lovedFrames.length ? 'Loved frames start a follow-up in Follow-ups.' : undefined}
+        secondary={{ label: 'Keep visit open', onPress: handleClose }}
+        primary={{
+          label: outcome === 'booked_next_visit' ? 'Save and book' : 'Save visit',
+          onPress: handleSubmit,
+          disabled: !outcome,
+          loading: isSubmitting,
+        }}
+      >
+        <View className="gap-[24px]">
+          <Field label="How did it go?" required>
+            <View className="flex-row flex-wrap gap-[12px]">
+              {OUTCOME_OPTIONS.map((o) => {
+                const on = outcome === o.key;
+                const Icon = o.icon;
+                return (
+                  <Pressable
+                    key={o.key}
+                    onPress={() => setOutcome(o.key)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: on }}
+                    accessibilityLabel={`${o.label}. ${o.description}`}
+                    className="w-[48.5%]"
+                  >
+                    {({ pressed }) => (
+                      <View className={`flex-row items-center gap-[14px] p-[16px] rounded-lg border ${on ? 'border-accent bg-bg-page' : pressed ? 'border-border bg-bg-subtle' : 'border-border bg-bg-page'}`}
+                        style={on ? { borderWidth: 2, padding: 15 } : undefined}>
+                        <View className={`w-[40px] h-[40px] rounded-md items-center justify-center ${on ? 'bg-accent' : 'border border-border'}`}>
+                          <Icon size={20} color={on ? kitColors.inverse : kitColors.icon} />
+                        </View>
+                        <View className="flex-1">
+                          <Text className="text-body-md font-medium text-text-primary">{o.label}</Text>
+                          <Text className="text-body-sm text-text-tertiary">{o.description}</Text>
+                        </View>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
-          </View>
+          </Field>
 
-          {/* Close button */}
-          <Pressable
-            onPress={handleClose}
-            className="w-[44px] h-[44px] items-center justify-center"
-            accessibilityRole="button"
-            accessibilityLabel="Cancel and close"
-          >
-            <X size={24} color="#171717" />
+          {outcome === 'purchased' ? (
+            <TextField label="Order number" hint="Optional. Links the visit to the sale." value={orderRef} onChangeText={setOrderRef} placeholder="e.g. #1042" autoCapitalize="characters" autoCorrect={false} />
+          ) : null}
+
+          <Field label="Follow-up email" hint={consentCaptured ? `Their loved frames${photoCount ? ' and photos' : ''}, so they can decide at home.` : 'Needs their consent from the fitting (photos and email).'}>
+            <View className="flex-row items-center justify-between gap-[16px] border border-border rounded-md px-[16px] min-h-[56px]">
+              <View className="flex-1 flex-row items-center gap-[8px]">
+                <Text className="text-body-md text-text-primary">Send a summary</Text>
+                {lovedFrames.length ? <Badge>{`${lovedFrames.length} loved`}</Badge> : null}
+              </View>
+              {sendSummary && consentCaptured ? (
+                <ChoiceChips options={[{ key: 'en', label: 'English' }, { key: 'fr', label: 'Français' }]} value={language} onChange={(l: Language | null) => setLanguage(l ?? language)} />
+              ) : null}
+              <Switch
+                value={sendSummary && consentCaptured}
+                onValueChange={setSendSummary}
+                disabled={!consentCaptured}
+                trackColor={{ true: kitColors.primary, false: kitColors.border }}
+                accessibilityLabel="Send a summary email"
+              />
+            </View>
+          </Field>
+
+          <Field label="Notes for the team" hint="Staff only. Saved to their history.">
+            <ChoiceChips multiple options={QUICK_TAGS} value={selectedTags} onChange={setSelectedTags} />
+          </Field>
+          <TextField label="Notes" value={internalNotes} onChangeText={setInternalNotes} placeholder="What they liked, what to try next time" multiline />
+
+          <Pressable onPress={handleQuickEnd} accessibilityRole="button" className="self-start min-h-[44px] justify-center" disabled={isSubmitting}>
+            <Text className="text-body-sm text-text-tertiary underline">End without details (counts as no sale)</Text>
           </Pressable>
         </View>
+      </Sheet>
 
-        {/* ─── Step Content ───────────────────────────────────────────── */}
-        {step === 1 && (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ padding: 32 }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Step1Outcome
-              outcome={outcome}
-              orderRef={orderRef}
-              onOutcomeSelect={handleOutcomeSelect}
-              onOrderRefChange={setOrderRef}
-              onQuickEnd={handleQuickEnd}
-            />
-          </ScrollView>
-        )}
-        {step === 2 && (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ padding: 32 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Step2Summary
-              sendSummary={sendSummary}
-              language={language}
-              consentCaptured={consentCaptured}
-              clientName={activeClientName ?? 'Client'}
-              shortlistedFrames={shortlistedFrames}
-              onSendSummaryChange={setSendSummary}
-              onLanguageChange={setLanguage}
-              onNext={() => setStep(3)}
-            />
-          </ScrollView>
-        )}
-        {step === 3 && (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ padding: 32 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Step3Notes
-              internalNotes={internalNotes}
-              selectedTags={selectedTags}
-              onNotesChange={setInternalNotes}
-              onTagToggle={handleTagToggle}
-            />
-          </ScrollView>
-        )}
-
-        {/* ─── Bottom Action Bar ──────────────────────────────────────── */}
-        {step === 3 && (
-          <View className="px-xl py-md border-t border-color-border bg-color-bg-elevated">
-            <Pressable
-              onPress={handleSubmit}
-              disabled={isSubmitting || !outcome}
-              accessibilityRole="button"
-              accessibilityLabel="Save and end session"
-              className={`min-h-[52px] rounded-lg items-center justify-center ${
-                isSubmitting ? 'bg-color-bg-muted' : 'bg-color-brand'
-              }`}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text className="text-body-lg font-semibold text-color-brand-text">
-                  Save & end session
-                </Text>
-              )}
-            </Pressable>
-          </View>
-        )}
-      </View>
-      
-      {/* ─── Follow-up Appointment Sheet ────────────────────────────────── */}
       <CreateAppointmentSheet
         visible={showFollowUpSheet}
         onClose={handleFollowUpSheetClose}
@@ -421,314 +357,6 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
           suggestedNotes: `Follow-up from session on ${new Date().toLocaleDateString()}`,
         }}
       />
-    </Modal>
-  );
-}
-
-// ─── Step 1: Outcome ──────────────────────────────────────────────────────────
-
-interface Step1Props {
-  outcome: OutcomeTag | null;
-  orderRef: string;
-  onOutcomeSelect: (outcome: OutcomeTag) => void;
-  onOrderRefChange: (ref: string) => void;
-  onQuickEnd: () => void;
-}
-
-function Step1Outcome({ outcome, orderRef, onOutcomeSelect, onOrderRefChange, onQuickEnd }: Step1Props) {
-  return (
-    <View>
-      <Text className="text-display-sm text-color-text-primary text-center mb-sm">
-        How did it go?
-      </Text>
-      <Text className="text-body-lg text-color-text-muted text-center mb-xl">
-        Select an outcome to categorize this session
-      </Text>
-
-      {/* 2×2 grid of outcome cards */}
-      <View className="flex-row flex-wrap justify-between">
-        {OUTCOME_OPTIONS.map((option) => {
-          const IconComponent = option.icon;
-          const isSelected = outcome === option.key;
-
-          return (
-            <Pressable
-              key={option.key}
-              onPress={() => onOutcomeSelect(option.key)}
-              accessibilityRole="button"
-              accessibilityLabel={`Session outcome: ${option.label}. ${option.description}`}
-              accessibilityState={{ selected: isSelected }}
-              className={`w-[48%] min-h-[140px] rounded-lg border-2 p-lg items-center justify-center mb-lg ${
-                isSelected
-                  ? 'border-color-brand bg-color-bg-surface'
-                  : 'border-color-border bg-color-bg-surface'
-              }`}
-            >
-              <IconComponent
-                size={32}
-                color={isSelected ? '#000EC7' : '#404040'}
-              />
-              <Text
-                className={`text-body-lg font-semibold text-center mt-md ${
-                  isSelected ? 'text-color-brand' : 'text-color-text-primary'
-                }`}
-              >
-                {option.label}
-              </Text>
-              <Text className="text-body-sm text-color-text-muted text-center mt-xs">
-                {option.description}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Order reference field — only visible after "Purchased" selected */}
-      {outcome === 'purchased' && (
-        <View className="mt-lg">
-          <Text className="text-body-lg font-medium text-color-text-primary mb-sm">
-            Link to order (optional)
-          </Text>
-          <View className="flex-row gap-sm">
-            <TextInput
-              value={orderRef}
-              onChangeText={onOrderRefChange}
-              placeholder="Order number or receipt..."
-              placeholderTextColor="#737373"
-              className="flex-1 bg-color-bg-surface border border-color-border rounded-lg px-md py-md text-body-lg text-color-text-primary min-h-[48px]"
-            />
-            <Pressable
-              onPress={() => toast.info('Coming soon', 'Barcode scanning for order linking coming soon.')}
-              accessibilityRole="button"
-              accessibilityLabel="Scan receipt barcode"
-              className="bg-color-brand rounded-lg min-h-[48px] min-w-[48px] items-center justify-center"
-            >
-              <ScanLine size={22} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </View>
-      )}
-
-      {/* Quick end — skip steps, end immediately */}
-      <View className="mt-xl pt-xl border-t border-color-border">
-        <Pressable
-          onPress={onQuickEnd}
-          accessibilityRole="button"
-          accessibilityLabel="End session without notes or email"
-          className="min-h-[48px] rounded-lg border border-color-border items-center justify-center"
-        >
-          <Text className="text-body-lg text-color-text-muted">
-            Just end the session (no email, no notes)
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-// ─── Step 2: Summary Email ────────────────────────────────────────────────────
-
-interface Step2Props {
-  sendSummary: boolean;
-  language: Language;
-  consentCaptured: boolean;
-  clientName: string;
-  shortlistedFrames: { productName?: string | null; verdict?: string | null }[];
-  onSendSummaryChange: (value: boolean) => void;
-  onLanguageChange: (lang: Language) => void;
-  onNext: () => void;
-}
-
-function Step2Summary({
-  sendSummary,
-  language,
-  consentCaptured,
-  clientName,
-  shortlistedFrames,
-  onSendSummaryChange,
-  onLanguageChange,
-  onNext,
-}: Step2Props) {
-  return (
-    <View>
-      <Text className="text-display-sm text-color-text-primary text-center mb-xl">
-        Summary email
-      </Text>
-
-      {/* Send toggle */}
-      <View className="flex-row items-center justify-between mb-lg bg-color-bg-surface border border-color-border rounded-lg p-lg">
-        <Text className="text-body-lg font-medium text-color-text-primary">Send summary email</Text>
-        <Switch
-          value={sendSummary}
-          onValueChange={onSendSummaryChange}
-          trackColor={{ false: '#D4D4D4', true: '#16A34A' }}
-          thumbColor="#FFFFFF"
-        />
-      </View>
-
-      {/* Consent warning */}
-      {!consentCaptured && (
-        <View className="mb-lg bg-color-bg-muted rounded-lg p-md">
-          <Text className="text-body-sm text-color-text-muted">
-            Photos not permitted — email will show frame names only
-          </Text>
-        </View>
-      )}
-
-      {/* Language selector */}
-      {sendSummary && (
-        <View className="flex-row items-center mb-xl gap-sm">
-          <Text className="text-body-lg text-color-text-primary mr-md">Language:</Text>
-          {(['en', 'fr'] as const).map((lang) => (
-            <Pressable
-              key={lang}
-              onPress={() => onLanguageChange(lang)}
-              accessibilityRole="button"
-              accessibilityLabel={`Set language to ${lang === 'en' ? 'English' : 'French'}`}
-              accessibilityState={{ selected: language === lang }}
-              className={`px-lg py-sm rounded-lg min-h-[44px] min-w-[56px] items-center justify-center ${
-                language === lang
-                  ? 'bg-color-brand'
-                  : 'border border-color-border bg-color-bg-surface'
-              }`}
-            >
-              <Text
-                className={`text-body-lg font-semibold ${
-                  language === lang ? 'text-color-brand-text' : 'text-color-text-primary'
-                }`}
-              >
-                {lang.toUpperCase()}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-
-      {/* Email preview card */}
-      <View className="bg-color-bg-surface border border-color-border rounded-lg p-lg mb-xl">
-        <Text className="text-body-sm text-color-text-muted mb-sm font-medium uppercase tracking-wide">
-          Preview
-        </Text>
-
-        {sendSummary ? (
-          <View>
-            <Text className="text-body-sm text-color-text-muted mb-xs">
-              To: {clientName}
-            </Text>
-            <Text className="text-body-sm text-color-text-muted mb-md">
-              Subject: Your fitting session summary
-            </Text>
-
-            {shortlistedFrames.length > 0 ? (
-              <View>
-                <Text className="text-body-lg text-color-text-primary mb-sm">
-                  {language === 'en' ? 'Frames you loved:' : 'Montures que vous avez aimées:'}
-                </Text>
-                {shortlistedFrames.slice(0, 3).map((photo, idx) => (
-                  <Text key={idx} className="text-body-sm text-color-text-secondary">
-                    • {photo.productName || 'Frame'} — {photo.verdict}
-                  </Text>
-                ))}
-                {shortlistedFrames.length > 3 && (
-                  <Text className="text-body-sm text-color-text-muted mt-xs">
-                    + {shortlistedFrames.length - 3} more
-                  </Text>
-                )}
-              </View>
-            ) : (
-              <Text className="text-body-lg text-color-text-muted">
-                {language === 'en'
-                  ? 'Thank you for visiting us today.'
-                  : "Merci de votre visite aujourd'hui."}
-              </Text>
-            )}
-          </View>
-        ) : (
-          <Text className="text-body-lg text-color-text-muted text-center py-lg">
-            No email will be sent
-          </Text>
-        )}
-      </View>
-
-      {/* Next button */}
-      <Pressable
-        onPress={onNext}
-        accessibilityRole="button"
-        accessibilityLabel="Continue to notes"
-        className="bg-color-brand rounded-lg min-h-[52px] items-center justify-center"
-      >
-        <Text className="text-body-lg font-semibold text-color-brand-text">Next</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-// ─── Step 3: Internal Notes ───────────────────────────────────────────────────
-
-interface Step3Props {
-  internalNotes: string;
-  selectedTags: QuickTag[];
-  onNotesChange: (notes: string) => void;
-  onTagToggle: (tag: QuickTag) => void;
-}
-
-function Step3Notes({ internalNotes, selectedTags, onNotesChange, onTagToggle }: Step3Props) {
-  return (
-    <View>
-      <Text className="text-display-sm text-color-text-primary text-center mb-xl">
-        Internal notes
-      </Text>
-
-      {/* Notes textarea */}
-      <View className="mb-xl">
-        <Text className="text-body-lg font-medium text-color-text-primary mb-sm">
-          Session notes (staff only)
-        </Text>
-        <TextInput
-          value={internalNotes}
-          onChangeText={onNotesChange}
-          placeholder="Add notes about this session..."
-          placeholderTextColor="#737373"
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-          className="bg-color-bg-surface border border-color-border rounded-lg p-lg text-body-lg text-color-text-primary min-h-[140px]"
-        />
-      </View>
-
-      {/* Quick tag chips */}
-      <View>
-        <Text className="text-body-lg font-medium text-color-text-primary mb-md">
-          Quick tags
-        </Text>
-        <View className="flex-row flex-wrap gap-sm">
-          {QUICK_TAGS.map((tag) => {
-            const isSelected = selectedTags.includes(tag.key);
-            return (
-              <Pressable
-                key={tag.key}
-                onPress={() => onTagToggle(tag.key)}
-                accessibilityRole="button"
-                accessibilityLabel={`Tag: ${tag.label}`}
-                accessibilityState={{ selected: isSelected }}
-                className={`rounded-lg px-lg py-sm min-h-[44px] items-center justify-center ${
-                  isSelected
-                    ? 'bg-color-brand'
-                    : 'border border-color-border bg-color-bg-surface'
-                }`}
-              >
-                <Text
-                  className={`text-body-lg font-medium ${
-                    isSelected ? 'text-color-brand-text' : 'text-color-text-primary'
-                  }`}
-                >
-                  {tag.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-    </View>
+    </>
   );
 }

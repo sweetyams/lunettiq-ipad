@@ -7,7 +7,7 @@ import { useClients } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
-import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, kitColors } from '@/src/ui/kit';
+import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, formatPhone, kitColors } from '@/src/ui/kit';
 import type { Client, ClientSearchParams } from '@/src/api/clients.types';
 
 // --- Types ---
@@ -235,7 +235,7 @@ function ClientPreview({ client }: ClientPreviewProps) {
   // Contact summary line
   const contactParts = [
     client.email,
-    client.phone || 'No phone',
+    formatPhone(client.phone) || 'No phone',
     'EN', // TODO: from client language preference
   ].filter(Boolean);
 

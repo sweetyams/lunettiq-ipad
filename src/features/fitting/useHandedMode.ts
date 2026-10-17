@@ -1,3 +1,4 @@
+import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { useEffect, useRef, useState } from 'react';
 import { usePrivacyStore, completeReclaimFromClient } from '@/src/features/privacy/PrivacyModeProvider';
 import { useFittingStore } from './useFittingStore';
@@ -11,6 +12,7 @@ interface HandedModeState {
 }
 
 export function useHandedMode() {
+  const { lock: lockApp, pinEnabled } = useAuthContext();
   const { handedToClient, handToClient } = usePrivacyStore();
   const { setVerdict } = useFittingStore();
   const [state, setState] = useState<HandedModeState>({
@@ -58,11 +60,9 @@ export function useHandedMode() {
   const handleTopEdgePress = () => {
     const now = Date.now();
     const timeSinceLastTap = now - lastTapTimeRef.current;
-    console.log(`[Handed] tap — count=${tapCountRef.current} timeSince=${timeSinceLastTap}ms`);
 
     if (tapCountRef.current === 1 && timeSinceLastTap < DOUBLE_TAP_TIMEOUT) {
       // Second tap within window — trigger exit
-      console.log('[Handed] double-tap detected — exiting');
       tapCountRef.current = 0;
       lastTapTimeRef.current = 0;
       if (tapTimeoutRef.current) {
@@ -88,12 +88,12 @@ export function useHandedMode() {
   };
 
   const handleExitGesture = async () => {
-    console.log('[Handed] handleExitGesture called — reclaiming');
-    // TODO: Integrate expo-local-authentication biometric prompt before reclaiming
-    // const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Staff auth' });
-    // if (!result.success) return;
+    // Back to staff view, behind the PIN when this device has one: the client
+    // must not reach prescriptions or internal notes by double-tapping.
     completeReclaimFromClient();
+    if (pinEnabled) lockApp();
   };
+
 
   const handleHandToClient = () => {
     handToClient();
@@ -101,6 +101,7 @@ export function useHandedMode() {
 
   const handleReclaim = () => {
     completeReclaimFromClient();
+    if (pinEnabled) lockApp();
   };
 
   // Client verdict handler - marks verdicts as client-set

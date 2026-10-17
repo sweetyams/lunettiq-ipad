@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTenantStore } from '@/src/features/tenant/useTenantStore';
+import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 
 /**
  * Demo-store indicator.
@@ -14,8 +15,10 @@ export function DemoStrip() {
   const env = useTenantStore((s) => s.activeProject?.env);
   const name = useTenantStore((s) => s.activeProject?.name);
   const { top } = useSafeAreaInsets();
+  const handed = usePrivacyStore((s) => s.handedToClient);
 
-  if (!env || env === 'production') return null;
+  // Never in front of a client.
+  if (!env || env === 'production' || handed) return null;
 
   const label = env === 'demo' ? 'Demo store' : 'Staging';
 

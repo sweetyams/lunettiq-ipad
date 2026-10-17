@@ -1,11 +1,4 @@
 export { useSessionStore } from './useSessionStore';
 export type { WorkContext, FrameTried, SessionState } from './useSessionStore';
-export { SessionBanner } from './SessionBanner';
-export { SessionTopBar } from './SessionTopBar';
-export { StartSessionButton } from './StartSessionButton';
-export { ClientContextPanel } from './ClientContextPanel';
-export { ClientTimeline } from './ClientTimeline';
-export { ProductBrowserPanel } from './ProductBrowserPanel';
-export { EndSessionFlow } from './EndSessionFlow';
 export { EndSessionSheet } from './EndSessionSheet';
 export { SessionServerBridge } from './SessionServerBridge';

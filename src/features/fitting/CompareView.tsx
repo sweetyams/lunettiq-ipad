@@ -1,97 +1,39 @@
-import { View, Text, Image, ScrollView, Pressable } from 'react-native';
-import { X } from 'lucide-react-native';
-import { Button } from '@/src/ui/Button';
-import { VerdictControl } from './VerdictControl';
+import { View, Text, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
+import { Button, VerdictPicker } from '@/src/ui/kit';
 import type { SessionPhoto, Verdict } from './fitting.types';
 
 interface CompareViewProps {
   photos: SessionPhoto[];
   onClose: () => void;
-  onVerdictChange?: (photoId: string, verdict: Verdict) => void;
+  onVerdictChange?: (photoId: string, verdict: Verdict | null) => void;
 }
 
+/** Side-by-side photos (2–4) to help the client choose. */
 export function CompareView({ photos, onClose, onVerdictChange }: CompareViewProps) {
-  const getGridLayout = (count: number) => {
-    if (count <= 2) return { cols: 2, rows: 1 };
-    return { cols: 2, rows: 2 };
-  };
-
-  const { cols, rows } = getGridLayout(photos.length);
-
+  const width = photos.length <= 2 ? '48.5%' : '48.5%';
   return (
     <View className="flex-1 bg-bg-page">
-      {/* Header */}
-      <View className="flex-row items-center justify-between p-lg border-b border-border bg-bg-surface">
-        <Text className="text-heading-xl text-text-primary font-semibold">
-          Compare Frames
-        </Text>
-        <Pressable
-          onPress={onClose}
-          className="w-10 h-10 items-center justify-center rounded-full bg-border"
-          accessibilityRole="button"
-          accessibilityLabel="Close comparison"
-        >
-          <X size={20} color="#2B2B2B" />
-        </Pressable>
+      <View className="flex-row items-center justify-between px-[32px] py-[16px] border-b border-border">
+        <View>
+          <Text className="text-heading-lg text-text-primary">Compare</Text>
+          <Text className="text-body-sm text-text-tertiary">{photos.length} photos side by side</Text>
+        </View>
+        <Button label="Done" variant="primary" onPress={onClose} />
       </View>
-
-      <ScrollView className="flex-1 p-lg" contentContainerStyle={{ flexGrow: 1 }}>
-        {/* Photo Grid */}
-        <View className="flex-1">
-          {Array.from({ length: rows }, (_, rowIndex) => (
-            <View key={rowIndex} className="flex-row flex-1 gap-md mb-md">
-              {Array.from({ length: cols }, (_, colIndex) => {
-                const photoIndex = rowIndex * cols + colIndex;
-                const photo = photos[photoIndex];
-                
-                if (!photo) {
-                  return <View key={colIndex} className="flex-1" />;
-                }
-
-                return (
-                  <View key={photo.id} className="flex-1 bg-bg-surface rounded-lg p-md border border-border">
-                    {/* Photo */}
-                    <View className="aspect-square rounded-lg overflow-hidden mb-md bg-border">
-                      <Image
-                        source={{ uri: photo.thumbnailUri }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
-                    </View>
-
-                    {/* Product Info */}
-                    <View className="mb-md">
-                      <Text className="text-body-md font-medium text-text-primary font-medium mb-xs">
-                        {photo.productName || 'Unknown Frame'}
-                      </Text>
-                      {photo.notes && (
-                        <Text className="text-caption-md text-text-muted" numberOfLines={2}>
-                          {photo.notes}
-                        </Text>
-                      )}
-                    </View>
-
-                    {/* Verdict Control */}
-                    {onVerdictChange && (
-                      <VerdictControl
-                        value={photo.verdict}
-                        onChange={(verdict) => onVerdictChange(photo.id, verdict)}
-                        size="small"
-                      />
-                    )}
-                  </View>
-                );
-              })}
+      <ScrollView contentContainerStyle={{ padding: 24, gap: 16, flexDirection: 'row', flexWrap: 'wrap' }}>
+        {photos.map((p) => (
+          <View key={p.id} style={{ width }} className="border border-border rounded-lg overflow-hidden">
+            <Image source={{ uri: p.localUri || p.thumbnailUri }} contentFit="cover" style={{ width: '100%', aspectRatio: photos.length <= 2 ? 3 / 4 : 4 / 3 }} />
+            <View className="p-[16px] gap-[12px] border-t border-border">
+              <Text className="text-body-lg font-medium text-text-primary" numberOfLines={1}>{p.productName ?? 'Frame not linked'}</Text>
+              {p.notes ? <Text className="text-body-sm text-text-tertiary" numberOfLines={2}>{p.notes}</Text> : null}
+              {onVerdictChange ? (
+                <VerdictPicker value={p.verdict} onChange={(v) => onVerdictChange(p.id, v ?? null)} label={p.productName ?? 'photo'} />
+              ) : null}
             </View>
-          ))}
-        </View>
-
-        {/* Action Bar */}
-        <View className="mt-lg">
-          <Button variant="primary" onPress={onClose}>
-            Done Comparing
-          </Button>
-        </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );

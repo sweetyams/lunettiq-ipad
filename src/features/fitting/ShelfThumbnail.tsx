@@ -1,5 +1,7 @@
-import { View, Text, Image, Pressable } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { View, Text, Pressable } from 'react-native';
+import { Image } from 'expo-image';
+import { Check, Heart } from 'lucide-react-native';
+import { kitColors } from '@/src/ui/kit';
 import type { SessionPhoto } from './fitting.types';
 
 interface ShelfThumbnailProps {
@@ -9,61 +11,36 @@ interface ShelfThumbnailProps {
   onToggleSelect: () => void;
 }
 
+/** Shelf photo: tap opens detail; the corner circle selects it for Compare. */
 export function ShelfThumbnail({ photo, isSelected, onPress, onToggleSelect }: ShelfThumbnailProps) {
-  const verdictColors = {
-    loved: 'border-accent',
-    liked: 'border-blue',
-    unsure: 'border-warning',
-    rejected: 'border-border-strong',
-  };
-
-  const verdictBorderClass = photo.verdict ? verdictColors[photo.verdict] : 'border-border';
-  const selectedBorderClass = isSelected ? 'border-accent border-2' : 'border border-border';
-
+  const loved = photo.verdict === 'loved' || photo.verdict === 'liked';
   return (
-    <View className="mr-sm">
+    <View className="w-[88px] gap-[4px]">
       <Pressable
         onPress={onPress}
         onLongPress={onToggleSelect}
-        className={`w-20 h-20 rounded-md overflow-hidden ${selectedBorderClass} ${verdictBorderClass} bg-bg-surface`}
         accessibilityRole="button"
-        accessibilityLabel={`Photo ${photo.productName ? `of ${photo.productName}` : 'without product'}${photo.verdict ? `, verdict ${photo.verdict}` : ''}`}
+        accessibilityLabel={`Photo${photo.productName ? ` of ${photo.productName}` : ''}${photo.verdict ? `, ${photo.verdict}` : ''}`}
+        className={`w-[88px] h-[88px] rounded-md overflow-hidden ${isSelected ? 'border-2 border-accent' : 'border border-border'}`}
       >
-        <Image
-          source={{ uri: photo.thumbnailUri }}
-          className="w-full h-full"
-          resizeMode="cover"
-        />
-        
-        {/* Upload status indicator */}
-        {photo.uploadStatus === 'uploading' && (
-          <View className="absolute inset-0 bg-black/30 items-center justify-center">
-            <View className="w-6 h-6 bg-bg-surface/80 rounded-full" />
+        <Image source={{ uri: photo.thumbnailUri }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
+        {loved ? (
+          <View className="absolute bottom-[6px] left-[6px] w-[22px] h-[22px] rounded-full bg-bg-page items-center justify-center">
+            <Heart size={12} color={kitColors.text} fill={kitColors.text} />
           </View>
-        )}
-        
-        {/* Selection indicator */}
-        {isSelected && (
-          <View className="absolute top-1 right-1 w-5 h-5 bg-accent rounded-full items-center justify-center">
-            <Check size={12} color="#FFFFFF" strokeWidth={3} />
-          </View>
-        )}
-        
-        {/* Verdict indicator */}
-        {photo.verdict && (
-          <View className="absolute bottom-1 left-1 w-3 h-3 bg-bg-surface rounded-full border border-border" />
-        )}
+        ) : null}
       </Pressable>
-      
-      {/* Product name */}
-      {photo.productName && (
-        <Text 
-          className="text-caption-md text-text-primary mt-xs text-center" 
-          numberOfLines={1}
-        >
-          {photo.productName}
-        </Text>
-      )}
+      <Pressable
+        onPress={onToggleSelect}
+        hitSlop={8}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isSelected }}
+        accessibilityLabel="Select to compare"
+        className={`absolute top-[6px] right-[6px] w-[24px] h-[24px] rounded-full items-center justify-center border ${isSelected ? 'bg-accent border-accent' : 'bg-bg-page border-border'}`}
+      >
+        {isSelected ? <Check size={14} color={kitColors.inverse} strokeWidth={3} /> : null}
+      </Pressable>
+      <Text className="text-body-sm text-text-secondary" numberOfLines={1}>{photo.productName ?? 'Not linked'}</Text>
     </View>
   );
 }

@@ -12,9 +12,11 @@ import { useTenantCapabilities, useActiveTenantDeviceManagement } from '@/src/fe
 interface AuthContextType {
   isLocked: boolean;
   lock: () => void;
+  /** A staff PIN can be verified on this device (team mode + device management). */
+  pinEnabled: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({ isLocked: false, lock: () => {} });
+const AuthContext = createContext<AuthContextType>({ isLocked: false, lock: () => {}, pinEnabled: false });
 
 export function useAuthContext(): AuthContextType {
   return useContext(AuthContext);
@@ -149,7 +151,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   return (
-    <AuthContext.Provider value={{ isLocked, lock }}>
+    <AuthContext.Provider value={{ isLocked, lock, pinEnabled: effectivePinEnabled && deviceManagement === true }}>
       <TouchActivityProvider onActivity={resetActivity}>
         {children}
         {isLocked && (

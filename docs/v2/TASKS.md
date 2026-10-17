@@ -41,7 +41,7 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | D2 | App shell (status pill, tab badges, session bar, lock) | ⬜ | |
 | D3 | Floor (reference screen, review before going wide) | ⬜ | |
 | D4 | Clients: list, profile + tabs, new client, profile sheets | ✅ | `D4.1`–`D4.4` done. New client is blocked on Foundry (no create endpoint; see handoff §"Missing / mismatched client endpoints") |
-| D5 | Visit: workspace, fitting, handed mode, end visit | ⬜ | |
+| D5 | Visit: workspace, fitting, handed mode, end visit | ✅ | Rebuilt on the kit; handed-mode exit now PIN-gated. To verify on device: double-tap exit → PIN, End visit sheet |
 | D6 | Schedule + appointment sheets | ⬜ | |
 | D7 | Products + configurator | ⬜ | |
 | D8 | Orders, Follow-ups, Review | ✅ | Kit: PageHeader, FilterChips, Section, ListRow, Badge. Follow-ups grouped Call today / In the sequence; Review anomalies as danger badges, Claim next as the primary |

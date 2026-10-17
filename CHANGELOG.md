@@ -1,5 +1,27 @@
 # Changelog
 
+## [2026-10-17] — Phase D5: the visit on the kit; handed mode secured
+
+### Fixed
+- **Handed mode had no staff check on exit.** A client double-tapping the top bar (or the timeout screen's button) got straight back into the staff view with prescriptions and notes. Exit now returns to staff view behind the PIN when the device has one (`pinEnabled` added to the auth context).
+- **Handed view was empty during most visits**: it only showed fitting photos. It now shows the tray frames with photos so the client can react (Love / Maybe / No) themselves.
+- Fake or dead controls removed: hard-coded "$200–400 second-pair budget", AI stylist box and buttons that did nothing, "Create order from tray" (no-op), "Photos" link, Filter sheet wired to no-ops, "Newest" sort that sorted nothing, the fitting photo "Shortlist" toast that promised a 48h hold it never created, "Link product" alert, barcode-scanner references, `console.log`s in handed mode.
+- Session bar never showed the tier (looked for `CULT`, tags are `member-cult`).
+- ModeStrip told clients to "double-tap with two fingers to exit" (wrong gesture, and shouldn't coach the client). Hidden in handed mode; the demo pill is hidden there too.
+- Clients preview showed the raw phone number.
+
+### Changed
+- **Visit workspace:** white header (client, tier, live "Visit · 12:04 · 3 tried · 1 loved"), Hand to client and Fitting photos (ghost), End visit (the one primary). Catalogue with search, sort chips, fit badge, "In tray" / "Suggested" marks; tapping twice doesn't duplicate. Rail: Tray (photo, name, `VerdictPicker`, **Order** on loved frames → configurator → order summary, now actually wired), Client key-values (real insurance pairs left), Visit notes.
+- **End visit:** one page instead of three steps: outcome tiles, order number when Purchased, follow-up email (with language; disabled without consent), team tags + notes, "End without details". Same save logic.
+- **Fitting:** white header with Back to visit; floating white photo shelf with a visible select circle for Compare (was long-press only); Frame detail on the Sheet: link the photo to a tray frame, reaction, notes, show-to-client switch, upload status, two-tap delete; Consent on the Sheet with a script to read; Compare with `VerdictPicker`.
+- **Handed view / timeout:** client-facing, Lunettiq wordmark, large cards and 56pt reaction buttons, discreet staff bar.
+
+### Removed
+- Unused: SessionBanner, SessionTopBar, StartSessionButton, ClientContextPanel, ClientTimeline, ProductBrowserPanel, EndSessionFlow, EndSessionExample, ClientFittingReview, both VerdictControls, TopBar, the second ConsentModal.
+
+### Added
+- Kit: `VerdictPicker` (Love / Maybe / No; `lg` for client-facing). `FrameTried.imageUrl`.
+
 ## [2026-10-16] — Phase D4.3–D4.4: New client and all profile sheets on the kit; five broken writes fixed
 
 ### Fixed

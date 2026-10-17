@@ -16,7 +16,6 @@ export { Button } from './Button';
 export { Card, CardHead, CardBody, CardFoot } from './Card';
 export { ClientCard } from './ClientCard';
 export { ClientRow } from './ClientRow';
-export { ConsentModal } from './ConsentModal';
 export { DevErrorBoundary } from './DevErrorBoundary';
 export { EmptyState } from './EmptyState';
 export { EnvGate } from './EnvGate';
@@ -40,8 +39,6 @@ export { StockDot } from './StockDot';
 export { SyncIndicator } from './SyncIndicator';
 export { TimelineEntry } from './TimelineEntry';
 export { ToastContainer } from './Toast';
-export { TopBar } from './TopBar';
-export { VerdictControl } from './VerdictControl';
 
 // Toast System
 export { useToastStore, toast } from './useToastStore';
