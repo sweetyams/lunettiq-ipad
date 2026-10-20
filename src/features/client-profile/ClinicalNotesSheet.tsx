@@ -18,7 +18,7 @@ export function ClinicalNotesSheet({ clientId, visible, onClose }: ClinicalNotes
 
   const save = async () => {
     try {
-      await createInteraction.mutateAsync({
+      const res = await createInteraction.mutateAsync({
         clientId,
         type: 'note',
         direction: 'internal',
@@ -26,7 +26,8 @@ export function ClinicalNotesSheet({ clientId, visible, onClose }: ClinicalNotes
         body: body.trim(),
         metadata: { category: 'clinical' },
       });
-      toast.success('Clinical note saved');
+      if (res && 'queued' in res) toast.info('Note saved on this iPad', 'It syncs to the client’s history when back online.');
+      else toast.success('Clinical note saved');
       onClose();
     } catch {
       toast.error('Couldn’t save the note', 'Check the connection and try again. Your text is still here.');

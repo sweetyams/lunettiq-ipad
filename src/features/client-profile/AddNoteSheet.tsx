@@ -20,7 +20,7 @@ export function AddNoteSheet({ clientId, visible, onClose }: AddNoteSheetProps) 
 
   const save = async () => {
     try {
-      await createInteraction.mutateAsync({
+      const res = await createInteraction.mutateAsync({
         clientId,
         type: 'note',
         direction: 'internal',
@@ -28,7 +28,8 @@ export function AddNoteSheet({ clientId, visible, onClose }: AddNoteSheetProps) 
         body: body.trim(),
         metadata: tags.length ? { tags } : undefined,
       });
-      toast.success('Note saved', 'It’s on the client’s history.');
+      if (res && 'queued' in res) toast.info('Note saved on this iPad', 'It syncs to the client’s history when back online.');
+      else toast.success('Note saved', 'It’s on the client’s history.');
       onClose();
     } catch {
       toast.error('Couldn’t save the note', 'Check the connection and try again. Your text is still here.');

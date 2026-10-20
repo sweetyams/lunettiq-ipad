@@ -5,6 +5,7 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { HandedToClientView } from '@/src/features/fitting/HandedToClientView';
 import { SessionBar } from '@/src/ui/SessionBar';
 import { SessionServerBridge } from '@/src/features/session/SessionServerBridge';
+import { VisitOutboxWorker } from '@/src/features/session/VisitOutboxWorker';
 import { FloatingTabBar } from '@/src/ui/FloatingTabBar';
 import { useRxApprovalSummary } from '@/src/api/useRxApprovals';
 import { useRxPipelineCounts } from '@/src/api/useRxPipeline';
@@ -51,6 +52,7 @@ export default function AppLayout() {
       <SessionBar />
       {/* Keeps the active visit in step with Foundry (session + try-ons) */}
       <SessionServerBridge />
+      <VisitOutboxWorker />
 
       <Tabs
         tabBar={(props) =>

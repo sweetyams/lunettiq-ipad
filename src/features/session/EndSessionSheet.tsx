@@ -9,12 +9,13 @@ import { ShoppingBag, Calendar, Star, DoorOpen } from 'lucide-react-native';
 import { Sheet, Field, TextField, ChoiceChips, Badge, kitColors } from '@/src/ui/kit';
 import { useSessionStore } from './useSessionStore';
 import { useFittingStore } from '../fitting/useFittingStore';
-import { useEndSession } from '@/src/api/useSessions';
 import { useEffectiveLocationId } from '@/src/features/tenant/useDeviceLocationStore';
 import { toServerFramesTried, unsyncedFrames, verdictToInteractionType } from './sessionSync';
-import { useCreateBatchProductInteractions } from '@/src/api/useProductInteractions';
 import { CreateAppointmentSheet } from '@/src/features/appointments/CreateAppointmentSheet';
 import { toast } from '@/src/ui/useToastStore';
+import { useSyncStore } from '@/src/sync/useSyncStore';
+import { newClose, type EndPayload } from './visitOutbox';
+import { useVisitOutbox, flushClose } from './VisitOutboxWorker';
 import type { QuickTag } from '@/src/api/sessions.types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,10 +100,46 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
   const locationId = useEffectiveLocationId();
 
   const { photos, consentStatus, reset: resetFitting } = useFittingStore();
-  const endSessionMutation = useEndSession();
-  const batchInteractionsMutation = useCreateBatchProductInteractions();
+  const isOnline = useSyncStore((st) => st.isOnline);
+  const [isSubmitting, setSubmitting] = useState(false);
 
-  const isSubmitting = endSessionMutation.isPending || batchInteractionsMutation.isPending;
+  /**
+   * Save the whole close to the outbox first (survives offline / app restarts), clear the
+   * visit, then try to send it now. Returns false only if nothing could be saved.
+   */
+  const closeVisit = useCallback(async (end: EndPayload): Promise<boolean> => {
+    if (!activeClientId || !sessionId) return false;
+    const job = newClose({
+      clientId: activeClientId,
+      sessionId,
+      locationId,
+      appointmentId,
+      framesTried: toServerFramesTried(framesTried),
+      triedOn: unsyncedFrames(framesTried).map((f) => ({
+        productId: f.productId, variantId: f.variantId, type: 'tried_on' as const, metadata: { triedAt: f.triedAt },
+      })),
+      verdicts: framesTried.flatMap((f) => {
+        const type = verdictToInteractionType(f.verdict);
+        return type ? [{ productId: f.productId, variantId: f.variantId, type, notes: f.notes || undefined, metadata: { verdict: f.verdict, photoCount: f.photoIds.length } }] : [];
+      }),
+      end,
+    });
+    useVisitOutbox.getState().add(job);
+    resetSession();
+    resetFitting();
+    if (!isOnline) {
+      toast.info('Visit saved on this iPad', 'It syncs to Foundry when the iPad is back online.');
+      return true;
+    }
+    setSubmitting(true);
+    try {
+      const result = await flushClose(job);
+      if (result.step !== 'done') toast.info('Visit saved on this iPad', 'Foundry didn’t answer; it retries automatically.');
+    } finally {
+      setSubmitting(false);
+    }
+    return true;
+  }, [activeClientId, sessionId, locationId, appointmentId, framesTried, isOnline, resetSession, resetFitting]);
   const consentCaptured = consentStatus === 'granted';
 
   // Frames the client loved: what the follow-up email is about.
@@ -135,29 +172,8 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       return;
     }
 
-    try {
-      await endSessionMutation.mutateAsync({
-        sessionId,
-        clientId: activeClientId,
-        locationId,
-        appointmentId,
-        framesTried: toServerFramesTried(framesTried),
-        outcomeTag: 'left_empty_handed',
-        sendSummary: false,
-        summaryLanguage: 'en',
-        internalNotes: '',
-        tags: [],
-        orderRef: undefined,
-      });
-
-      resetSession();
-      resetFitting();
-      onComplete();
-    } catch (error) {
-      console.error('Failed to quick-end session:', error);
-      toast.error('Failed', 'Could not end session. Try again.');
-    }
-  }, [activeClientId, sessionId, appointmentId, locationId, framesTried, endSessionMutation, resetSession, resetFitting, onComplete]);
+    if (await closeVisit({ outcome: 'no_match', sendSummary: false, tags: [] })) onComplete();
+  }, [activeClientId, sessionId, closeVisit, onComplete]);
 
 
   const handleSubmit = useCallback(async () => {
@@ -170,82 +186,30 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     savedClientIdRef.current = activeClientId;
     savedSessionIdRef.current = sessionId;
 
-    try {
-      // 1. End the session (creates it first if it never reached Foundry,
-      //    and saves frames + verdicts on it)
-      const ended = await endSessionMutation.mutateAsync({
-        sessionId,
-        clientId: activeClientId,
-        locationId,
-        appointmentId,
-        framesTried: toServerFramesTried(framesTried),
-        outcomeTag: outcome,
-        sendSummary: sendSummary && consentCaptured,
-        summaryLanguage: language,
-        internalNotes: internalNotes.trim() || '',
-        tags: selectedTags,
-        orderRef: orderRef.trim() || undefined,
-      });
-
-      // 2. Product interactions: any try-on the bridge hasn't sent yet, plus
-      //    each verdict as liked/disliked (what Foundry's feedback + hot leads read)
-      const interactions = [
-        ...unsyncedFrames(framesTried).map((f) => ({
-          clientId: activeClientId,
-          productId: f.productId,
-          variantId: f.variantId,
-          type: 'tried_on' as const,
-          sessionId: ended.id,
-          locationId,
-          metadata: { triedAt: f.triedAt },
-        })),
-        ...framesTried.flatMap((f) => {
-          const type = verdictToInteractionType(f.verdict);
-          return type
-            ? [{
-                clientId: activeClientId,
-                productId: f.productId,
-                variantId: f.variantId,
-                type,
-                sessionId: ended.id,
-                locationId,
-                notes: f.notes || undefined,
-                metadata: { verdict: f.verdict, photoCount: f.photoIds.length },
-              }]
-            : [];
-        }),
-      ];
-      if (interactions.length > 0) {
-        try {
-          await batchInteractionsMutation.mutateAsync(interactions);
-        } catch (error) {
-          // The visit itself is saved; don't make the stylist redo it.
-          console.warn('Visit saved, but some frame feedback failed to send:', error);
-          toast.warning('Visit saved', 'Some frame feedback didn’t reach Foundry.');
-        }
-      }
-
-      // 3. Reset stores (after saving the data)
-      resetSession();
-      resetFitting();
-
-      // 4. Check if we need to show follow-up appointment sheet
-      if (outcome === 'booked_next_visit') {
-        setShowFollowUpSheet(true);
-        // Don't call onComplete() yet — wait for appointment sheet to close
-      } else {
-        // Normal completion for other outcomes
-        onComplete();
-      }
-    } catch (error) {
-      console.error('Failed to end session:', error);
-      toast.error('Visit not saved', 'Couldn’t reach Foundry. Check the connection and try again.');
+    const outcomeMap: Record<string, EndPayload['outcome']> = {
+      purchased: 'purchased',
+      booked_next_visit: 'needs_followup',
+      shortlist_emailed: 'saved_for_later',
+      left_empty_handed: 'no_match',
+    };
+    const saved = await closeVisit({
+      outcome: outcomeMap[outcome] ?? 'no_match',
+      notes: internalNotes.trim() || undefined,
+      sendSummary: sendSummary && consentCaptured,
+      summaryLanguage: language,
+      tags: selectedTags,
+      orderRef: orderRef.trim() || undefined,
+    });
+    if (!saved) {
+      toast.error('Visit not saved', 'No active visit found.');
+      return;
     }
+    // Booking the next visit needs Foundry (free times); offline, book it later from the profile.
+    if (outcome === 'booked_next_visit' && isOnline) setShowFollowUpSheet(true);
+    else onComplete();
   }, [
-    activeClientId, sessionId, appointmentId, locationId, outcome, framesTried, sendSummary,
-    consentCaptured, language, internalNotes, selectedTags, orderRef,
-    batchInteractionsMutation, endSessionMutation, resetSession,
-    resetFitting, onComplete,
+    activeClientId, sessionId, outcome, sendSummary, consentCaptured, language, internalNotes,
+    selectedTags, orderRef, closeVisit, isOnline, onComplete,
   ]);
 
   const handleFollowUpSheetClose = useCallback(() => {
