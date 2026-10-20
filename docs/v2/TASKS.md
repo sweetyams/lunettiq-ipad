@@ -12,7 +12,7 @@ Updated with every commit. Branch: `feat/v2-s0-visit-persistence` (iPad), `feat/
 | 0.1 | Restore server session creation | ✅ | `3aa7fe9`. Verified live: visit created on Foundry, ended with outcome |
 | 0.2 | Persist try-ons (frames + verdicts) | ✅ | `3aa7fe9`, `38ca5f7`. Verified live: try-ons → hot lead created |
 | 0.3 | Landscape first + brand + sign-in/lock | ✅ | `4370815`, `450a407`. Brand decision: keep live storefront tokens |
-| 0.4 | i18n FR/EN | 🔄 | Client-facing screens + Floor, appointment statuses, client search (`50306c6`). Next: Clients, visit, Schedule |
+| 0.4 | i18n FR/EN | 🔄 | Client-facing screens, Floor, statuses, search, Clients, Schedule, visit spine. Next: profile tabs, Orders, Follow-ups, Review, sheets |
 | 0.5 | Replace `Alert.alert`, remove "coming soon" | ➡️ | Moved into Phase D (D10) |
 | 0.6 | Offline writes (session, try-ons, notes, holds) | 🔄 | `1e1efe8`: visit close outbox (End visit offline, resumable steps), notes queued via SyncEngine, sync pill. Left: holds, lifestyle questionnaire; airplane-mode check on device |
 | 0.7 | Demo seed relative to today | ✅ | Foundry `dbc614302`, `5de9458c7` (not merged). Re-run before each demo |
@@ -77,7 +77,7 @@ See [01-foundry-handoff-hot-leads.md](01-foundry-handoff-hot-leads.md).
 
 | # | Task | Status |
 |---|---|---|
-| 1.1 | Visit shell (step rail, resumable) | ⬜ |
+| 1.1 | Visit shell (step rail, resumable) | ✅ | `3a8d1cc`. Welcome/File/Lifestyle/Frames/Quote/Close, persisted step + purposes, EN/FR |
 | 1.2 | Quick-build file < 60 s | ⬜ |
 | 1.3 | Rx capture + OCR | ⬜ |
 | 1.4 | Lifestyle in handed mode | ⬜ |
