@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { admitAfterClerkLogin } from '@/src/features/auth/AuthProvider';
 import { Wordmark } from '@/src/ui/Wordmark';
 import { Button, TextField } from '@/src/ui/kit';
+import { useLayout } from '@/src/ui/layout';
 
 // Warm up the browser for Android to reduce auth load time (no-op on iOS).
 export function useWarmUpBrowser() {
@@ -31,6 +32,7 @@ export default function LoginScreen() {
   useWarmUpBrowser();
   const { signIn, setActive, isLoaded } = useSignIn();
   const { startSSOFlow } = useSSO();
+  const layout = useLayout();
 
   const [stage, setStage] = useState<Stage>('main');
   const [email, setEmail] = useState('');
@@ -111,9 +113,9 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className="flex-1 flex-row bg-bg-page">
-      {/* Brand panel: same dark ground and wordmark as the splash and PIN lock */}
-      <View className="flex-1 bg-bg-inverse items-center justify-center px-[48px]">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} className={`flex-1 bg-bg-page ${layout.isPortrait ? 'flex-col' : 'flex-row'}`}>
+      {/* Brand panel: same dark ground and wordmark as the splash and PIN lock (a band on top in portrait) */}
+      <View className={`bg-bg-inverse items-center justify-center px-[48px] ${layout.isPortrait ? 'h-[280px]' : 'flex-1'}`}>
         <Wordmark tone="inverse" caption="In store" />
       </View>
 
