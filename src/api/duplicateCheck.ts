@@ -55,3 +55,14 @@ export function findLikelyDuplicates(p: DuplicateCheckParams, candidates: Client
   }
   return [...out.values()].sort((a, b) => rank[a.reason] - rank[b.reason]);
 }
+
+/** Candidates Foundry returns with a 409 DUPLICATE from POST /api/clients. */
+export function duplicatesFromError(err: unknown): DuplicateClient[] | null {
+  const e = err as { status?: number; code?: string; details?: { candidates?: DuplicateClient[] } };
+  if (e?.status !== 409 || e.code !== 'DUPLICATE') return null;
+  return (e.details?.candidates ?? []).map((c) => ({
+    ...c,
+    fullName: c.fullName ?? [c.firstName, c.lastName].filter(Boolean).join(' '),
+    reason: c.reason ?? 'email',
+  }));
+}

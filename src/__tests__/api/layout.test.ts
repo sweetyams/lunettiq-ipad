@@ -23,3 +23,21 @@ describe('layout size classes', () => {
     expect(sizeClassFor(1200)).toBe('wide');
   });
 });
+
+import { duplicatesFromError } from '@/src/api/duplicateCheck';
+
+describe('Foundry branch responses', () => {
+  it('scanner opens the frame directly when the scan carries catalogue ids', async () => {
+    (globalThis as { __DEV__?: boolean }).__DEV__ = false;
+    const { scannedProductId } = await import('@/src/api/scanResolve');
+    expect(scannedProductId({ shopifyProductId: '8123', productId: 'uuid' })).toBe('8123');
+    expect(scannedProductId({ productId: 'uuid' })).toBe('uuid');
+    expect(scannedProductId({})).toBeNull();
+  });
+
+  it('reads 409 DUPLICATE candidates from create-client', () => {
+    const err = { status: 409, code: 'DUPLICATE', details: { candidates: [{ id: 'c1', firstName: 'Ana', lastName: 'Roy', email: 'a@x.com', phone: null, matchedOn: ['email'] }] } };
+    expect(duplicatesFromError(err)).toEqual([expect.objectContaining({ id: 'c1', fullName: 'Ana Roy', reason: 'email' })]);
+    expect(duplicatesFromError({ status: 500 })).toBeNull();
+  });
+});

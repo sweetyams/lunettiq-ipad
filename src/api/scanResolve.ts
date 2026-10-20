@@ -7,6 +7,8 @@ export type ScanResult =
       item: {
         id: string; sku: string | null; name: string; qrCode: string | null; groupName: string | null;
         familyName: string | null; colour: string | null; colourHex: string | null;
+        /** Catalogue ids (Foundry branch fix/ipad-v2-api-gaps); absent on older servers. */
+        productId?: string | null; shopifyProductId?: string | null;
         locationLevels: Array<{ locationId: string; locationName: string; onHand: number; committed: number }>;
         shelf: { code: string; label: string | null; locationName: string } | null;
       };
@@ -24,4 +26,9 @@ export function resolveScanCode(code: string): Promise<ScanResult> {
 /** Best catalogue search term for a scanned item: family + colour, else its name. */
 export function catalogueQuery(item: { familyName: string | null; colour: string | null; name: string }): string {
   return item.familyName ? `${item.familyName}${item.colour ? ` ${item.colour}` : ''}` : item.name;
+}
+
+/** Catalogue id for the scanned frame when Foundry links it, else null (search instead). */
+export function scannedProductId(item: { productId?: string | null; shopifyProductId?: string | null }): string | null {
+  return item.shopifyProductId || item.productId || null;
 }

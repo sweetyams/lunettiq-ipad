@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { useAppointments, useStaffSchedules, useSchedulingStaff } from '@/src/api/useAppointments';
+import { useAppointments, useStaffSchedules, useSchedulingStaff, useStaffRoster } from '@/src/api/useAppointments';
 import type { Appointment } from '@/src/api/appointments.types';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
@@ -22,6 +22,8 @@ export default function StaffScheduleScreen() {
   const { data: staff } = useSchedulingStaff();
   const { data: schedules } = useStaffSchedules(key);
   const { data: appts, isLoading, error, refetch } = useAppointments({ date: key });
+  // Prefer Foundry's daily roster (real shifts, day-offs, notes); older servers → schedule rows.
+  const { data: roster } = useStaffRoster(key);
 
   const columns = useMemo(() => {
     const byStaff = new Map<string, Appointment[]>();
@@ -30,6 +32,21 @@ export default function StaffScheduleScreen() {
       byStaff.set(k, [...(byStaff.get(k) ?? []), a]);
     }
     for (const l of byStaff.values()) l.sort((x, y) => Date.parse(x.startsAt) - Date.parse(y.startsAt));
+    if (roster) {
+      const fmt = (r: (typeof roster)[number]) =>
+        r.status === 'working' ? r.shifts.map((x) => `${hhmm(x.startTime)}–${hhmm(x.endTime)}`).join(', ') : null;
+      const cols = roster.map((r) => ({
+        id: r.staffId,
+        name: r.name,
+        role: r.title ?? '',
+        hours: fmt(r),
+        list: [...(byStaff.get(r.staffId) ?? []), ...(r.clerkUserId ? byStaff.get(r.clerkUserId) ?? [] : [])]
+          .sort((x, y) => Date.parse(x.startsAt) - Date.parse(y.startsAt)),
+      }));
+      const known = new Set(roster.flatMap((r) => [r.staffId, r.clerkUserId].filter(Boolean) as string[]));
+      const unassigned = [...byStaff.entries()].filter(([k]) => !known.has(k)).flatMap(([, l]) => l);
+      return unassigned.length ? [...cols, { id: 'unassigned', name: 'Unassigned', role: '', hours: null, list: unassigned }] : cols;
+    }
     const cols = (staff ?? []).map((s) => {
       // Foundry's list is "staff with a schedule" (rows may be people or shifts).
       const shift = (schedules ?? []).find((sc) => sc.staffId === s.id || sc.id === s.id);
@@ -38,11 +55,11 @@ export default function StaffScheduleScreen() {
     }).sort((a, b) => Number(!!b.hours) - Number(!!a.hours) || b.list.length - a.list.length);
     const unassigned = byStaff.get('unassigned') ?? [];
     return unassigned.length ? [...cols, { id: 'unassigned', name: 'Unassigned', role: '', hours: null, list: unassigned }] : cols;
-  }, [staff, schedules, appts]);
+  }, [staff, schedules, appts, roster]);
 
   const onDuty = columns.filter((c) => c.hours).length;
   // No schedules at all = hours not set up in Foundry; don't call everyone "Off".
-  const hasRoster = (schedules ?? []).length > 0;
+  const hasRoster = roster ? roster.some((r) => r.status !== 'unset') : (schedules ?? []).length > 0;
   const isToday = key === ymd(new Date());
 
   return (

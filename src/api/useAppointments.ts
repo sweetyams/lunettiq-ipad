@@ -239,6 +239,31 @@ export function useSchedulingStaff() {
   });
 }
 
+export interface RosterEntry {
+  staffId: string;
+  clerkUserId: string | null;
+  name: string;
+  title: string | null;
+  status: 'working' | 'off' | 'unset';
+  shifts: Array<{ startTime: string; endTime: string; locationId: string | null; source: 'schedule' | 'override' }>;
+  note: string | null;
+}
+
+/**
+ * Who works on a date (GET /api/scheduling/roster, Foundry branch fix/ipad-v2-api-gaps).
+ * Resolves to null on servers without the endpoint so callers keep their fallback.
+ */
+export function useStaffRoster(date: string) {
+  return useQuery({
+    queryKey: ['staff-roster', date],
+    queryFn: () => api.get<RosterEntry[]>('/api/scheduling/roster', { params: { date } })
+      .then((r) => (Array.isArray(r) ? r : null))
+      .catch(() => null),
+    staleTime: 5 * 60 * 1000,
+    enabled: /^\d{4}-\d{2}-\d{2}$/.test(date),
+  });
+}
+
 /** Available time slots for a date/type/staff combination */
 export function useAvailableSlots(params: { date: string; typeId?: string; staffId?: string; locationId?: string }) {
   // Only fetch when we have a valid date (YYYY-MM-DD format)

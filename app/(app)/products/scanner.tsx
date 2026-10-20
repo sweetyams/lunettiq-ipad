@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { BarcodeScanner } from '@/src/camera/BarcodeScanner';
 import { api, APIError } from '@/src/api/client';
-import { resolveScanCode, catalogueQuery, type ScanResult } from '@/src/api/scanResolve';
+import { resolveScanCode, catalogueQuery, scannedProductId, type ScanResult } from '@/src/api/scanResolve';
 import { productKey, type Product } from '@/src/api/products.types';
 import { Badge, Button, KeyValue, Section, TextField, kitColors } from '@/src/ui/kit';
 import { toast } from '@/src/ui/useToastStore';
@@ -84,7 +84,7 @@ export default function ScannerScreen() {
                   <Badge tone={onHand > 0 ? 'success' : 'danger'} dot>{onHand > 0 ? `${onHand} on hand` : 'None on hand'}</Badge>
                 </View>
               </View>
-              <Button label="Open frame" variant="primary" onPress={() => openFrame(catalogueQuery(item))} loading={opening} />
+              <Button label="Open frame" variant="primary" onPress={() => { const id = scannedProductId(item); if (id) router.push(`/products/${id}`); else openFrame(catalogueQuery(item)); }} loading={opening} />
               <Section title="Details">
                 <KeyValue rows={[
                   { label: 'SKU', value: item.sku },

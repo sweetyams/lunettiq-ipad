@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, WifiOff } from 'lucide-react-native';
-import { useCreateClient, useTriggerDuplicateCheck } from '@/src/api/useCreateClient';
+import { useCreateClient, useTriggerDuplicateCheck, duplicatesFromError } from '@/src/api/useCreateClient';
 import { useSyncStore } from '@/src/sync/useSyncStore';
 import { Avatar } from '@/src/ui/Avatar';
 import { Button, ChoiceChips, Field, ListRow, Section, TextField, kitColors, formatPhone } from '@/src/ui/kit';
@@ -30,6 +30,8 @@ export default function NewClientScreen() {
   const [form, setForm] = useState<FormData>({ firstName: '', lastName: '', email: '', phone: '', preferredLanguage: 'en', notes: '' });
   const [duplicates, setDuplicates] = useState<DuplicateClient[]>([]);
   const [checking, setChecking] = useState(false);
+  // Foundry refused because the email/phone is already on a client: staff confirm before forcing.
+  const [blocked, setBlocked] = useState(false);
   const createClient = useCreateClient();
   const triggerDuplicateCheck = useTriggerDuplicateCheck();
 
@@ -59,7 +61,7 @@ export default function NewClientScreen() {
     return () => clearTimeout(t);
   }, [form.firstName, form.lastName, form.email, form.phone, isOnline, triggerDuplicateCheck]);
 
-  const set = (k: keyof FormData) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof FormData) => (v: string) => { setBlocked(false); setForm((f) => ({ ...f, [k]: v })); };
 
   const emailError = form.email.trim() && !EMAIL.test(form.email.trim()) ? 'That doesn’t look like an email address.' : null;
   const phoneError = form.phone.trim() && form.phone.replace(/\D/g, '').length < 10 ? 'Use 10 digits, e.g. 514-555-0123.' : null;
@@ -68,6 +70,7 @@ export default function NewClientScreen() {
   const submit = async () => {
     try {
       const created = await createClient.mutateAsync({
+        force: blocked || undefined,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim() || undefined,
@@ -78,7 +81,14 @@ export default function NewClientScreen() {
       toast.success('Client created', `${form.firstName.trim()} ${form.lastName.trim()}`);
       router.replace(`/clients/${created.id}`);
     } catch (e) {
-      // Foundry has no staff create-client route yet (GET-only /api/clients): 404/405.
+      const existing = duplicatesFromError(e);
+      if (existing) {
+        setDuplicates(existing);
+        setBlocked(true);
+        toast.warning('Already a client', 'Open their profile, or tap Create anyway if it’s a different person.');
+        return;
+      }
+      // Older Foundry has no staff create-client route (GET-only /api/clients): 404/405.
       if (e instanceof APIError && (e.status === 404 || e.status === 405)) {
         toast.error('Can’t create clients from the iPad yet', 'Foundry needs a create-client endpoint. Start a visit from Floor for now.');
       } else {
@@ -107,7 +117,7 @@ export default function NewClientScreen() {
         {isOnline ? (
           <View className="flex-row gap-[8px]">
             <Button label="Cancel" variant="ghost" onPress={() => router.back()} />
-            <Button label="Create client" variant="primary" onPress={submit} disabled={!canCreate} loading={createClient.isPending} />
+            <Button label={blocked ? 'Create anyway' : 'Create client'} variant={blocked ? 'secondary' : 'primary'} onPress={submit} disabled={!canCreate} loading={createClient.isPending} />
           </View>
         ) : null}
       </View>
