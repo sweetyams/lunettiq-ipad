@@ -10,6 +10,7 @@ import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { Badge, Button, FilterChips, PageHeader, Section, Sheet, kitColors, staffFirstName } from '@/src/ui/kit';
 import { useLayout } from '@/src/ui/layout';
+import { useT } from '@/src/i18n';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
 import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet, WalkInButton } from '@/src/features/appointments';
 import { useVisitActions } from '@/src/features/appointments/useVisitActions';
@@ -25,6 +26,7 @@ export default function ScheduleScreen() {
   const [booking, setBooking] = useState<{ clientId: string | null; serviceType?: 'follow-up' } | null>(book ? { clientId: book } : null);
   const [editing, setEditing] = useState(false);
   const layout = useLayout();
+  const tr = useT();
   // Portrait 11": the list takes the width; details open as a sheet.
   const twoPane = layout.twoPane;
 
@@ -60,13 +62,13 @@ export default function ScheduleScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       <PageHeader
-        title="Schedule"
+        title={tr('schedule.title')}
         subtitle={subtitle}
-        meta={usingCache ? <Badge tone="warning" dot>Offline copy</Badge> : undefined}
+        meta={usingCache ? <Badge tone="warning" dot>{tr('schedule.offlineCopy')}</Badge> : undefined}
         actions={
           <>
             <WalkInButton />
-            <Button label="Book" icon={CalendarPlus} variant="primary" onPress={() => setBooking({ clientId: null })} />
+            <Button label={tr('schedule.book')} icon={CalendarPlus} variant="primary" onPress={() => setBooking({ clientId: null })} />
           </>
         }
       />
@@ -74,14 +76,14 @@ export default function ScheduleScreen() {
         <FilterChips<View_>
           value="today"
           onChange={(v) => { if (v === 'week') router.push('/appointments/week'); if (v === 'staff') router.push('/appointments/staff-schedule'); }}
-          options={[{ key: 'today', label: 'Today' }, { key: 'week', label: 'Week' }, { key: 'staff', label: 'Staff' }]}
+          options={[{ key: 'today', label: tr('schedule.today') }, { key: 'week', label: tr('schedule.week') }, { key: 'staff', label: tr('schedule.staff') }]}
         />
         {staff && staff.length > 1 ? (
           <View className="flex-1">
             <FilterChips<string>
               value={staffFilter}
               onChange={setStaffFilter}
-              options={[{ key: 'all', label: 'Everyone' }, ...staff.map((s) => {
+              options={[{ key: 'all', label: tr('schedule.everyone') }, ...staff.map((s) => {
                 const first = staffFirstName(s.name);
                 const clash = staff.filter((o) => staffFirstName(o.name) === first).length > 1;
                 return { key: s.id, label: clash ? (s.name.includes('@') ? s.name.split('@')[0]! : s.name) : first };
@@ -99,7 +101,7 @@ export default function ScheduleScreen() {
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
           {isLoading ? <LoadingState /> : error && !usingCache ? <ErrorState error={error} onRetry={refetch} /> : list.length === 0 ? (
-            <EmptyState message={staffFilter === 'all' ? 'Nothing booked today. Use Walk-in for clients who drop by.' : 'Nothing booked for them today.'} />
+            <EmptyState message={staffFilter === 'all' ? tr('schedule.nothingToday') : tr('schedule.nothingForThem')} />
           ) : (
             <Section padded={false}>
               {list.map((a, i) => (
@@ -130,7 +132,7 @@ export default function ScheduleScreen() {
             ) : (
               <View className="flex-1 items-center justify-center gap-[12px]">
                 <CalendarDays size={32} color={kitColors.iconMuted} />
-                <Text className="text-body-md text-text-tertiary">Select an appointment to see details and actions.</Text>
+                <Text className="text-body-md text-text-tertiary">{tr('schedule.selectAppointment')}</Text>
               </View>
             )}
           </View>
@@ -138,7 +140,7 @@ export default function ScheduleScreen() {
       </View>
 
       {!twoPane && selectedAppt ? (
-        <Sheet visible={!editing && !booking} onClose={() => setSelectedId(null)} title="Appointment" fill scroll={false}>
+        <Sheet visible={!editing && !booking} onClose={() => setSelectedId(null)} title={tr('schedule.appointment')} fill scroll={false}>
           <AppointmentDetailPanel
             appointment={selectedAppt}
             onEdit={() => setEditing(true)}

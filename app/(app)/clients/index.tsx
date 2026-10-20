@@ -10,16 +10,17 @@ import { Avatar } from '@/src/ui/Avatar';
 import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, formatPhone, kitColors } from '@/src/ui/kit';
 import type { Client, ClientSearchParams } from '@/src/api/clients.types';
 import { useLayout, useKeyboard } from '@/src/ui/layout';
+import { useT, type TKey } from '@/src/i18n';
 
 // --- Types ---
 type FilterType = 'all' | 'recent' | 'cult' | 'vault' | 'incomplete';
 
 const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'recent', label: 'Recent' },
+  { key: 'all', label: 'clients.all' },
+  { key: 'recent', label: 'clients.recent' },
   { key: 'cult', label: 'CULT' },
   { key: 'vault', label: 'VAULT' },
-  { key: 'incomplete', label: 'Incomplete' },
+  { key: 'incomplete', label: 'clients.incomplete' },
 ];
 
 // --- Main Screen ---
@@ -31,6 +32,9 @@ export default function ClientsScreen() {
   const router = useRouter();
   const layout = useLayout();
   const keyboard = useKeyboard();
+  const tr = useT();
+  // CULT/VAULT are brand names; the rest are dictionary keys.
+  const filters = FILTERS.map((f) => ({ ...f, label: f.label.includes('.') ? tr(f.label as TKey) : f.label }));
   // Portrait 11": one column, rows open the profile. Otherwise list + preview.
   const twoPane = layout.twoPane;
 
@@ -96,9 +100,9 @@ export default function ClientsScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       <PageHeader
-        title="Clients"
-        subtitle={`${total.toLocaleString()} client${total === 1 ? '' : 's'}`}
-        actions={<Button label="New client" icon={UserPlus} onPress={() => router.push('/clients/new')} />}
+        title={tr('clients.title')}
+        subtitle={tr(total === 1 ? 'clients.countOne' : 'clients.countMany', { count: total.toLocaleString() })}
+        actions={<Button label={tr('clients.newClient')} icon={UserPlus} onPress={() => router.push('/clients/new')} />}
       />
 
       <View className="flex-1 flex-row">
@@ -110,7 +114,7 @@ export default function ClientsScreen() {
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search by name, email or phone"
+                placeholder={tr('clients.searchPlaceholder')}
                 placeholderTextColor={kitColors.textTertiary}
                 className="flex-1 ml-[8px] text-body-md text-text-primary"
                 autoCapitalize="none"
@@ -121,7 +125,7 @@ export default function ClientsScreen() {
               />
             </View>
             {/* Filters give way to results while the keyboard is up. */}
-            {keyboard.visible ? null : <FilterChips<FilterType> value={activeFilter} onChange={setActiveFilter} options={FILTERS} />}
+            {keyboard.visible ? null : <FilterChips<FilterType> value={activeFilter} onChange={setActiveFilter} options={filters} />}
           </View>
 
           <View className="flex-1">
@@ -155,7 +159,7 @@ export default function ClientsScreen() {
           ) : (
             <View className="flex-1 items-center justify-center">
               <User size={40} color={kitColors.iconMuted} />
-              <Text className="text-body-md text-text-tertiary mt-[12px]">Select a client to preview</Text>
+              <Text className="text-body-md text-text-tertiary mt-[12px]">{tr('clients.selectToPreview')}</Text>
             </View>
           )}
         </View> : null}
@@ -172,6 +176,7 @@ interface ClientRowProps {
 }
 
 function ClientRow({ client, isSelected, onPress }: ClientRowProps) {
+  const tr = useT();
   const name = [client.firstName, client.lastName].filter(Boolean).join(' ');
   const hasCultTag = (client.tags ?? []).some((t) => t === 'member-cult');
   const hasVaultTag = (client.tags ?? []).some((t) => t === 'member-vault');
@@ -179,9 +184,9 @@ function ClientRow({ client, isSelected, onPress }: ClientRowProps) {
   // Relative time
   const activityText = useMemo(() => {
     const diff = Math.floor((Date.now() - new Date(client.updatedAt).getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Yesterday';
-    if (diff < 7) return `${diff}d ago`;
+    if (diff === 0) return tr('floor.today');
+    if (diff === 1) return tr('floor.yesterday');
+    if (diff < 7) return `${diff}d`;
     return new Date(client.updatedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
   }, [client.updatedAt]);
 
@@ -190,17 +195,17 @@ function ClientRow({ client, isSelected, onPress }: ClientRowProps) {
     <ListRow
       selected={isSelected}
       onPress={onPress}
-      accessibilityLabel={`${name || 'Unnamed client'}, last activity ${activityText}`}
+      accessibilityLabel={tr('clients.lastActivityA11y', { name: name || tr('clients.noName'), when: activityText })}
       leading={<Avatar firstName={client.firstName} lastName={client.lastName} size="md" />}
       title={
         <View className="flex-row items-center gap-[8px]">
           <Text className={`text-body-md text-text-primary ${name ? 'font-medium' : 'text-text-tertiary'}`} numberOfLines={1}>
-            {name || 'No name yet'}
+            {name || tr('clients.noName')}
           </Text>
           {tier ? <Badge tone="info">{tier}</Badge> : null}
         </View>
       }
-      subtitle={client.email || 'No email'}
+      subtitle={client.email || tr('clients.noEmail')}
       trailing={<Text className="text-body-sm text-text-tertiary">{activityText}</Text>}
     />
   );
@@ -212,11 +217,12 @@ interface ClientPreviewProps {
 }
 
 function ClientPreview({ client }: ClientPreviewProps) {
+  const tr = useT();
   const router = useRouter();
   const { startSession } = useSessionStore();
   const privacyMode = usePrivacyStore((s) => s.mode);
 
-  const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || 'Unknown';
+  const name = [client.firstName, client.lastName].filter(Boolean).join(' ') || tr('clients.noName');
 
   // Tier from tags
   const tierTag = (client.tags ?? []).find((t) => t.startsWith('member-'));
@@ -236,40 +242,21 @@ function ClientPreview({ client }: ClientPreviewProps) {
 
   const formatLastVisit = (dateStr: string): string => {
     const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
-    if (diff === 0) return 'Today';
-    if (diff === 1) return 'Yesterday';
-    if (diff < 30) return `${diff} days ago`;
+    if (diff === 0) return tr('floor.today');
+    if (diff === 1) return tr('floor.yesterday');
+    if (diff < 30) return tr('clients.daysAgo', { count: diff });
     return new Date(dateStr).toLocaleDateString('en-CA', { day: 'numeric', month: 'short' });
   };
 
   // Contact summary line
-  const contactParts = [
-    client.email,
-    formatPhone(client.phone) || 'No phone',
-    'EN', // TODO: from client language preference
-  ].filter(Boolean);
+  const contactParts = [client.email, formatPhone(client.phone) || tr('clients.noPhone')].filter(Boolean);
 
-  // Profile gaps (computed from missing data)
-  const gaps = useMemo(() => {
-    const g: { id: string; label: string }[] = [];
-    // These would come from a completeness endpoint (P0 API gap)
-    // For now compute from available data
-    g.push({ id: 'rx', label: 'Prescription' });
-    g.push({ id: 'fit', label: 'Fit measurements' });
-    g.push({ id: 'lifestyle', label: 'Lifestyle' });
-    g.push({ id: 'insurance', label: 'Insurance' });
-    return g;
-  }, []);
 
   const handleStartSession = useCallback(() => {
     startSession(client.id, name);
     router.push(`/clients/${client.id}/session`);
   }, [client.id, name, startSession, router]);
 
-  const handleGapPress = useCallback((gapId: string) => {
-    // Navigate to profile with the relevant sheet open
-    router.push(`/clients/${client.id}`);
-  }, [client.id, router]);
 
   return (
     <ScrollView className="flex-1" contentContainerStyle={{ padding: 40, paddingBottom: 140, gap: 24 }} showsVerticalScrollIndicator={false}>
@@ -280,7 +267,7 @@ function ClientPreview({ client }: ClientPreviewProps) {
           <View className="flex-row items-center gap-[10px]">
             <Text className="text-display-md text-text-primary" numberOfLines={1}>{name}</Text>
             {tier ? <Badge tone="info">{tier}</Badge> : null}
-            {isActive ? <Badge tone="success" dot>Active</Badge> : null}
+            {isActive ? <Badge tone="success" dot>{tr('clients.active')}</Badge> : null}
           </View>
           <Text className="text-body-md text-text-tertiary mt-[4px]" numberOfLines={1}>{contactParts.join(' · ')}</Text>
         </View>
@@ -288,24 +275,17 @@ function ClientPreview({ client }: ClientPreviewProps) {
 
       <StatRow
         stats={[
-          { value: String(client.orderCount ?? 0), label: 'Orders' },
-          { value: formatCurrency(client.totalSpent), label: 'Lifetime value' },
-          { value: formatLastVisit(client.updatedAt), label: 'Last visit' },
+          { value: String(client.orderCount ?? 0), label: tr('clients.orders') },
+          { value: formatCurrency(client.totalSpent), label: tr('clients.lifetimeValue') },
+          { value: formatLastVisit(client.updatedAt), label: tr('clients.lastActivity') },
         ]}
       />
 
-      <Section title="Missing from profile" count={gaps.length}>
-        <View className="flex-row flex-wrap gap-[8px]">
-          {gaps.map((g) => (
-            <Button key={g.id} label={g.label} icon={Plus} size="sm" onPress={() => handleGapPress(g.id)} />
-          ))}
-        </View>
-      </Section>
 
       <View className="flex-row gap-[12px]">
-        <Button label="Start visit" icon={Play} variant="primary" size="lg" onPress={handleStartSession} />
-        <Button label="Open profile" size="lg" onPress={() => router.push(`/clients/${client.id}`)} />
-        <Button label="Book appointment" icon={CalendarPlus} variant="ghost" size="lg" onPress={() => router.push(`/appointments?book=${client.id}`)} />
+        <Button label={tr('clients.startVisit')} icon={Play} variant="primary" size="lg" onPress={handleStartSession} />
+        <Button label={tr('clients.openProfile')} size="lg" onPress={() => router.push(`/clients/${client.id}`)} />
+        <Button label={tr('clients.bookAppointment')} icon={CalendarPlus} variant="ghost" size="lg" onPress={() => router.push(`/appointments?book=${client.id}`)} />
       </View>
     </ScrollView>
   );
@@ -329,28 +309,30 @@ function ListLoadingState() {
 }
 
 function ListErrorState({ onRetry }: { onRetry: () => void }) {
+  const tr = useT();
   return (
     <View className="flex-1 items-center justify-center py-xl px-lg">
       <Text className="text-body-md text-text-primary font-medium mb-xs">
-        Couldn’t load clients
+        {tr('clients.loadFailed')}
       </Text>
       <Text className="text-body-sm text-text-tertiary text-center mb-lg">
-        Check the connection and try again.
+        {tr('clients.checkConnection')}
       </Text>
-      <Button label="Try again" size="sm" onPress={onRetry} />
+      <Button label={tr('clients.tryAgain')} size="sm" onPress={onRetry} />
     </View>
   );
 }
 
 function ListEmptyState({ searchQuery }: { searchQuery: string }) {
+  const tr = useT();
   return (
     <View className="flex-1 items-center justify-center py-xl px-lg">
       <User size={40} color={kitColors.iconMuted} />
       <Text className="text-body-md text-text-primary font-medium mt-md text-center">
-        {searchQuery ? `No results for "${searchQuery}"` : 'No clients yet'}
+        {searchQuery ? tr('clients.noResults', { q: searchQuery }) : tr('clients.noClients')}
       </Text>
       <Text className="text-body-sm text-text-muted text-center mt-xs">
-        {searchQuery ? 'Try adjusting your search terms' : 'Create your first client to get started'}
+        {searchQuery ? tr('clients.adjustSearch') : tr('clients.createFirst')}
       </Text>
     </View>
   );
