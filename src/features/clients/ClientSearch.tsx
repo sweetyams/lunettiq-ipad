@@ -6,6 +6,7 @@ import { Avatar } from '@/src/ui/Avatar';
 import { ListRow, kitColors } from '@/src/ui/kit';
 import { formatPhone } from '@/src/ui/kit/format';
 import type { Client } from '@/src/api/clients.types';
+import { useT } from '@/src/i18n';
 
 export const clientName = (c: Client) => [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'No name yet';
 
@@ -28,7 +29,7 @@ export function useDebounced<T>(value: T, ms = 250): T {
  * dismisses the keyboard to see more.
  */
 export function ClientSearch({
-  onPick, trailing, placeholder = 'Name, email or phone', autoFocus = true, excludeIds, emptyHint, selectedId, header,
+  onPick, trailing, placeholder, autoFocus = true, excludeIds, emptyHint, selectedId, header,
 }: {
   onPick: (client: Client) => void;
   /** Per-row action (e.g. a "Start visit" button). Rows are tappable either way. */
@@ -42,6 +43,7 @@ export function ClientSearch({
   /** Rendered above the results when the field is empty (e.g. recent clients). */
   header?: ReactNode;
 }) {
+  const tr = useT();
   const [query, setQuery] = useState('');
   const input = useRef<TextInput>(null);
   const q = useDebounced(query.trim());
@@ -59,7 +61,7 @@ export function ClientSearch({
             ref={input}
             value={query}
             onChangeText={setQuery}
-            placeholder={placeholder}
+            placeholder={placeholder ?? tr('search.placeholder')}
             placeholderTextColor={kitColors.iconMuted}
             className="flex-1 text-body-lg text-text-primary py-[10px]"
             autoFocus={autoFocus}
@@ -70,17 +72,17 @@ export function ClientSearch({
             enablesReturnKeyAutomatically
             blurOnSubmit={false}
             onSubmitEditing={() => { if (results[0]) onPick(results[0]); }}
-            accessibilityLabel="Search clients"
+            accessibilityLabel={tr('search.a11y')}
           />
           {query ? (
-            <Pressable onPress={() => { setQuery(''); input.current?.focus(); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
+            <Pressable onPress={() => { setQuery(''); input.current?.focus(); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={tr('search.clear')}>
               <X size={18} color={kitColors.iconMuted} />
             </Pressable>
           ) : null}
         </View>
         {active && results.length > 0 ? (
           <Text className="text-body-sm text-text-tertiary mt-[6px]">
-            {results.length} {results.length === 1 ? 'match' : 'matches'}{waiting ? ' · searching…' : ' · Return opens the first'}
+            {tr(results.length === 1 ? 'search.matchOne' : 'search.matchMany', { count: results.length })} · {waiting ? tr('search.searching') : tr('search.returnOpens')}
           </Text>
         ) : null}
       </View>
@@ -104,9 +106,9 @@ export function ClientSearch({
         )}
         ListEmptyComponent={
           <View className="px-[20px] py-[16px]">
-            {!active ? (header ?? <Text className="text-body-sm text-text-tertiary">Type at least two letters.</Text>)
-              : waiting ? <Text className="text-body-sm text-text-tertiary">Searching…</Text>
-              : <Text className="text-body-sm text-text-tertiary">{emptyHint ?? `No client matches “${q}”.`}</Text>}
+            {!active ? (header ?? <Text className="text-body-sm text-text-tertiary">{tr('search.typeMore')}</Text>)
+              : waiting ? <Text className="text-body-sm text-text-tertiary">{tr('search.searchingLong')}</Text>
+              : <Text className="text-body-sm text-text-tertiary">{emptyHint ?? tr('search.none', { q })}</Text>}
           </View>
         }
       />

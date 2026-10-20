@@ -2,6 +2,7 @@ import { View, Text, Pressable } from 'react-native';
 import type { Appointment } from '@/src/api/appointments.types';
 import { Badge, Button, type BadgeTone } from '@/src/ui/kit';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
+import { useT, type TKey } from '@/src/i18n';
 
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   scheduled: { label: 'Scheduled', tone: 'outline' },
@@ -41,7 +42,9 @@ export function AppointmentRow({
   hideAction?: boolean;
 }) {
   const privacyMode = usePrivacyStore((s) => s.mode);
-  const status = STATUS[appointment.status] ?? STATUS.scheduled!;
+  const tr = useT();
+  const statusKey = STATUS[appointment.status] ? appointment.status : 'scheduled';
+  const status = { ...STATUS[statusKey]!, label: tr(`status.${statusKey}` as TKey) };
   const { time, period } = formatTime(appointment.startsAt);
   const done = appointment.status === 'completed' || appointment.status === 'no_show' || appointment.status === 'cancelled';
 
@@ -49,11 +52,11 @@ export function AppointmentRow({
   let action: { label: string; onPress: () => void } | null = null;
   if (privacyMode !== 'client' && !hideAction) {
     if (appointment.status === 'scheduled' || appointment.status === 'confirmed') {
-      action = { label: 'Mark arrived', onPress: () => onMarkArrived(appointment.id) };
+      action = { label: tr('status.markArrived'), onPress: () => onMarkArrived(appointment.id) };
     } else if (appointment.status === 'arrived') {
-      action = { label: 'Start visit', onPress: () => onStartVisit(appointment.id) };
+      action = { label: tr('status.startVisit'), onPress: () => onStartVisit(appointment.id) };
     } else if (appointment.status === 'in_progress') {
-      action = { label: 'Open visit', onPress: () => onOpenVisit(appointment.id) };
+      action = { label: tr('status.openVisit'), onPress: () => onOpenVisit(appointment.id) };
     }
   }
 
@@ -63,7 +66,7 @@ export function AppointmentRow({
       onLongPress={onLongPress}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
-      accessibilityLabel={`${time} ${period}, ${appointment.clientName ?? 'Client'}, ${appointment.type}, ${status.label}`}
+      accessibilityLabel={`${time} ${period}, ${appointment.clientName ?? tr('floor.client')}, ${appointment.type}, ${status.label}`}
     >
       {({ pressed }) => (
         <View className={`flex-row items-center gap-[20px] px-[20px] min-h-[76px] py-[12px] ${first ? '' : 'border-t border-border'} ${pressed || selected ? 'bg-bg-subtle' : ''} ${done ? 'opacity-50' : ''}`}>
@@ -72,7 +75,7 @@ export function AppointmentRow({
             <Text className="text-body-sm text-text-tertiary">{period}</Text>
           </View>
           <View className="flex-1">
-            <Text className="text-body-lg font-medium text-text-primary" numberOfLines={1}>{appointment.clientName ?? 'Client'}</Text>
+            <Text className="text-body-lg font-medium text-text-primary" numberOfLines={1}>{appointment.clientName ?? tr('floor.client')}</Text>
             <Text className="text-body-sm text-text-tertiary mt-[2px]" numberOfLines={1}>
               {appointment.type}{appointment.duration ? ` · ${appointment.duration} min` : ''}
             </Text>

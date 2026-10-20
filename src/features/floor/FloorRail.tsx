@@ -8,11 +8,12 @@ import { usePermissions } from '@/src/features/auth/usePermissions';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
 import { Badge, ListRow, Section, StatusDot, kitColors } from '@/src/ui/kit';
+import { useT } from '@/src/i18n';
 
-function relativeDay(iso: string): string {
+function relativeDay(iso: string, tr: ReturnType<typeof useT>): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
+  if (days <= 0) return tr('floor.today');
+  if (days === 1) return tr('floor.yesterday');
   if (days < 7) return `${days}d ago`;
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
@@ -34,14 +35,15 @@ function Quiet({ children }: { children: string }) {
 
 /** Holds placed during visits; staff-only (hidden in client view). */
 export function HoldsSection() {
+  const tr = useT();
   const router = useRouter();
   const privacyMode = usePrivacyStore((s) => s.mode);
   const { data: holds, isLoading } = useActiveHolds();
   if (privacyMode === 'client') return null;
   const list = holds ?? [];
   return (
-    <Section title="Holds" count={list.length} padded={false}>
-      {isLoading ? <Loading /> : list.length === 0 ? <Quiet>No frames on hold.</Quiet> : list.map((h, i) => {
+    <Section title={tr('floor.holds')} count={list.length} padded={false}>
+      {isLoading ? <Loading /> : list.length === 0 ? <Quiet>{tr('floor.noHolds')}</Quiet> : list.map((h, i) => {
         const left = h.expiresAt ? timeLeft(h.expiresAt) : null;
         return (
           <ListRow
@@ -59,6 +61,7 @@ export function HoldsSection() {
 
 /** Rx orders and optician review at a glance; each row opens its tab. */
 export function RxSection() {
+  const tr = useT();
   const router = useRouter();
   const { data: counts } = useRxPipelineCounts();
   const { data: approvals } = useRxApprovalSummary();
@@ -71,7 +74,7 @@ export function RxSection() {
   ];
   if (canReview) rows.push({ key: 'review', tone: 'info', label: `${approvals?.submitted ?? 0} waiting for your review`, route: '/review' });
   return (
-    <Section title="Orders" padded={false}>
+    <Section title={tr('floor.orders')} padded={false}>
       {rows.map((r, i) => (
         <ListRow
           key={r.key}
@@ -87,18 +90,19 @@ export function RxSection() {
 }
 
 export function RecentClientsSection() {
+  const tr = useT();
   const router = useRouter();
   const { data, isLoading } = useRecentClients();
   const clients = data?.clients ?? [];
   return (
-    <Section title="Recent clients" padded={false} action={{ label: 'All clients', onPress: () => router.push('/clients') }}>
-      {isLoading ? <Loading /> : clients.length === 0 ? <Quiet>No recent clients.</Quiet> : clients.map((c, i) => (
+    <Section title={tr('floor.recentClients')} padded={false} action={{ label: tr('floor.allClients'), onPress: () => router.push('/clients') }}>
+      {isLoading ? <Loading /> : clients.length === 0 ? <Quiet>{tr('floor.noRecent')}</Quiet> : clients.map((c, i) => (
         <ListRow
           key={c.id}
           divider={i > 0}
           leading={<Avatar firstName={c.firstName} lastName={c.lastName} size="sm" />}
-          title={[c.firstName, c.lastName].filter(Boolean).join(' ') || 'Client'}
-          trailing={<Text className="text-body-sm text-text-tertiary">{relativeDay(c.updatedAt)}</Text>}
+          title={[c.firstName, c.lastName].filter(Boolean).join(' ') || tr('floor.client')}
+          trailing={<Text className="text-body-sm text-text-tertiary">{relativeDay(c.updatedAt, tr)}</Text>}
           onPress={() => router.push(`/clients/${c.id}`)}
         />
       ))}

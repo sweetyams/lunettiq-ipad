@@ -14,9 +14,12 @@ import { ErrorState } from '@/src/ui/ErrorState';
 import { toast } from '@/src/ui/useToastStore';
 import type { Appointment } from '@/src/api/appointments.types';
 import { useLayout } from '@/src/ui/layout';
+import { useT, useLangStore } from '@/src/i18n';
 
 export default function HomeScreen() {
   const layout = useLayout();
+  const tr = useT();
+  const lang = useLangStore((st) => st.uiLang);
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -56,9 +59,9 @@ export default function HomeScreen() {
 
   const list = sortedAppointments;
   const upcoming = list.filter((a) => a.status === 'scheduled' || a.status === 'confirmed').length;
-  const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const dateLabel = new Date().toLocaleDateString(lang === 'fr' ? 'fr-CA' : 'en-CA', { weekday: 'long', month: 'long', day: 'numeric' });
   const subtitle = list.length
-    ? `${dateLabel} · ${list.length} appointment${list.length === 1 ? '' : 's'}${upcoming ? ` · ${upcoming} still to come` : ''}`
+    ? `${dateLabel} · ${tr(list.length === 1 ? 'floor.countOne' : 'floor.countMany', { count: list.length })}${upcoming ? ` · ${tr('floor.stillToCome', { count: upcoming })}` : ''}`
     : dateLabel;
 
   // Network/auth errors fall back to the normal layout (offline-first); real errors show a retry.
@@ -72,11 +75,11 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       <PageHeader
-        title="Today"
+        title={tr('floor.title')}
         subtitle={subtitle}
         actions={
           <>
-            <Button label="Schedule" icon={Calendar} onPress={() => router.push('/appointments')} />
+            <Button label={tr('floor.schedule')} icon={Calendar} onPress={() => router.push('/appointments')} />
             <WalkInButton variant="primary" />
           </>
         }
@@ -90,15 +93,15 @@ export default function HomeScreen() {
       >
         {/* Appointments (side by side with the rail; stacked in portrait 11") */}
         <View className={layout.twoPane ? 'flex-[3]' : ''}>
-          <Section title="Appointments" count={list.length} padded={false}>
+          <Section title={tr('floor.appointments')} count={list.length} padded={false}>
             {isLoading ? (
               <LoadingState />
             ) : error && !isRecoverableError ? (
               <View className="p-[20px]"><ErrorState error="Couldn’t load today’s appointments" onRetry={refetch} /></View>
             ) : list.length === 0 ? (
               <View className="px-[20px] pb-[28px] pt-[8px] items-start gap-[12px]">
-                <Text className="text-body-md text-text-secondary">No appointments today. Walk-ins start from Schedule.</Text>
-                <Button label="Find a client" size="sm" onPress={() => router.push('/clients')} />
+                <Text className="text-body-md text-text-secondary">{tr('floor.noneToday')}</Text>
+                <Button label={tr('floor.findClient')} size="sm" onPress={() => router.push('/clients')} />
               </View>
             ) : (
               list.map((a, i) => (
