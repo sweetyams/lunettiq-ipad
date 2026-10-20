@@ -9,6 +9,7 @@ import { Button, ChoiceChips, Field, ListRow, Section, TextField, kitColors, for
 import { toast } from '@/src/ui/useToastStore';
 import { APIError } from '@/src/api/client';
 import type { DuplicateClient } from '@/src/api/duplicateCheck';
+import { useLayout } from '@/src/ui/layout';
 
 interface FormData {
   firstName: string;
@@ -23,6 +24,7 @@ interface FormData {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function NewClientScreen() {
+  const layout = useLayout();
   const router = useRouter();
   const isOnline = useSyncStore((s) => s.isOnline);
   const [form, setForm] = useState<FormData>({ firstName: '', lastName: '', email: '', phone: '', preferredLanguage: 'en', notes: '' });
@@ -131,9 +133,9 @@ export default function NewClientScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       {header}
-      <ScrollView contentContainerStyle={{ padding: 32, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
-        <View className="flex-row gap-[24px] items-start">
-          <View className="flex-[3]">
+      <ScrollView contentContainerStyle={{ padding: layout.size === 'compact' ? 24 : 32, paddingBottom: 140 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
+        <View className={layout.twoPane ? 'flex-row gap-[24px] items-start' : 'gap-[24px]'}>
+          <View className={layout.twoPane ? 'flex-[3]' : ''}>
             <Section>
               <View className="gap-[20px]">
                 <View className="flex-row gap-[16px]">
@@ -156,7 +158,7 @@ export default function NewClientScreen() {
             </Section>
           </View>
 
-          <View className="flex-[2]">
+          <View className={layout.twoPane ? 'flex-[2]' : ''}>
             <Section title="Already a client?" count={duplicates.length || undefined} padded={duplicates.length === 0}>
               {duplicates.length === 0 ? (
                 <Text className="text-body-sm text-text-tertiary">

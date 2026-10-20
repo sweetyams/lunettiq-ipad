@@ -25,6 +25,7 @@ import { ClinicalTab } from '@/src/features/client-profile/tabs/ClinicalTab';
 import { HistoryTab } from '@/src/features/client-profile/tabs/HistoryTab';
 import { RelationshipsTab } from '@/src/features/client-profile/tabs/RelationshipsTab';
 import { rxStatus, rxTypeLabel } from '@/src/features/client-profile/tabs/rxFormat';
+import { useLayout } from '@/src/ui/layout';
 
 type TabType = 'overview' | 'clinical' | 'history' | 'relationships';
 
@@ -46,6 +47,7 @@ export default function ClientProfileScreen() {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const close = useCallback(() => setSheet(null), []);
+  const layout = useLayout();
 
   const { data: client, isLoading, error, refetch } = useClient(id);
   const { data: prescriptions } = usePrescriptions({ clientId: id });
@@ -81,6 +83,57 @@ export default function ClientProfileScreen() {
   const contactLine = [client.email, phone].filter(Boolean).join(' · ') || 'No email or phone yet';
   const rxBadge = latestRx ? rxStatus(latestRx) : null;
 
+  const railSections = (
+    <>
+        <Section title="Summary">
+          <KeyValue
+            mono
+            rows={[
+              { label: 'Orders', value: String(client.orderCount ?? 0) },
+              { label: 'Lifetime value', value: formatDollars(client.totalSpent) },
+              { label: 'Average order', value: client.orderCount ? formatDollars(Math.round(((client.totalSpent ?? 0) / client.orderCount) * 100) / 100) : null },
+              { label: 'Client since', value: formatDate(client.createdAt) },
+            ]}
+          />
+        </Section>
+
+        <Section
+          title="Prescription"
+          action={{ label: latestRx ? 'View' : 'Add', onPress: () => (latestRx ? setActiveTab('clinical') : setSheet('prescription')) }}
+        >
+          {latestRx && rxBadge ? (
+            <View className="gap-[8px]">
+              <Text className="text-body-md font-medium text-text-primary">
+                {latestRx.prescribedAt ? `Exam ${formatDate(latestRx.prescribedAt)}` : rxTypeLabel(latestRx)}
+              </Text>
+              {latestRx.prescribedBy || latestRx.clinicName ? (
+                <Text className="text-body-sm text-text-tertiary">{[latestRx.prescribedBy, latestRx.clinicName].filter(Boolean).join(' · ')}</Text>
+              ) : null}
+              <View className="flex-row">
+                <Badge tone={rxBadge.tone} dot={rxBadge.tone !== 'neutral'}>{rxBadge.label}</Badge>
+              </View>
+            </View>
+          ) : (
+            <Text className="text-body-sm text-text-tertiary">None on file.</Text>
+          )}
+        </Section>
+
+        <Section title="Next visit" action={{ label: 'Book', onPress: () => router.push(`/appointments?book=${client.id}`) }}>
+          {nextVisit ? (
+            <View className="gap-[4px]">
+              <Text className="text-body-md font-medium text-text-primary">{nextVisit.type}</Text>
+              <Text className="text-body-sm text-text-tertiary">
+                {new Date(nextVisit.startsAt).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                {nextVisit.staffName ? ` · ${nextVisit.staffName}` : ''}
+              </Text>
+            </View>
+          ) : (
+            <Text className="text-body-sm text-text-tertiary">Nothing booked.</Text>
+          )}
+        </Section>
+    </>
+  );
+
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
@@ -115,63 +168,22 @@ export default function ClientProfileScreen() {
       <Tabs<TabType> value={activeTab} onChange={setActiveTab} options={availableTabs} />
 
       <View className="flex-1 flex-row">
-        {/* Inspector rail */}
-        {staff ? (
+        {/* Inspector rail (beside the tabs when there's room; on top of Overview in portrait 11") */}
+        {staff && layout.twoPane ? (
           <ScrollView
-            className="w-[320px] flex-grow-0 border-r border-border"
+            className="flex-grow-0 border-r border-border"
+            style={{ width: layout.size === 'wide' ? 320 : 280 }}
             contentContainerStyle={{ padding: 24, paddingBottom: 140, gap: 20 }}
             showsVerticalScrollIndicator={false}
           >
-            <Section title="Summary">
-              <KeyValue
-                mono
-                rows={[
-                  { label: 'Orders', value: String(client.orderCount ?? 0) },
-                  { label: 'Lifetime value', value: formatDollars(client.totalSpent) },
-                  { label: 'Average order', value: client.orderCount ? formatDollars(Math.round(((client.totalSpent ?? 0) / client.orderCount) * 100) / 100) : null },
-                  { label: 'Client since', value: formatDate(client.createdAt) },
-                ]}
-              />
-            </Section>
-
-            <Section
-              title="Prescription"
-              action={{ label: latestRx ? 'View' : 'Add', onPress: () => (latestRx ? setActiveTab('clinical') : setSheet('prescription')) }}
-            >
-              {latestRx && rxBadge ? (
-                <View className="gap-[8px]">
-                  <Text className="text-body-md font-medium text-text-primary">
-                    {latestRx.prescribedAt ? `Exam ${formatDate(latestRx.prescribedAt)}` : rxTypeLabel(latestRx)}
-                  </Text>
-                  {latestRx.prescribedBy || latestRx.clinicName ? (
-                    <Text className="text-body-sm text-text-tertiary">{[latestRx.prescribedBy, latestRx.clinicName].filter(Boolean).join(' · ')}</Text>
-                  ) : null}
-                  <View className="flex-row">
-                    <Badge tone={rxBadge.tone} dot={rxBadge.tone !== 'neutral'}>{rxBadge.label}</Badge>
-                  </View>
-                </View>
-              ) : (
-                <Text className="text-body-sm text-text-tertiary">None on file.</Text>
-              )}
-            </Section>
-
-            <Section title="Next visit" action={{ label: 'Book', onPress: () => router.push(`/appointments?book=${client.id}`) }}>
-              {nextVisit ? (
-                <View className="gap-[4px]">
-                  <Text className="text-body-md font-medium text-text-primary">{nextVisit.type}</Text>
-                  <Text className="text-body-sm text-text-tertiary">
-                    {new Date(nextVisit.startsAt).toLocaleString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                    {nextVisit.staffName ? ` · ${nextVisit.staffName}` : ''}
-                  </Text>
-                </View>
-              ) : (
-                <Text className="text-body-sm text-text-tertiary">Nothing booked.</Text>
-              )}
-            </Section>
+            {railSections}
           </ScrollView>
         ) : null}
 
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 140 }}>
+          {activeTab === 'overview' && staff && !layout.twoPane ? (
+            <View className="gap-[20px] mb-[24px]">{railSections}</View>
+          ) : null}
           {activeTab === 'overview' && (
             <OverviewTab clientId={client.id} client={client} onOpenSheet={setSheet} />
           )}

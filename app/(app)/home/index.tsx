@@ -13,8 +13,10 @@ import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { toast } from '@/src/ui/useToastStore';
 import type { Appointment } from '@/src/api/appointments.types';
+import { useLayout } from '@/src/ui/layout';
 
 export default function HomeScreen() {
+  const layout = useLayout();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -82,12 +84,12 @@ export default function HomeScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 32, paddingBottom: 140, gap: 24, flexDirection: 'row', alignItems: 'flex-start' }}
+        contentContainerStyle={{ padding: layout.size === 'compact' ? 24 : 32, paddingBottom: 140, gap: 24, flexDirection: layout.twoPane ? 'row' : 'column', alignItems: layout.twoPane ? 'flex-start' : 'stretch' }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* Appointments */}
-        <View className="flex-[3]">
+        {/* Appointments (side by side with the rail; stacked in portrait 11") */}
+        <View className={layout.twoPane ? 'flex-[3]' : ''}>
           <Section title="Appointments" count={list.length} padded={false}>
             {isLoading ? (
               <LoadingState />
@@ -115,7 +117,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Rail */}
-        <View className="flex-[2] gap-[24px]">
+        <View className={`gap-[24px] ${layout.twoPane ? 'flex-[2]' : ''}`}>
           <RxSection />
           <HoldsSection />
           <RecentClientsSection />

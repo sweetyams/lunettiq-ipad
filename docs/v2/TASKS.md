@@ -37,9 +37,9 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 | # | Task | Status | Notes |
 |---|---|---|---|
 | D0 | Found UI tokens, system font, touch type scale | ✅ | White surfaces, zinc hairlines, Found UI status colours, 14px floor, legacy class aliases. Elevation presets move to D1 (kit components) |
-| D1 | Kit components + preview screen | ⬜ | Screen, PageHeader, Section, Badge, StatusDot, Button, SegmentedControl, ListRow, KeyValue, StatTile, Avatar, Sheet, EmptyState, Confirm |
-| D2 | App shell (status pill, tab badges, session bar, lock) | ⬜ | |
-| D3 | Floor (reference screen, review before going wide) | ⬜ | |
+| D1 | Kit components + preview screen | ✅ | `src/ui/kit` (Badge, StatusDot, Button, Section, PageHeader, ListRow, StatRow, FilterChips, KeyValue, Tabs, Sheet, Field, ChoiceChips, VerdictPicker). Built during D4–D10; no separate preview screen |
+| D2 | App shell (status pill, tab badges, session bar, lock) | ✅ | Done during D5/D9 (SessionBar, FloatingTabBar, PIN lock) |
+| D3 | Floor (reference screen, review before going wide) | ✅ | Walk-in primary (D11) |
 | D4 | Clients: list, profile + tabs, new client, profile sheets | ✅ | `D4.1`–`D4.4` done. New client is blocked on Foundry (no create endpoint; see handoff §"Missing / mismatched client endpoints") |
 | D5 | Visit: workspace, fitting, handed mode, end visit | ✅ | Rebuilt on the kit; handed-mode exit now PIN-gated. To verify on device: double-tap exit → PIN, End visit sheet |
 | D6 | Schedule + appointment sheets | ✅ | Today / Week / Staff + detail inspector, one-page booking, reschedule, real walk-in. Foundry: roster + holds filters (handoff) |
@@ -51,15 +51,26 @@ Spec and full screen audit: [02-design-parity.md](02-design-parity.md). *Builder
 
 Baseline (Oct 16): 288 grey fills · 305 hex colours · 266 sub-14px text · 85 brand-blue buttons · 79 non-existent classes · 30 `Alert.alert` · 10 left-edge status bars · no custom font loaded.
 
+## Phase O · Orientation, screen sizes and keyboard (added Oct 20)
+
+0.3 locked the app to landscape and every layout assumes a 13" iPad (fixed 640/880 pt sheets, 784 pt sheet height, 440 pt list column). On an 11" iPad the keyboard leaves room for one search result; portrait isn't possible. Goal: usable in both orientations on 11" and 13", and search that stays readable with the keyboard up.
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| O1 | Unlock orientation; `useLayout` (portrait/landscape, compact/regular/wide) + `useKeyboard` hooks | 🔄 | Native change: needs a dev-client rebuild and TestFlight build 4 |
+| O2 | Sheets fit the screen and the keyboard | ⬜ | Width = min(640/880, screen − 32); height = space above the keyboard; compact header while typing |
+| O3 | One client search pattern | ⬜ | Field pinned top, results fill to the keyboard, Return picks the top result, drag dismisses. Clients, Walk-in, Link client, Book appointment, Frames |
+| O4 | Screens reflow in portrait / 11" | ⬜ | Two-pane screens (Clients, Schedule, profile, visit, Frames detail) stack or narrow; Floor columns; tab bar |
+| O5 | QA in 4 setups + TestFlight build 4 | ⬜ | 11"/13" × portrait/landscape screenshots in `docs/v2/qa/orientation/` |
+
 ## Waiting on Foundry
 
 See [01-foundry-handoff-hot-leads.md](01-foundry-handoff-hot-leads.md).
 
 | Item | Status |
 |---|---|
-| Hot leads skip non-canonical client ids (most production clients) | ⏸ Foundry fix needed |
-| Tablet sessions have no `staff_id` | ⏸ Foundry fix needed |
-| `/api/scheduling` should include client name | ⏸ Nice to have (iPad works around it) |
+| Hot leads, shell customers, Rx/holds filters, create client, duplicates, roster, Rx validation, client links, staff attribution, end-visit fields, appointment names, Rx paging, scan ids | 🔄 Built on Foundry branch `fix/ipad-v2-api-gaps` (15 commits, not merged). Review prompt: [04-foundry-review-prompt.md](04-foundry-review-prompt.md) |
+| Demo lens configurator flow | ⏸ Your call: copy from production or hand-build |
 | Merge `feat/lunettiq-demo-today-seed` | ⏸ Your review |
 
 ## Sprint 1 · Visit spine (Nov 2 – Nov 13)

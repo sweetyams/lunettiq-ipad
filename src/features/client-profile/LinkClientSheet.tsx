@@ -1,8 +1,9 @@
 import { View, Text } from 'react-native';
-import { useState, useEffect } from 'react';
-import { Sheet, TextField, Field, ChoiceChips, ListRow, Badge } from '@/src/ui/kit';
+import { useState } from 'react';
+import { Sheet, Field, ChoiceChips, ListRow, Badge } from '@/src/ui/kit';
+import { ClientSearch, clientName } from '@/src/features/clients/ClientSearch';
 import { Avatar } from '@/src/ui/Avatar';
-import { useClients, useCreateClientLink } from '@/src/api/useClients';
+import { useCreateClientLink } from '@/src/api/useClients';
 import { toast } from '@/src/ui/useToastStore';
 import type { Client, RelationshipType } from '@/src/api/clients.types';
 
@@ -22,22 +23,13 @@ const TYPES: Array<{ key: RelationshipType; label: string }> = [
   { key: 'other', label: 'Other' },
 ];
 
-const nameOf = (c: Client) => [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || 'No name yet';
+const nameOf = clientName;
+const memberTag = (c: Client) => c.tags?.find((t) => t.startsWith('member-'))?.replace('member-', '').toUpperCase();
 
 export function LinkClientSheet({ clientId, visible, onClose }: LinkClientSheetProps) {
-  const [query, setQuery] = useState('');
-  const [debounced, setDebounced] = useState('');
   const [picked, setPicked] = useState<Client | null>(null);
   const [type, setType] = useState<RelationshipType | null>(null);
   const createLink = useCreateClientLink();
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 250);
-    return () => clearTimeout(t);
-  }, [query]);
-
-  const { data, isFetching } = useClients(debounced.length >= 2 ? { q: debounced, limit: 6 } : { limit: 0 });
-  const results = debounced.length >= 2 ? (data?.clients ?? []).filter((c) => c.id !== clientId) : [];
 
   const save = async () => {
     if (!picked || !type) return;
@@ -50,51 +42,40 @@ export function LinkClientSheet({ clientId, visible, onClose }: LinkClientSheetP
     }
   };
 
+  // Step 1: find the client with the whole sheet (results stay visible above the keyboard).
+  if (!picked) {
+    return (
+      <Sheet visible={visible} onClose={onClose} title="Link a client" subtitle="Family or partners who shop together." fill scroll={false}>
+        <ClientSearch
+          onPick={setPicked}
+          excludeIds={[clientId]}
+          trailing={(c) => (memberTag(c) ? <Badge tone="info">{memberTag(c)}</Badge> : null)}
+        />
+      </Sheet>
+    );
+  }
+
+  // Step 2: relationship.
   return (
     <Sheet
       visible={visible}
       onClose={onClose}
       title="Link a client"
       subtitle="Family or partners who shop together."
-      primary={{ label: 'Link client', onPress: save, disabled: !picked || !type, loading: createLink.isPending }}
+      primary={{ label: 'Link client', onPress: save, disabled: !type, loading: createLink.isPending }}
     >
       <View className="gap-[20px]">
-        {picked ? (
-          <Field label="Client">
-            <View className="border border-border rounded-md">
-              <ListRow
-                divider={false}
-                leading={<Avatar size="sm" firstName={picked.firstName ?? ''} lastName={picked.lastName ?? ''} />}
-                title={nameOf(picked)}
-                subtitle={picked.email ?? undefined}
-                trailing={<Text className="text-body-sm font-medium text-text-primary" onPress={() => setPicked(null)} accessibilityRole="button">Change</Text>}
-              />
-            </View>
-          </Field>
-        ) : (
-          <View className="gap-[8px]">
-            <TextField label="Find a client" value={query} onChangeText={setQuery} placeholder="Name, email or phone" autoCapitalize="none" autoCorrect={false} autoFocus />
-            {debounced.length >= 2 ? (
-              <View className="border border-border rounded-md overflow-hidden">
-                {results.length === 0 ? (
-                  <Text className="text-body-sm text-text-tertiary px-[16px] py-[14px]">{isFetching ? 'Searching…' : 'No matching clients.'}</Text>
-                ) : (
-                  results.map((c, i) => (
-                    <ListRow
-                      key={c.id}
-                      divider={i > 0}
-                      onPress={() => setPicked(c)}
-                      leading={<Avatar size="sm" firstName={c.firstName ?? ''} lastName={c.lastName ?? ''} />}
-                      title={nameOf(c)}
-                      subtitle={c.email ?? undefined}
-                      trailing={c.tags?.some((t) => t.startsWith('member-')) ? <Badge tone="info">{c.tags.find((t) => t.startsWith('member-'))!.replace('member-', '').toUpperCase()}</Badge> : undefined}
-                    />
-                  ))
-                )}
-              </View>
-            ) : null}
+        <Field label="Client">
+          <View className="border border-border rounded-md">
+            <ListRow
+              divider={false}
+              leading={<Avatar size="sm" firstName={picked.firstName ?? ''} lastName={picked.lastName ?? ''} />}
+              title={nameOf(picked)}
+              subtitle={picked.email ?? undefined}
+              trailing={<Text className="text-body-sm font-medium text-text-primary" onPress={() => setPicked(null)} accessibilityRole="button">Change</Text>}
+            />
           </View>
-        )}
+        </Field>
         <Field label="Relationship">
           <ChoiceChips options={TYPES} value={type} onChange={setType} />
         </Field>

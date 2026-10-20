@@ -8,7 +8,8 @@ import type { Appointment } from '@/src/api/appointments.types';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
-import { Badge, Button, FilterChips, PageHeader, Section, kitColors, staffFirstName } from '@/src/ui/kit';
+import { Badge, Button, FilterChips, PageHeader, Section, Sheet, kitColors, staffFirstName } from '@/src/ui/kit';
+import { useLayout } from '@/src/ui/layout';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
 import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet, WalkInButton } from '@/src/features/appointments';
 import { useVisitActions } from '@/src/features/appointments/useVisitActions';
@@ -23,6 +24,9 @@ export default function ScheduleScreen() {
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [booking, setBooking] = useState<{ clientId: string | null; serviceType?: 'follow-up' } | null>(book ? { clientId: book } : null);
   const [editing, setEditing] = useState(false);
+  const layout = useLayout();
+  // Portrait 11": the list takes the width; details open as a sheet.
+  const twoPane = layout.twoPane;
 
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -89,7 +93,8 @@ export default function ScheduleScreen() {
 
       <View className="flex-1 flex-row">
         <ScrollView
-          className="w-[640px] flex-grow-0"
+          className={twoPane ? 'flex-grow-0' : 'flex-1'}
+          style={twoPane ? { width: layout.size === 'wide' ? 640 : 480 } : undefined}
           contentContainerStyle={{ padding: 24, paddingRight: 12, paddingBottom: 140 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
         >
@@ -113,23 +118,35 @@ export default function ScheduleScreen() {
           )}
         </ScrollView>
 
-        <View className="flex-1 border-l border-border">
-          {selectedAppt ? (
-            <AppointmentDetailPanel
-              appointment={selectedAppt}
-              onEdit={() => setEditing(true)}
-              onCancelled={() => setSelectedId(null)}
-              onBookFollowUp={() => setBooking({ clientId: selectedAppt.clientId, serviceType: 'follow-up' })}
-            />
-          ) : (
-            <View className="flex-1 items-center justify-center gap-[12px]">
-              <CalendarDays size={32} color={kitColors.iconMuted} />
-              <Text className="text-body-md text-text-tertiary">Select an appointment to see details and actions.</Text>
-            </View>
-          )}
-        </View>
+        {twoPane ? (
+          <View className="flex-1 border-l border-border">
+            {selectedAppt ? (
+              <AppointmentDetailPanel
+                appointment={selectedAppt}
+                onEdit={() => setEditing(true)}
+                onCancelled={() => setSelectedId(null)}
+                onBookFollowUp={() => setBooking({ clientId: selectedAppt.clientId, serviceType: 'follow-up' })}
+              />
+            ) : (
+              <View className="flex-1 items-center justify-center gap-[12px]">
+                <CalendarDays size={32} color={kitColors.iconMuted} />
+                <Text className="text-body-md text-text-tertiary">Select an appointment to see details and actions.</Text>
+              </View>
+            )}
+          </View>
+        ) : null}
       </View>
 
+      {!twoPane && selectedAppt ? (
+        <Sheet visible={!editing && !booking} onClose={() => setSelectedId(null)} title="Appointment" fill scroll={false}>
+          <AppointmentDetailPanel
+            appointment={selectedAppt}
+            onEdit={() => setEditing(true)}
+            onCancelled={() => setSelectedId(null)}
+            onBookFollowUp={() => setBooking({ clientId: selectedAppt.clientId, serviceType: 'follow-up' })}
+          />
+        </Sheet>
+      ) : null}
       {booking ? (
         <CreateAppointmentSheet
           visible

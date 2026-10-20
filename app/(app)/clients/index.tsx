@@ -9,6 +9,7 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
 import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, formatPhone, kitColors } from '@/src/ui/kit';
 import type { Client, ClientSearchParams } from '@/src/api/clients.types';
+import { useLayout, useKeyboard } from '@/src/ui/layout';
 
 // --- Types ---
 type FilterType = 'all' | 'recent' | 'cult' | 'vault' | 'incomplete';
@@ -28,6 +29,10 @@ export default function ClientsScreen() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const router = useRouter();
+  const layout = useLayout();
+  const keyboard = useKeyboard();
+  // Portrait 11": one column, rows open the profile. Otherwise list + preview.
+  const twoPane = layout.twoPane;
 
   // Debounce search (300ms)
   useEffect(() => {
@@ -81,11 +86,11 @@ export default function ClientsScreen() {
     ({ item }: { item: Client }) => (
       <ClientRow
         client={item}
-        isSelected={selectedClientId === item.id}
-        onPress={() => setSelectedClientId(item.id)}
+        isSelected={twoPane && selectedClientId === item.id}
+        onPress={() => (twoPane ? setSelectedClientId(item.id) : router.push(`/clients/${item.id}`))}
       />
     ),
-    [selectedClientId],
+    [selectedClientId, twoPane, router],
   );
 
   return (
@@ -98,7 +103,7 @@ export default function ClientsScreen() {
 
       <View className="flex-1 flex-row">
         {/* List */}
-        <View className="w-[440px] border-r border-border">
+        <View className={twoPane ? 'border-r border-border' : 'flex-1'} style={twoPane ? { width: layout.listWidth } : undefined}>
           <View className="px-[20px] pt-[16px] pb-[12px] gap-[12px]">
             <View className="flex-row items-center bg-bg-page border border-border rounded-md px-[12px] min-h-[44px]">
               <Search size={18} color={kitColors.iconMuted} />
@@ -110,10 +115,13 @@ export default function ClientsScreen() {
                 className="flex-1 ml-[8px] text-body-md text-text-primary"
                 autoCapitalize="none"
                 autoCorrect={false}
+                returnKeyType="search"
+                onSubmitEditing={() => { const first = clients[0]; if (first) router.push(`/clients/${first.id}`); }}
                 accessibilityLabel="Search clients"
               />
             </View>
-            <FilterChips<FilterType> value={activeFilter} onChange={setActiveFilter} options={FILTERS} />
+            {/* Filters give way to results while the keyboard is up. */}
+            {keyboard.visible ? null : <FilterChips<FilterType> value={activeFilter} onChange={setActiveFilter} options={FILTERS} />}
           </View>
 
           <View className="flex-1">
@@ -132,14 +140,16 @@ export default function ClientsScreen() {
                 initialNumToRender={15}
                 maxToRenderPerBatch={10}
                 windowSize={10}
-                contentContainerStyle={{ paddingBottom: 140 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={{ paddingBottom: keyboard.visible ? keyboard.height + 24 : 140 }}
               />
             )}
           </View>
         </View>
 
         {/* Preview */}
-        <View className="flex-1">
+        {twoPane ? <View className="flex-1">
           {selectedClient ? (
             <ClientPreview client={selectedClient} />
           ) : (
@@ -148,7 +158,7 @@ export default function ClientsScreen() {
               <Text className="text-body-md text-text-tertiary mt-[12px]">Select a client to preview</Text>
             </View>
           )}
-        </View>
+        </View> : null}
       </View>
     </View>
   );

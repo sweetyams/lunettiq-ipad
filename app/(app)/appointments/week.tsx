@@ -7,7 +7,8 @@ import type { Appointment } from '@/src/api/appointments.types';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
-import { Button, FilterChips, PageHeader, Section, kitColors } from '@/src/ui/kit';
+import { Button, FilterChips, PageHeader, Section, kitColors, Sheet } from '@/src/ui/kit';
+import { useLayout } from '@/src/ui/layout';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
 import { AppointmentDetailPanel, CreateAppointmentSheet, EditAppointmentSheet } from '@/src/features/appointments';
 import { useVisitActions } from '@/src/features/appointments/useVisitActions';
@@ -32,6 +33,8 @@ export default function WeekScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(params.selected ?? null);
   const [booking, setBooking] = useState<{ clientId: string | null; serviceType?: 'follow-up' } | null>(null);
   const [editing, setEditing] = useState(false);
+  const layout = useLayout();
+  const twoPane = layout.twoPane;
 
   useEffect(() => {
     if (!params.date) return;
@@ -107,7 +110,7 @@ export default function WeekScreen() {
       </View>
 
       <View className="flex-1 flex-row mt-[8px]">
-        <ScrollView className="w-[640px] flex-grow-0" contentContainerStyle={{ padding: 24, paddingRight: 12, paddingBottom: 140 }}
+        <ScrollView className={twoPane ? 'flex-grow-0' : 'flex-1'} style={twoPane ? { width: layout.size === 'wide' ? 640 : 480 } : undefined} contentContainerStyle={{ padding: 24, paddingRight: 12, paddingBottom: 140 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}>
           {isLoading ? <LoadingState /> : error ? <ErrorState error={error} onRetry={refetch} /> : list.length === 0 ? (
             <EmptyState message="Nothing booked this day." />
@@ -122,19 +125,27 @@ export default function WeekScreen() {
             </Section>
           )}
         </ScrollView>
-        <View className="flex-1 border-l border-border">
-          {selected ? (
-            <AppointmentDetailPanel appointment={selected} onEdit={() => setEditing(true)} onCancelled={() => setSelectedId(null)}
-              onBookFollowUp={() => setBooking({ clientId: selected.clientId, serviceType: 'follow-up' })} />
-          ) : (
-            <View className="flex-1 items-center justify-center gap-[12px]">
-              <CalendarDays size={32} color={kitColors.iconMuted} />
-              <Text className="text-body-md text-text-tertiary">Select an appointment to see details.</Text>
-            </View>
-          )}
-        </View>
+        {twoPane ? (
+          <View className="flex-1 border-l border-border">
+            {selected ? (
+              <AppointmentDetailPanel appointment={selected} onEdit={() => setEditing(true)} onCancelled={() => setSelectedId(null)}
+                onBookFollowUp={() => setBooking({ clientId: selected.clientId, serviceType: 'follow-up' })} />
+            ) : (
+              <View className="flex-1 items-center justify-center gap-[12px]">
+                <CalendarDays size={32} color={kitColors.iconMuted} />
+                <Text className="text-body-md text-text-tertiary">Select an appointment to see details.</Text>
+              </View>
+            )}
+          </View>
+        ) : null}
       </View>
 
+      {!twoPane && selected ? (
+        <Sheet visible={!editing && !booking} onClose={() => setSelectedId(null)} title="Appointment" fill scroll={false}>
+          <AppointmentDetailPanel appointment={selected} onEdit={() => setEditing(true)} onCancelled={() => setSelectedId(null)}
+            onBookFollowUp={() => setBooking({ clientId: selected.clientId, serviceType: 'follow-up' })} />
+        </Sheet>
+      ) : null}
       {booking ? (
         <CreateAppointmentSheet visible onClose={() => setBooking(null)} preselectedClientId={booking.clientId}
           preselectedServiceType={booking.serviceType ?? null} preselectedDate={day >= todayKey ? day : null} />

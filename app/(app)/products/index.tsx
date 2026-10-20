@@ -21,7 +21,8 @@ const PAGE = 50;
 export default function FramesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const numColumns = width > 1100 ? 4 : 3;
+  // ~240pt tiles in the width beside the tab bar (≈96pt): 2 in portrait 11", 4–5 in landscape 13".
+  const numColumns = Math.max(2, Math.min(5, Math.floor((width - 96 - 48) / 240)));
   const { activeClientId, activeClientName, mode } = useSessionStore();
   const inVisit = mode !== 'idle' && !!activeClientId;
 
@@ -135,6 +136,8 @@ export default function FramesScreen() {
           keyExtractor={(p) => productKey(p)}
           numColumns={numColumns}
           renderItem={renderItem}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 140 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReached={() => { if ((data?.data?.length ?? 0) < total) setLimit((l) => l + PAGE); }}

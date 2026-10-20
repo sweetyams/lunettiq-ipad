@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useCreateAppointment, useAppointmentServices, useSchedulingStaff, useAvailableSlots } from '@/src/api/useAppointments';
-import { useClient, useClients } from '@/src/api/useClients';
+import { useClient } from '@/src/api/useClients';
+import { ClientSearch } from '@/src/features/clients/ClientSearch';
 import type { AppointmentService, CreateAppointmentPayload, TimeSlot } from '@/src/api/appointments.types';
 import type { Client } from '@/src/api/clients.types';
 import { Avatar } from '@/src/ui/Avatar';
@@ -43,12 +44,12 @@ export function CreateAppointmentSheet({
   const [date, setDate] = useState<Date>(initialDate);
   const [slot, setSlot] = useState<TimeSlot | null>(null);
   const [notes, setNotes] = useState(followUpContext?.suggestedNotes ?? '');
-  const [query, setQuery] = useState('');
+  // Picking a client takes over the sheet so results stay visible above the keyboard.
+  const [picking, setPicking] = useState(false);
 
   const { data: services } = useAppointmentServices();
   const { data: staffList } = useSchedulingStaff();
   const { data: preselected } = useClient(preselectedClientId ?? '');
-  const { data: found, isFetching: searching } = useClients(query.trim().length >= 2 ? { q: query.trim(), limit: 6 } : { limit: 0 });
   const { data: slots, isLoading: slotsLoading } = useAvailableSlots({ date: service ? ymd(date) : '', typeId: service?.id, staffId: staffId ?? undefined });
   const create = useCreateAppointment();
 
@@ -99,6 +100,14 @@ export function CreateAppointmentSheet({
 
   const staffName = staffList?.find((s) => s.id === (staffId ?? slot?.staffId))?.name;
 
+  if (picking) {
+    return (
+      <Sheet visible={visible} onClose={() => setPicking(false)} title="Who is it for?" subtitle="Book appointment" fill scroll={false}>
+        <ClientSearch onPick={(c) => { setClient(c); setPicking(false); }} />
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       visible={visible}
@@ -129,22 +138,7 @@ export function CreateAppointmentSheet({
               />
             </View>
           ) : (
-            <View className="gap-[8px]">
-              <TextField label="Find a client" value={query} onChangeText={setQuery} placeholder="Name or email" autoCapitalize="none" autoCorrect={false} />
-              {query.trim().length >= 2 ? (
-                <View className="border border-border rounded-md overflow-hidden">
-                  {(found?.clients ?? []).length === 0 ? (
-                    <Text className="text-body-sm text-text-tertiary px-[16px] py-[14px]">{searching ? 'Searching…' : 'No matching clients.'}</Text>
-                  ) : (
-                    (found?.clients ?? []).map((c, i) => (
-                      <ListRow key={c.id} divider={i > 0} onPress={() => { setClient(c); setQuery(''); }}
-                        leading={<Avatar size="sm" firstName={c.firstName ?? ''} lastName={c.lastName ?? ''} />}
-                        title={nameOf(c)} subtitle={c.email ?? undefined} />
-                    ))
-                  )}
-                </View>
-              ) : null}
-            </View>
+            <Button label="Find a client" variant="secondary" onPress={() => setPicking(true)} />
           )}
         </Field>
 

@@ -8,9 +8,11 @@ import { resolveScanCode, catalogueQuery, type ScanResult } from '@/src/api/scan
 import { productKey, type Product } from '@/src/api/products.types';
 import { Badge, Button, KeyValue, Section, TextField, kitColors } from '@/src/ui/kit';
 import { toast } from '@/src/ui/useToastStore';
+import { useLayout } from '@/src/ui/layout';
 
 /** Scan a frame tag or shelf code: stock by location, shelf, and a jump to the frame. */
 export default function ScannerScreen() {
+  const layout = useLayout();
   const router = useRouter();
   const [manual, setManual] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,7 +64,7 @@ export default function ScannerScreen() {
         <View className="flex-1">
           <BarcodeScanner onCode={resolve} paused={busy} />
         </View>
-        <ScrollView className="w-[440px] flex-grow-0 border-l border-border" contentContainerStyle={{ padding: 24, gap: 20, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
+        <ScrollView className="flex-grow-0 border-l border-border" style={{ width: { wide: 440, regular: 360, compact: 320 }[layout.size] }} contentContainerStyle={{ padding: 24, gap: 20, paddingBottom: 140 }} keyboardShouldPersistTaps="handled">
           <View className="flex-row items-end gap-[8px]">
             <TextField className="flex-1" label="Or type the code" value={manual} onChangeText={setManual} placeholder="IT-… or SL-…" autoCapitalize="characters" autoCorrect={false} returnKeyType="search" onSubmitEditing={() => resolve(manual)} />
             <Button label="Find" variant="primary" onPress={() => resolve(manual)} loading={busy} disabled={!manual.trim()} />

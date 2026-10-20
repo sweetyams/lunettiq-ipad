@@ -25,6 +25,7 @@ import { ConfiguratorSheet } from '@/src/features/configurator/ConfiguratorSheet
 import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet';
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
+import { useLayout } from '@/src/ui/layout';
 
 type SortOption = 'best-match' | 'price-asc' | 'price-desc';
 
@@ -45,6 +46,10 @@ function useElapsed(startedAt: number | null) {
 }
 
 export default function SessionWorkspaceScreen() {
+  const layout = useLayout();
+  // Catalogue beside the tray: ~220pt tiles in whatever width is left (tab bar ≈ 96pt).
+  const trayWidth = { wide: 400, regular: 340, compact: 300 }[layout.size];
+  const catalogueColumns = Math.max(2, Math.min(4, Math.floor((layout.width - 96 - trayWidth - 48) / 220)));
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const handToClient = usePrivacyStore((s) => s.handToClient);
@@ -194,8 +199,11 @@ export default function SessionWorkspaceScreen() {
             <FlatList
               data={sorted}
               keyExtractor={(item) => productKey(item)}
-              numColumns={4}
+              key={`tray-grid-${catalogueColumns}`}
+              numColumns={catalogueColumns}
               showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               contentContainerStyle={{ paddingTop: 12, paddingBottom: 140 }}
               ListHeaderComponent={
                 <Text className="text-body-sm text-text-tertiary px-[4px] pb-[8px]">
@@ -206,7 +214,7 @@ export default function SessionWorkspaceScreen() {
               renderItem={({ item }) => {
                 const added = inTray.has(productKey(item));
                 return (
-                  <View className="flex-1 m-[6px]" style={{ maxWidth: '25%' }}>
+                  <View className="flex-1 m-[6px]" style={{ maxWidth: `${100 / catalogueColumns}%` }}>
                     <ProductCard product={item} onPress={addToTray} />
                     {added ? (
                       <View className="absolute top-[8px] left-[8px] flex-row items-center gap-[4px] bg-accent rounded-full px-[8px] py-[2px]" pointerEvents="none">
@@ -225,7 +233,7 @@ export default function SessionWorkspaceScreen() {
 
         {/* Visit rail */}
         <ScrollView
-          className="w-[400px] flex-grow-0 border-l border-border"
+          className="flex-grow-0 border-l border-border" style={{ width: trayWidth }}
           contentContainerStyle={{ padding: 20, paddingBottom: 140, gap: 16 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
