@@ -26,6 +26,7 @@ import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
 import { useLayout } from '@/src/ui/layout';
+import { VisitStepRail, StepFooter, WelcomeStep, FileStep, LifestyleStep, QuoteStep, CloseStep, useStepFacts } from '@/src/features/visit/VisitSteps';
 
 type SortOption = 'best-match' | 'price-asc' | 'price-desc';
 
@@ -55,7 +56,7 @@ export default function SessionWorkspaceScreen() {
   const handToClient = usePrivacyStore((s) => s.handToClient);
   const {
     mode, activeClientId, sessionId, sessionStartedAt, framesTried, sessionNotes,
-    setSessionNotes, addFrameTried, updateFrameVerdict, startFitting,
+    setSessionNotes, addFrameTried, updateFrameVerdict, startFitting, step,
   } = useSessionStore();
 
   const { data: client, isLoading: clientLoading, error: clientError, refetch: refetchClient } = useClient(id);
@@ -63,6 +64,7 @@ export default function SessionWorkspaceScreen() {
   const { data: preferences } = useClientPreferences(id);
   const { data: insurance } = useInsuranceProfile(id);
   const elapsed = useElapsed(sessionStartedAt);
+  const facts = useStepFacts(id, client);
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('best-match');
@@ -159,129 +161,137 @@ export default function SessionWorkspaceScreen() {
         <Button label="End visit" variant="primary" onPress={() => setShowEnd(true)} />
       </View>
 
-      <View className="flex-1 flex-row">
-        {/* Catalogue */}
-        <View className="flex-1 px-[24px] pt-[20px]">
-          <View className="flex-row items-center gap-[10px] border border-border rounded-md px-[12px] min-h-[44px] bg-bg-page">
-            <Search size={18} color={kitColors.iconMuted} />
-            <TextInput
-              value={search}
-              onChangeText={setSearch}
-              placeholder="Search frames by name, shape or colour"
-              placeholderTextColor={kitColors.iconMuted}
-              className="flex-1 text-body-md text-text-primary"
-              autoCapitalize="none"
-              autoCorrect={false}
-              accessibilityLabel="Search frames"
-            />
-          </View>
-          <View className="flex-row items-center gap-[12px] mt-[12px]">
-            <View className="flex-shrink">
-              <FilterChips<SortOption>
-                value={sortBy}
-                onChange={setSortBy}
-                options={[
-                  { key: 'best-match', label: 'Best match' },
-                  { key: 'price-asc', label: 'Price: low to high' },
-                  { key: 'price-desc', label: 'Price: high to low' },
-                ]}
+      <VisitStepRail facts={facts} />
+      {step === 'frames' ? (
+        <View className="flex-1 flex-row">
+          {/* Catalogue */}
+          <View className="flex-1 px-[24px] pt-[20px]">
+            <View className="flex-row items-center gap-[10px] border border-border rounded-md px-[12px] min-h-[44px] bg-bg-page">
+              <Search size={18} color={kitColors.iconMuted} />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Search frames by name, shape or colour"
+                placeholderTextColor={kitColors.iconMuted}
+                className="flex-1 text-body-md text-text-primary"
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Search frames"
               />
             </View>
-            <View className="flex-1" />
-            {fitRange ? <Badge tone="info">{`Fits ${fitRange}`}</Badge> : null}
+            <View className="flex-row items-center gap-[12px] mt-[12px]">
+              <View className="flex-shrink">
+                <FilterChips<SortOption>
+                  value={sortBy}
+                  onChange={setSortBy}
+                  options={[
+                    { key: 'best-match', label: 'Best match' },
+                    { key: 'price-asc', label: 'Price: low to high' },
+                    { key: 'price-desc', label: 'Price: high to low' },
+                  ]}
+                />
+              </View>
+              <View className="flex-1" />
+              {fitRange ? <Badge tone="info">{`Fits ${fitRange}`}</Badge> : null}
+            </View>
+
+            {productsLoading ? (
+              <LoadingState />
+            ) : productsError ? (
+              <ErrorState error={productsError} onRetry={refetchProducts} />
+            ) : (
+              <FlatList
+                data={sorted}
+                keyExtractor={(item) => productKey(item)}
+                key={`tray-grid-${catalogueColumns}`}
+                numColumns={catalogueColumns}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={{ paddingTop: 12, paddingBottom: 140 }}
+                ListHeaderComponent={
+                  <Text className="text-body-sm text-text-tertiary px-[4px] pb-[8px]">
+                    {sorted.length} frames · tap to add to the tray
+                  </Text>
+                }
+                ListEmptyComponent={<EmptyState message={search ? `No frames match “${search}”.` : 'No frames in the catalogue.'} />}
+                renderItem={({ item }) => {
+                  const added = inTray.has(productKey(item));
+                  return (
+                    <View className="flex-1 m-[6px]" style={{ maxWidth: `${100 / catalogueColumns}%` }}>
+                      <ProductCard product={item} onPress={addToTray} />
+                      {added ? (
+                        <View className="absolute top-[8px] left-[8px] flex-row items-center gap-[4px] bg-accent rounded-full px-[8px] py-[2px]" pointerEvents="none">
+                          <Check size={12} color={kitColors.inverse} strokeWidth={2.5} />
+                          <Text className="text-body-sm font-medium text-accent-text">In tray</Text>
+                        </View>
+                      ) : suggested.has(productKey(item)) ? (
+                        <View className="absolute top-[8px] left-[8px]" pointerEvents="none"><Badge tone="info">Suggested</Badge></View>
+                      ) : null}
+                    </View>
+                  );
+                }}
+              />
+            )}
           </View>
 
-          {productsLoading ? (
-            <LoadingState />
-          ) : productsError ? (
-            <ErrorState error={productsError} onRetry={refetchProducts} />
-          ) : (
-            <FlatList
-              data={sorted}
-              keyExtractor={(item) => productKey(item)}
-              key={`tray-grid-${catalogueColumns}`}
-              numColumns={catalogueColumns}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-              contentContainerStyle={{ paddingTop: 12, paddingBottom: 140 }}
-              ListHeaderComponent={
-                <Text className="text-body-sm text-text-tertiary px-[4px] pb-[8px]">
-                  {sorted.length} frames · tap to add to the tray
-                </Text>
-              }
-              ListEmptyComponent={<EmptyState message={search ? `No frames match “${search}”.` : 'No frames in the catalogue.'} />}
-              renderItem={({ item }) => {
-                const added = inTray.has(productKey(item));
-                return (
-                  <View className="flex-1 m-[6px]" style={{ maxWidth: `${100 / catalogueColumns}%` }}>
-                    <ProductCard product={item} onPress={addToTray} />
-                    {added ? (
-                      <View className="absolute top-[8px] left-[8px] flex-row items-center gap-[4px] bg-accent rounded-full px-[8px] py-[2px]" pointerEvents="none">
-                        <Check size={12} color={kitColors.inverse} strokeWidth={2.5} />
-                        <Text className="text-body-sm font-medium text-accent-text">In tray</Text>
+          {/* Visit rail */}
+          <ScrollView
+            className="flex-grow-0 border-l border-border" style={{ width: trayWidth }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 140, gap: 16 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Section title="Tray" count={framesTried.length || undefined} padded={framesTried.length === 0}>
+              {framesTried.length === 0 ? (
+                <Text className="text-body-sm text-text-tertiary">Tap frames in the catalogue as they try them on. Record a reaction for each; it drives follow-ups.</Text>
+              ) : (
+                framesTried.slice().reverse().map((frame, i) => {
+                  const isLoved = frame.verdict === 'loved' || frame.verdict === 'liked';
+                  return (
+                    <View key={frame.id} className={`px-[16px] py-[12px] gap-[10px] ${i > 0 ? 'border-t border-border' : ''}`}>
+                      <View className="flex-row items-center gap-[12px]">
+                        <View className="w-[56px] h-[40px] rounded-sm border border-border overflow-hidden items-center justify-center">
+                          {frame.imageUrl ? <Image source={{ uri: frame.imageUrl }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
+                        </View>
+                        <Text className="flex-1 text-body-md font-medium text-text-primary" numberOfLines={2}>{frame.productName}</Text>
+                        {isLoved ? <Button label="Order" size="sm" onPress={() => startOrder(frame)} /> : null}
                       </View>
-                    ) : suggested.has(productKey(item)) ? (
-                      <View className="absolute top-[8px] left-[8px]" pointerEvents="none"><Badge tone="info">Suggested</Badge></View>
-                    ) : null}
-                  </View>
-                );
-              }}
-            />
-          )}
-        </View>
-
-        {/* Visit rail */}
-        <ScrollView
-          className="flex-grow-0 border-l border-border" style={{ width: trayWidth }}
-          contentContainerStyle={{ padding: 20, paddingBottom: 140, gap: 16 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Section title="Tray" count={framesTried.length || undefined} padded={framesTried.length === 0}>
-            {framesTried.length === 0 ? (
-              <Text className="text-body-sm text-text-tertiary">Tap frames in the catalogue as they try them on. Record a reaction for each; it drives follow-ups.</Text>
-            ) : (
-              framesTried.slice().reverse().map((frame, i) => {
-                const isLoved = frame.verdict === 'loved' || frame.verdict === 'liked';
-                return (
-                  <View key={frame.id} className={`px-[16px] py-[12px] gap-[10px] ${i > 0 ? 'border-t border-border' : ''}`}>
-                    <View className="flex-row items-center gap-[12px]">
-                      <View className="w-[56px] h-[40px] rounded-sm border border-border overflow-hidden items-center justify-center">
-                        {frame.imageUrl ? <Image source={{ uri: frame.imageUrl }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
-                      </View>
-                      <Text className="flex-1 text-body-md font-medium text-text-primary" numberOfLines={2}>{frame.productName}</Text>
-                      {isLoved ? <Button label="Order" size="sm" onPress={() => startOrder(frame)} /> : null}
+                      <VerdictPicker value={frame.verdict} onChange={(v) => updateFrameVerdict(frame.id, v)} label={frame.productName} />
                     </View>
-                    <VerdictPicker value={frame.verdict} onChange={(v) => updateFrameVerdict(frame.id, v)} label={frame.productName} />
-                  </View>
-                );
-              })
-            )}
-          </Section>
+                  );
+                })
+              )}
+            </Section>
 
-          <Section title="Client" action={{ label: 'Profile', onPress: () => router.push(`/clients/${id}`) }}>
-            <KeyValue
-              rows={[
-                { label: 'Fit', value: fitRange },
-                { label: 'Likes', value: preferences?.stated?.shapes?.length ? preferences.stated.shapes.join(', ') : null },
-                { label: 'Avoid', value: preferences?.stated?.avoid?.length ? <Text className="text-body-md text-error flex-shrink text-right" numberOfLines={1}>{preferences.stated.avoid.join(', ')}</Text> : null },
-                { label: 'Insurance', value: pairsLeft == null ? null : `${pairsLeft} ${pairsLeft === 1 ? 'pair' : 'pairs'} left` },
-                { label: 'Orders', value: String(client.orderCount ?? 0) },
-              ]}
-            />
-          </Section>
+            <Section title="Client" action={{ label: 'Profile', onPress: () => router.push(`/clients/${id}`) }}>
+              <KeyValue
+                rows={[
+                  { label: 'Fit', value: fitRange },
+                  { label: 'Likes', value: preferences?.stated?.shapes?.length ? preferences.stated.shapes.join(', ') : null },
+                  { label: 'Avoid', value: preferences?.stated?.avoid?.length ? <Text className="text-body-md text-error flex-shrink text-right" numberOfLines={1}>{preferences.stated.avoid.join(', ')}</Text> : null },
+                  { label: 'Insurance', value: pairsLeft == null ? null : `${pairsLeft} ${pairsLeft === 1 ? 'pair' : 'pairs'} left` },
+                  { label: 'Orders', value: String(client.orderCount ?? 0) },
+                ]}
+              />
+            </Section>
 
-          <Section title="Visit notes">
-            <TextField label="Notes" hint="Saved to their history when the visit ends." value={sessionNotes} onChangeText={setSessionNotes} placeholder="What they’re after, budget, who it’s for" multiline />
-          </Section>
+            <Section title="Visit notes">
+              <TextField label="Notes" hint="Saved to their history when the visit ends." value={sessionNotes} onChangeText={setSessionNotes} placeholder="What they’re after, budget, who it’s for" multiline />
+            </Section>
 
-          <Pressable onPress={() => router.push(`/clients/${id}`)} className="flex-row items-center justify-center gap-[4px] min-h-[44px]" accessibilityRole="button">
-            <Text className="text-body-sm text-text-tertiary">Prescription, history and more on the profile</Text>
-            <ChevronRight size={16} color={kitColors.iconMuted} />
-          </Pressable>
-        </ScrollView>
-      </View>
+            <Pressable onPress={() => router.push(`/clients/${id}`)} className="flex-row items-center justify-center gap-[4px] min-h-[44px]" accessibilityRole="button">
+              <Text className="text-body-sm text-text-tertiary">Prescription, history and more on the profile</Text>
+              <ChevronRight size={16} color={kitColors.iconMuted} />
+            </Pressable>
+          </ScrollView>
+        </View>
+      ) : step === 'welcome' ? <WelcomeStep client={client} />
+        : step === 'file' ? <FileStep client={client} />
+        : step === 'lifestyle' ? <LifestyleStep client={client} done={facts.hasLifestyle} />
+        : step === 'quote' ? <QuoteStep onOrder={startOrder} />
+        : <CloseStep minutes={Math.max(1, Math.round((Date.now() - (sessionStartedAt ?? Date.now())) / 60_000))} onEnd={() => setShowEnd(true)} />}
+      <StepFooter onEnd={() => setShowEnd(true)} />
 
       {ordering && !ordering.cart ? (
         <ConfiguratorSheet

@@ -18,6 +18,9 @@ export function usePrescriptions(params?: { clientId?: string }) {
       return sortPrescriptions((Array.isArray(rows) ? rows : []).map(toPrescription));
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // A caller asking for one client's Rx with no id yet must not fall back to the
+    // store-wide list (that leaked other clients' prescriptions onto a profile).
+    enabled: !(params && 'clientId' in params && !params.clientId),
   });
 }
 

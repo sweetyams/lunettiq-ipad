@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
+import type { VisitStep, VisitPurpose } from '@/src/features/visit/steps';
 
 // --- Types ---
 
@@ -38,6 +39,10 @@ export interface SessionState {
   framesTried: FrameTried[];
   sessionNotes: string;
   notesLastSavedAt: number | null;
+  /** Visit spine position (V2 1.1); persisted so a visit resumes where it was. */
+  step: VisitStep;
+  /** Why they came in (Welcome step). */
+  purposes: VisitPurpose[];
 }
 
 interface SessionActions {
@@ -57,6 +62,8 @@ interface SessionActions {
   markFrameSynced: (id: string) => void;
   setSessionNotes: (notes: string) => void;
   markNotesSaved: () => void;
+  setStep: (step: VisitStep) => void;
+  togglePurpose: (p: VisitPurpose) => void;
 
   // Legacy compat
   setClient: (id: string | null, options?: StartSessionOptions) => void;
@@ -101,6 +108,8 @@ const INITIAL_STATE: SessionState = {
   framesTried: [],
   sessionNotes: '',
   notesLastSavedAt: null,
+  step: 'welcome',
+  purposes: [],
 };
 
 export const useSessionStore = create<SessionState & SessionActions>()(
@@ -123,6 +132,8 @@ export const useSessionStore = create<SessionState & SessionActions>()(
           framesTried: [],
           sessionNotes: '',
           notesLastSavedAt: null,
+          step: 'welcome',
+          purposes: [],
         });
       },
 
@@ -189,6 +200,12 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         set({ notesLastSavedAt: Date.now() });
       },
 
+      setStep: (step) => set({ step }),
+
+      togglePurpose: (p) => set((state) => ({
+        purposes: state.purposes.includes(p) ? state.purposes.filter((x) => x !== p) : [...state.purposes, p],
+      })),
+
       // Legacy compat — used by StartSessionButton and other existing code
       setClient: (id: string | null, options?: StartSessionOptions) => {
         if (id) {
@@ -223,6 +240,8 @@ export const useSessionStore = create<SessionState & SessionActions>()(
         framesTried: state.framesTried,
         sessionNotes: state.sessionNotes,
         notesLastSavedAt: state.notesLastSavedAt,
+        step: state.step,
+        purposes: state.purposes,
       }),
     }
   )
