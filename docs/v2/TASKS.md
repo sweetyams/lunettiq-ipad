@@ -12,7 +12,7 @@ Updated with every commit. Branch: `feat/v2-s0-visit-persistence` (iPad), `feat/
 | 0.1 | Restore server session creation | ✅ | `3aa7fe9`. Verified live: visit created on Foundry, ended with outcome |
 | 0.2 | Persist try-ons (frames + verdicts) | ✅ | `3aa7fe9`, `38ca5f7`. Verified live: try-ons → hot lead created |
 | 0.3 | Landscape first + brand + sign-in/lock | ✅ | `4370815`, `450a407`. Brand decision: keep live storefront tokens |
-| 0.4 | i18n FR/EN | 🔄 | Scaffold (`src/i18n`, no new deps) + client-facing screens in FR/EN (handed mode, timeout, consent script); App language in Profile. Next: extract staff screens (Floor → Visit spine first) |
+| 0.4 | i18n FR/EN | 🔄 | Client-facing screens + Floor, appointment statuses, client search (`50306c6`). Next: Clients, visit, Schedule |
 | 0.5 | Replace `Alert.alert`, remove "coming soon" | ➡️ | Moved into Phase D (D10) |
 | 0.6 | Offline writes (session, try-ons, notes, holds) | ⬜ | Connectivity check fixed (`b502d2f`) |
 | 0.7 | Demo seed relative to today | ✅ | Foundry `dbc614302`, `5de9458c7` (not merged). Re-run before each demo |
@@ -57,10 +57,10 @@ Baseline (Oct 16): 288 grey fills · 305 hex colours · 266 sub-14px text · 85 
 
 | # | Task | Status | Notes |
 |---|---|---|---|
-| O1 | Unlock orientation; `useLayout` (portrait/landscape, compact/regular/wide) + `useKeyboard` hooks | 🔄 | Native change: needs a dev-client rebuild and TestFlight build 4 |
-| O2 | Sheets fit the screen and the keyboard | ⬜ | Width = min(640/880, screen − 32); height = space above the keyboard; compact header while typing |
-| O3 | One client search pattern | ⬜ | Field pinned top, results fill to the keyboard, Return picks the top result, drag dismisses. Clients, Walk-in, Link client, Book appointment, Frames |
-| O4 | Screens reflow in portrait / 11" | ⬜ | Two-pane screens (Clients, Schedule, profile, visit, Frames detail) stack or narrow; Floor columns; tab bar |
+| O1 | Unlock orientation; `useLayout` (portrait/landscape, compact/regular/wide) + `useKeyboard` hooks | ✅ | `d1eefaf`. Dev client rebuilt; app launches in portrait on 11". `app.config.js` change uncommitted (shares the file with the encryption flag) |
+| O2 | Sheets fit the screen and the keyboard | ✅ | `d1eefaf` | Width = min(640/880, screen − 32); height = space above the keyboard; compact header while typing |
+| O3 | One client search pattern | ✅ | `d1eefaf`. ClientSearch in Walk-in, Link client, booking; Clients list keyboard-aware. Needs an on-device keyboard check | Field pinned top, results fill to the keyboard, Return picks the top result, drag dismisses. Clients, Walk-in, Link client, Book appointment, Frames |
+| O4 | Screens reflow in portrait / 11" | 🔄 | Done: Clients, Schedule, Week, profile, visit, Floor, New client, Frames, scanner, sign-in. Left: Orders, Follow-ups, Review, Profile settings checked on device | Two-pane screens (Clients, Schedule, profile, visit, Frames detail) stack or narrow; Floor columns; tab bar |
 | O5 | QA in 4 setups + TestFlight build 4 | ⬜ | 11"/13" × portrait/landscape screenshots in `docs/v2/qa/orientation/` |
 
 ## Waiting on Foundry
