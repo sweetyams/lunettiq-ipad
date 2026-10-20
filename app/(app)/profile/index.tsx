@@ -20,6 +20,7 @@ import { Avatar } from '@/src/ui/Avatar';
 import { useLangStore, useT, type Lang } from '@/src/i18n';
 import { toast } from '@/src/ui/useToastStore';
 import { Badge, Button, ChoiceChips, KeyValue, ListRow, PageHeader, Section, StatusDot, kitColors } from '@/src/ui/kit';
+import { useLayout } from '@/src/ui/layout';
 
 const AUTO_LOCK: Array<{ key: string; label: string }> = [
   { key: '2', label: '2 min' }, { key: '5', label: '5 min' }, { key: '10', label: '10 min' }, { key: 'never', label: 'Never' },
@@ -35,6 +36,7 @@ function ago(ts: number | null): string | null {
 
 /** Profile and device settings (Builder settings panel): you, store, sync, about. */
 export default function ProfileScreen() {
+  const layout = useLayout();
   const router = useRouter();
   const { signOut } = useAuth();
   const { user } = useUser();
@@ -93,9 +95,9 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       <PageHeader title="Profile" subtitle={activeProject ? `${activeProject.name}${location ? ` · ${locationName(location)}` : ''}` : undefined} />
-      <ScrollView contentContainerStyle={{ padding: 32, paddingBottom: 140 }}>
-        <View className="flex-row gap-[24px] items-start">
-          <View className="flex-1 gap-[20px]">
+      <ScrollView contentContainerStyle={{ padding: layout.size === 'compact' ? 24 : 32, paddingBottom: 140 }}>
+        <View className={layout.twoPane ? 'flex-row gap-[24px] items-start' : 'gap-[20px]'}>
+          <View className={layout.twoPane ? 'flex-1 gap-[20px]' : 'gap-[20px]'}>
             <Section title="You">
               <View className="flex-row items-center gap-[16px]">
                 <Avatar firstName={first ?? ''} lastName={rest.join(' ')} size="lg" />
@@ -164,7 +166,7 @@ export default function ProfileScreen() {
             ) : null}
           </View>
 
-          <View className="flex-1 gap-[20px]">
+          <View className={layout.twoPane ? 'flex-1 gap-[20px]' : 'gap-[20px]'}>
             <Section title="Sync">
               <View className="flex-row items-center gap-[8px] mb-[8px]">
                 <StatusDot tone={!sync.isOnline ? 'danger' : pending ? 'warning' : 'success'} />

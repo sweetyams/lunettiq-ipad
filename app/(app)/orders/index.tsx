@@ -8,6 +8,7 @@ import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
 import { PermissionGate } from '@/src/ui/PermissionGate';
 import { Badge, FilterChips, PageHeader, elevation, type BadgeTone } from '@/src/ui/kit';
+import { useLayout } from '@/src/ui/layout';
 
 type Filter = 'active' | OrderStage;
 
@@ -50,6 +51,7 @@ function OrderCard({ order, onPress }: { order: OrderItem; onPress: () => void }
 }
 
 function OrdersContent() {
+  const layout = useLayout();
   const router = useRouter();
   const { data: orders, isLoading, error, refetch, isRefetching } = useOrders();
   const [filter, setFilter] = useState<Filter>('active');
@@ -93,9 +95,10 @@ function OrdersContent() {
         <EmptyState message={filter === 'active' ? 'No open orders.' : `Nothing in ${STAGE_LABEL[filter as OrderStage]}.`} />
       ) : (
         <FlatList
+          key={`orders-${layout.twoPane ? 2 : 1}`}
           data={visible}
           keyExtractor={(o) => o.id}
-          numColumns={2}
+          numColumns={layout.twoPane ? 2 : 1}
           renderItem={({ item }) => <OrderCard order={item} onPress={() => openClient(item)} />}
           contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 12, paddingBottom: 140 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
