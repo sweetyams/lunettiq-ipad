@@ -61,7 +61,7 @@ Baseline (Oct 16): 288 grey fills · 305 hex colours · 266 sub-14px text · 85 
 | O2 | Sheets fit the screen and the keyboard | ✅ | `d1eefaf` | Width = min(640/880, screen − 32); height = space above the keyboard; compact header while typing |
 | O3 | One client search pattern | ✅ | `d1eefaf`. ClientSearch in Walk-in, Link client, booking; Clients list keyboard-aware. Needs an on-device keyboard check | Field pinned top, results fill to the keyboard, Return picks the top result, drag dismisses. Clients, Walk-in, Link client, Book appointment, Frames |
 | O4 | Screens reflow in portrait / 11" | 🔄 | Done: Clients, Schedule, Week, profile, visit, Floor, New client, Frames, scanner, sign-in. Orders/Profile done (`b10a103`). Left: on-device check | Two-pane screens (Clients, Schedule, profile, visit, Frames detail) stack or narrow; Floor columns; tab bar |
-| O5 | QA in 4 setups + TestFlight build 4 | 🔄 | Build 4 submitted Oct 20 (Phase O, Foundry wiring, FR Floor). Device check pending | 11"/13" × portrait/landscape screenshots in `docs/v2/qa/orientation/` |
+| O5 | QA in 4 setups + TestFlight build 4 | 🔄 | Build 4 submitted Oct 20 (Phase O, Foundry wiring, FR Floor). Build 5 submitted Nov 24 (gap checklist, f6f1af0). Device check pending | 11"/13" × portrait/landscape screenshots in `docs/v2/qa/orientation/` |
 
 ## Phase G · Gap checklist (added Nov 24)
 
