@@ -19,11 +19,19 @@ export interface StepFacts {
   loved: number;
 }
 
+/**
+ * Sunglasses-only visits (no prescription glasses, no contacts, no exam) take the
+ * sun path: the prescription is optional (gap checklist: split sun / optical intake).
+ */
+export function isSunPath(purposes: VisitPurpose[]): boolean {
+  return purposes.includes('sunglasses') && !purposes.some((p) => p === 'glasses' || p === 'contacts' || p === 'exam');
+}
+
 /** A step is "done" when what it's for is on file — never blocks moving on. */
 export function stepDone(step: VisitStep, f: StepFacts): boolean {
   switch (step) {
     case 'welcome': return f.purposes.length > 0;
-    case 'file': return f.hasContact && f.hasRx;
+    case 'file': return f.hasContact && (f.hasRx || isSunPath(f.purposes));
     case 'lifestyle': return f.hasLifestyle;
     case 'frames': return f.framesTried > 0;
     case 'quote': return f.loved > 0;

@@ -331,6 +331,10 @@ export function ConfiguratorSheet({
     return isStepComplete(currentStep.groups, selections);
   }, [currentStep, selections]);
 
+  // Jumping between steps means the summary must check every step, not just the last one.
+  const firstIncomplete = useMemo(() => steps.findIndex((st) => !isStepComplete(st.groups, selections)), [steps, selections]);
+  const allRequiredDone = firstIncomplete === -1;
+
   // Compute running price delta
   const priceDelta = useMemo(
     () => computePriceDelta(selections, allChoices, snapshot?.priceRules ?? [], lensColoursRaw, colourSelections),
@@ -435,7 +439,7 @@ export function ConfiguratorSheet({
         <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{money(basePrice > 0 ? total : priceDelta)}</Text>
       </View>
       {isSummaryStep ? (
-        <Button label="Continue to order" variant="primary" onPress={handleComplete} />
+        <Button label={allRequiredDone ? 'Continue to order' : 'Finish the lens steps'} variant="primary" onPress={allRequiredDone ? handleComplete : () => handleGoToStep(firstIncomplete)} />
       ) : (
         <Button label={currentStepIdx === steps.length - 1 ? 'Review' : 'Next'} icon={ChevronRight} variant="primary" onPress={handleNext} disabled={!currentStepComplete} />
       )}
@@ -458,13 +462,16 @@ export function ConfiguratorSheet({
       ) : (
         <View className="gap-[20px]">
           <View className="flex-row flex-wrap gap-[8px]">
+            {/* Every step is reachable at any time (add-ons used to be greyed out until the
+                lens steps were done). A tick means the step has what it needs. */}
             {[...steps.map((st) => st.name?.en ?? 'Step'), 'Review'].map((name, idx) => {
-              const done = idx < currentStepIdx;
+              const step = steps[idx];
+              const done = step ? isStepComplete(step.groups, selections) && Object.keys(selections).some((g) => step.groups.some((gr) => gr.id === g && (selections[g]?.length ?? 0) > 0)) : false;
               const on = idx === currentStepIdx;
               return (
-                <Pressable key={`${name}-${idx}`} onPress={() => (done ? handleGoToStep(idx) : undefined)} disabled={!done} accessibilityRole="tab" accessibilityState={{ selected: on }}>
-                  <View className={`flex-row items-center gap-[6px] rounded-full px-[12px] min-h-[32px] border ${on ? 'bg-accent border-accent' : done ? 'bg-bg-page border-border' : 'bg-bg-page border-border opacity-60'}`}>
-                    {done ? <Check size={14} color={kitColors.text} /> : <Text className={`text-body-sm ${on ? 'text-accent-text' : 'text-text-tertiary'}`}>{idx + 1}</Text>}
+                <Pressable key={`${name}-${idx}`} onPress={() => handleGoToStep(idx)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={`${name}${done ? ', done' : ''}`}>
+                  <View className={`flex-row items-center gap-[6px] rounded-full px-[14px] min-h-[44px] border ${on ? 'bg-accent border-accent' : 'bg-bg-page border-border'}`}>
+                    {done && !on ? <Check size={14} color={kitColors.text} /> : <Text className={`text-body-sm ${on ? 'text-accent-text' : 'text-text-tertiary'}`}>{idx + 1}</Text>}
                     <Text className={`text-body-sm font-medium ${on ? 'text-accent-text' : 'text-text-primary'}`}>{name}</Text>
                   </View>
                 </Pressable>

@@ -30,3 +30,14 @@ describe('visit spine', () => {
     expect(firstStepFor([])).toBe('welcome');
   });
 });
+
+import { isSunPath as _isSunPath, stepDone as _stepDone } from '@/src/features/visit/steps';
+describe('sun path', () => {
+  const base = { purposes: [] as never[], hasContact: true, hasRx: false, hasFit: false, hasLifestyle: false, framesTried: 0, loved: 0 };
+  it('sunglasses-only visits do not need a prescription on file', () => {
+    expect(_isSunPath(['sunglasses'])).toBe(true);
+    expect(_isSunPath(['sunglasses', 'glasses'])).toBe(false);
+    expect(_stepDone('file', { ...base, purposes: ['sunglasses'] })).toBe(true);
+    expect(_stepDone('file', { ...base, purposes: ['glasses'] })).toBe(false);
+  });
+});

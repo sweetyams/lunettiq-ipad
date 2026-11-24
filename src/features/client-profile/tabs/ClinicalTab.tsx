@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import { MeasurementsSection } from '../ClientFileSections';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
 import { useClientEnrichment } from '@/src/api/useClients';
 import { useInteractions } from '@/src/api/useInteractions';
@@ -100,6 +101,7 @@ export function ClinicalTab({ clientId, onAddPrescription, onEditFit, onAddClini
       </View>
 
       <View className="flex-[2] gap-[20px]">
+        <MeasurementsSection clientId={clientId} />
         <Section title="Fit" action={{ label: 'Edit', onPress: onEditFit }}>
           <KeyValue
             mono

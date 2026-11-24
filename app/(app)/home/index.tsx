@@ -3,11 +3,11 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 import { Calendar } from 'lucide-react-native';
-import { WalkInButton } from '@/src/features/appointments/WalkInButton';
 import { useTodayAppointments } from '@/src/api/useAppointments';
 import { useVisitActions } from '@/src/features/appointments/useVisitActions';
 import { AppointmentRow } from '@/src/features/floor/AppointmentRow';
-import { HoldsSection, RecentClientsSection, RxSection } from '@/src/features/floor/FloorRail';
+import { HoldsSection } from '@/src/features/floor/FloorRail';
+import { FunnelTiles, TodayStatus, TrafficCounter } from '@/src/features/floor/FloorFunnel';
 import { Button, PageHeader, Section } from '@/src/ui/kit';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
@@ -37,7 +37,7 @@ export default function HomeScreen() {
   // so arrivals, holds and Rx changes made elsewhere show immediately.
   useFocusEffect(
     useCallback(() => {
-      for (const queryKey of [['appointments', 'today'], ['inventory-holds'], ['rx-pipeline', 'counts'], ['rx-approvals', 'summary']]) {
+      for (const queryKey of [['appointments', 'today'], ['inventory-holds'], ['rx-pipeline'], ['rx-approvals', 'summary'], ['hot-leads']]) {
         queryClient.invalidateQueries({ queryKey });
       }
     }, [queryClient]),
@@ -77,20 +77,19 @@ export default function HomeScreen() {
       <PageHeader
         title={tr('floor.title')}
         subtitle={subtitle}
-        actions={
-          <>
-            <Button label={tr('floor.schedule')} icon={Calendar} onPress={() => router.push('/appointments')} />
-            <WalkInButton variant="primary" />
-          </>
-        }
+        actions={<Button label={tr('floor.schedule')} icon={Calendar} onPress={() => router.push('/appointments')} />}
       />
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: layout.size === 'compact' ? 24 : 32, paddingBottom: 140, gap: 24, flexDirection: layout.twoPane ? 'row' : 'column', alignItems: layout.twoPane ? 'flex-start' : 'stretch' }}
+        contentContainerStyle={{ padding: layout.size === 'compact' ? 24 : 32, paddingBottom: 140, gap: 24 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         showsVerticalScrollIndicator={false}
       >
+        {/* Funnel: the four ways a floor interaction starts */}
+        <FunnelTiles />
+
+        <View style={{ gap: 24, flexDirection: layout.twoPane ? 'row' : 'column', alignItems: layout.twoPane ? 'flex-start' : 'stretch' }}>
         {/* Appointments (side by side with the rail; stacked in portrait 11") */}
         <View className={layout.twoPane ? 'flex-[3]' : ''}>
           <Section title={tr('floor.appointments')} count={list.length} padded={false}>
@@ -113,6 +112,7 @@ export default function HomeScreen() {
                   onStartVisit={() => startVisit(a)}
                   onOpenVisit={() => startVisit(a)}
                   onPress={() => router.push(`/appointments?selected=${a.id}`)}
+                  onOpenClient={(cid) => router.push(`/clients/${cid}`)}
                 />
               ))
             )}
@@ -121,9 +121,10 @@ export default function HomeScreen() {
 
         {/* Rail */}
         <View className={`gap-[24px] ${layout.twoPane ? 'flex-[2]' : ''}`}>
-          <RxSection />
+          <TodayStatus />
+          <TrafficCounter />
           <HoldsSection />
-          <RecentClientsSection />
+        </View>
         </View>
       </ScrollView>
     </View>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { DoorOpen } from 'lucide-react-native';
+import { DoorOpen, UserPlus, UserRound } from 'lucide-react-native';
+import { View } from 'react-native';
+import { useQuickClient } from '@/src/features/clients/useQuickClient';
 import { useCreateAppointment, useMarkArrived } from '@/src/api/useAppointments';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { toast } from '@/src/ui/useToastStore';
@@ -16,12 +18,33 @@ const nameOf = clientName;
  * appointment and sent staff to a Clients mode that didn't exist.)
  */
 export function WalkInButton({ variant = 'secondary' }: { variant?: 'primary' | 'secondary' } = {}) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button label="Walk-in" icon={DoorOpen} variant={variant} onPress={() => setOpen(true)} />
+      <WalkInSheet visible={open} onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+/** The walk-in picker on its own, so Floor's "Start a visit" tile can open it. */
+export function WalkInSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const setOpen = (v: boolean) => { if (!v) onClose(); };
+  const open = visible;
   const [busy, setBusy] = useState(false);
   const create = useCreateAppointment();
   const arrive = useMarkArrived();
   const { startSession, mode } = useSessionStore();
+  const showQuickClient = useQuickClient((st) => st.show);
+  const newClient = (anonymous: boolean) => {
+    if (mode !== 'idle') {
+      toast.warning('Another visit is open', 'End it before starting a walk-in.');
+      return;
+    }
+    setOpen(false);
+    showQuickClient({ startVisit: true, anonymous });
+  };
 
   const start = async (c: Client) => {
     if (busy) return;
@@ -50,11 +73,16 @@ export function WalkInButton({ variant = 'secondary' }: { variant?: 'primary' | 
 
   return (
     <>
-      <Button label="Walk-in" icon={DoorOpen} variant={variant} onPress={() => setOpen(true)} />
-      <Sheet visible={open} onClose={() => setOpen(false)} title="Walk-in" subtitle="Find them, then start the visit. It’s logged on today’s schedule." fill scroll={false}>
+      <Sheet visible={open} onClose={() => setOpen(false)} title="Walk-in" subtitle="Find them, add them, or start without details. Name and contact can come at the end." fill scroll={false}>
         <ClientSearch
           onPick={start}
-          emptyHint="No match. New clients can’t be created from the iPad yet; add them in Foundry, then search again."
+          header={
+            <View className="flex-row gap-[8px] pb-[12px]">
+              <Button label="New client" icon={UserPlus} onPress={() => newClient(false)} />
+              <Button label="Start without details" icon={UserRound} variant="ghost" onPress={() => newClient(true)} />
+            </View>
+          }
+          emptyHint="No match. Add them as a new client, or start without details and take their name at the end."
           trailing={(c) => <Button label="Start visit" size="sm" variant="primary" onPress={() => start(c)} disabled={busy} />}
         />
       </Sheet>

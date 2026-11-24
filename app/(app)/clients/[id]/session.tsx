@@ -2,7 +2,7 @@ import { View, Text, Pressable, TextInput, ScrollView, FlatList } from 'react-na
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Image } from 'expo-image';
-import { Camera, Check, Search, Smartphone, ChevronRight } from 'lucide-react-native';
+import { Camera, Check, Search, Smartphone, ChevronRight, ShoppingBag, MessageSquare, Presentation, Sparkles } from 'lucide-react-native';
 
 import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
@@ -26,9 +26,24 @@ import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import { productKey, type Product, type ProductListParams } from '@/src/api/products.types';
 import { useLayout } from '@/src/ui/layout';
+import { TraySheet, StyleFinderSheet, PresentationView, ContactCaptureSheet, SecondPairPrompt } from '@/src/features/visit/VisitExtras';
+import { rankProducts, type StyleAnswers } from '@/src/features/visit/styleFinder';
+import { isDraftClient } from '@/src/features/clients/QuickClientSheet';
+import { MessageSheet } from '@/src/features/messages/MessageSheet';
+import { joinFrames } from '@/src/features/messages/templates';
+import { useLangStore } from '@/src/i18n';
 import { VisitStepRail, StepFooter, WelcomeStep, FileStep, LifestyleStep, QuoteStep, CloseStep, useStepFacts } from '@/src/features/visit/VisitSteps';
 
 type SortOption = 'best-match' | 'price-asc' | 'price-desc';
+
+function HeaderIcon({ icon: Icon, label, onPress }: { icon: typeof Camera; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={4}
+      className="w-[48px] h-[48px] rounded-md items-center justify-center active:bg-bg-subtle">
+      <Icon size={22} color={kitColors.icon} />
+    </Pressable>
+  );
+}
 
 const titleOf = (p: Product) => (typeof p.title === 'string' ? p.title : p.title?.en ?? p.title?.fr ?? '');
 
@@ -74,17 +89,25 @@ export default function SessionWorkspaceScreen() {
   const { data: suggestions } = useSuggestions(id, { limit: 12 });
 
   const [showEnd, setShowEnd] = useState(false);
+  const [panel, setPanel] = useState<null | 'tray' | 'style' | 'present' | 'contact' | 'message'>(null);
+  const [style, setStyle] = useState<StyleAnswers>({});
+  const lang = useLangStore((st) => st.uiLang);
+  const fr = lang === 'fr';
+  const styleActive = Object.values(style).some((v) => v && v !== 'any');
   // Order flow: configurator → summary, for one tray frame.
   const [ordering, setOrdering] = useState<{ product: Product; cart?: CartResult; price?: ConfiguratorPriceSummary } | null>(null);
 
   const inTray = useMemo(() => new Set(framesTried.map((f) => f.productId)), [framesTried]);
   const suggested = useMemo(() => new Set((suggestions ?? []).map((s: { productId: string }) => s.productId)), [suggestions]);
 
-  const sorted = useMemo(() => [...products].sort((a, b) => {
+  const sorted = useMemo(() => styleActive
+    // Style finder answers: matches first (store rules, then keywords), the rest after.
+    ? (() => { const ranked = rankProducts(products, style).map((r) => r.product); const set = new Set(ranked); return [...ranked, ...products.filter((p) => !set.has(p))]; })()
+    : [...products].sort((a, b) => {
     if (sortBy === 'price-asc') return parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0');
     if (sortBy === 'price-desc') return parseFloat(b.priceMax ?? '0') - parseFloat(a.priceMax ?? '0');
     return Number(suggested.has(productKey(b))) - Number(suggested.has(productKey(a)));
-  }), [products, sortBy, suggested]);
+  }), [products, sortBy, suggested, style, styleActive]);
 
   const addToTray = useCallback((key: string) => {
     const product = products.find((p) => productKey(p) === key || p.id === key);
@@ -139,7 +162,7 @@ export default function SessionWorkspaceScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       {/* Header */}
-      <View className="flex-row items-center gap-[16px] px-[32px] py-[16px] border-b border-border">
+      <View className="flex-row flex-wrap items-center gap-x-[12px] gap-y-[8px] px-[32px] py-[16px] border-b border-border">
         <Pressable onPress={() => router.push(`/clients/${id}`)} accessibilityRole="button" accessibilityLabel={`Open ${name}'s profile`} className="flex-row items-center gap-[12px] flex-shrink">
           <Avatar firstName={client.firstName ?? ''} lastName={client.lastName ?? ''} size="md" />
           <View className="flex-shrink">
@@ -156,12 +179,24 @@ export default function SessionWorkspaceScreen() {
           </View>
         </Pressable>
         <View className="flex-1" />
-        <Button label="Hand to client" icon={Smartphone} variant="ghost" onPress={handToClient} />
-        <Button label="Fitting photos" icon={Camera} variant="ghost" onPress={() => { startFitting(); router.push(`/clients/${id}/fitting`); }} />
-        <Button label="End visit" variant="primary" onPress={() => setShowEnd(true)} />
+        <Button label={`${fr ? 'Plateau' : 'Tray'}${framesTried.length ? ` · ${framesTried.length}` : ''}`} icon={ShoppingBag} onPress={() => setPanel('tray')} />
+        {/* Secondary visit actions as icons so the header fits portrait 11" on one line. */}
+        <View className="flex-row items-center">
+          <HeaderIcon icon={Presentation} label={fr ? 'Montrer au client' : 'Show client'} onPress={() => setPanel('present')} />
+          <HeaderIcon icon={MessageSquare} label={fr ? 'Message au client' : 'Message the client'} onPress={() => setPanel(isDraftClient(client) ? 'contact' : 'message')} />
+          <HeaderIcon icon={Camera} label={fr ? 'Photos d’essayage' : 'Fitting photos'} onPress={() => { startFitting(); router.push(`/clients/${id}/fitting`); }} />
+          <HeaderIcon icon={Smartphone} label={fr ? 'Remettre au client' : 'Hand to client'} onPress={handToClient} />
+        </View>
+        <Button label={fr ? 'Terminer' : 'End visit'} variant="primary" onPress={() => setShowEnd(true)} />
       </View>
 
       <VisitStepRail facts={facts} />
+      {isDraftClient(client) ? (
+        <View className="flex-row items-center gap-[12px] px-[32px] py-[10px] border-b border-border bg-bg-subtle">
+          <Text className="flex-1 text-body-md text-text-secondary">{fr ? 'Visite sans nom : tout ce qu’ils essaient est gardé. Prenez leurs coordonnées quand ils sont prêts.' : 'Guest visit: everything they try is kept. Take their details when they’re ready.'}</Text>
+          <Button label={fr ? 'Leur envoyer leur sélection' : 'Send them their choices'} size="sm" variant="primary" onPress={() => setPanel('contact')} />
+        </View>
+      ) : null}
       {step === 'frames' ? (
         <View className="flex-1 flex-row">
           {/* Catalogue */}
@@ -193,6 +228,7 @@ export default function SessionWorkspaceScreen() {
               </View>
               <View className="flex-1" />
               {fitRange ? <Badge tone="info">{`Fits ${fitRange}`}</Badge> : null}
+              <Button label={styleActive ? (fr ? 'Style ✓' : 'Style ✓') : (fr ? 'Trouver leur style' : 'Find their style')} icon={Sparkles} size="sm" variant={styleActive ? 'primary' : 'secondary'} onPress={() => setPanel('style')} />
             </View>
 
             {productsLoading ? (
@@ -242,7 +278,8 @@ export default function SessionWorkspaceScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <Section title="Tray" count={framesTried.length || undefined} padded={framesTried.length === 0}>
+            <SecondPairPrompt />
+            <Section title="Tray" count={framesTried.length || undefined} padded={framesTried.length === 0} action={framesTried.length ? { label: fr ? 'Revoir' : 'Review', onPress: () => setPanel('tray') } : undefined}>
               {framesTried.length === 0 ? (
                 <Text className="text-body-sm text-text-tertiary">Tap frames in the catalogue as they try them on. Record a reaction for each; it drives follow-ups.</Text>
               ) : (
@@ -290,7 +327,7 @@ export default function SessionWorkspaceScreen() {
         : step === 'file' ? <FileStep client={client} />
         : step === 'lifestyle' ? <LifestyleStep client={client} done={facts.hasLifestyle} />
         : step === 'quote' ? <QuoteStep onOrder={startOrder} />
-        : <CloseStep minutes={Math.max(1, Math.round((Date.now() - (sessionStartedAt ?? Date.now())) / 60_000))} onEnd={() => setShowEnd(true)} />}
+        : <CloseStep client={client} minutes={Math.max(1, Math.round((Date.now() - (sessionStartedAt ?? Date.now())) / 60_000))} onEnd={() => setShowEnd(true)} />}
       <StepFooter onEnd={() => setShowEnd(true)} />
 
       {ordering && !ordering.cart ? (
@@ -318,6 +355,17 @@ export default function SessionWorkspaceScreen() {
             toast.success('Order created', 'It’s in Orders. End the visit as “Purchased” when you’re done.');
           }}
         />
+      ) : null}
+
+      {panel === 'tray' ? <TraySheet visible clientId={id} onClose={() => setPanel(null)} onOrder={startOrder} /> : null}
+      {panel === 'style' ? <StyleFinderSheet visible initial={style} onApply={setStyle} onClose={() => setPanel(null)} /> : null}
+      <PresentationView visible={panel === 'present'} onClose={() => setPanel(null)} clientFirstName={isDraftClient(client) ? null : client.firstName} />
+      {panel === 'contact' ? <ContactCaptureSheet visible clientId={id} onClose={() => setPanel(null)} /> : null}
+      {panel === 'message' ? (
+        <MessageSheet visible onClose={() => setPanel(null)}
+          recipient={{ firstName: client.firstName, phone: client.phone, email: client.email }}
+          templates={['visit_choices', 'shortlist', 'booked_visit']}
+          vars={{ frames: joinFrames(framesTried.filter((f) => f.verdict === 'loved' || f.verdict === 'liked').map((f) => f.productName), lang) || null }} />
       ) : null}
 
       <EndSessionSheet

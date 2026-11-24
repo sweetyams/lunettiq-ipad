@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, Users, ClipboardList, PhoneCall, FileCheck, Lock, Glasses } from 'lucide-react-native';
+import { Home, Users, ClipboardList, PhoneCall, FileCheck, Lock, Glasses, UserPlus } from 'lucide-react-native';
+import { useQuickClient } from '@/src/features/clients/useQuickClient';
 import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { useUser } from '@clerk/clerk-expo';
 import { t as translate, useLangStore, type TKey } from '@/src/i18n';
@@ -30,7 +31,7 @@ const TAB_ITEMS: TabItemConfig[] = [
   { key: 'products', label: 'Frames', icon: Glasses },
   { key: 'orders', label: 'Orders', icon: ClipboardList },
   { key: 'follow-ups', label: 'Follow-ups', icon: PhoneCall },
-  { key: 'review', label: 'Review', icon: FileCheck },
+  { key: 'review', label: 'Approvals', icon: FileCheck },
   { key: 'profile', label: 'Profile', icon: null },
 ];
 
@@ -56,6 +57,7 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
   const { colors } = useDesignTokens();
   const { activeOperator } = useOperatorStore();
   const insets = useSafeAreaInsets();
+  const showQuickClient = useQuickClient((st) => st.show);
 
   const { user } = useUser();
   const uiLang = useLangStore((st) => st.uiLang);
@@ -198,6 +200,23 @@ export function FloatingTabBar({ state, descriptors, navigation, badges, hidden 
               grouping). It used to be an edge tab floating over content, where a tap
               near the right end of a row locked the iPad by accident. */}
           <View style={{ width: 1, height: 28, backgroundColor: kitColors.border }} />
+          {/* New client from any screen (gap checklist: "create customer reachable from any page"). */}
+          <Pressable
+            onPress={() => showQuickClient()}
+            accessibilityRole="button"
+            accessibilityLabel={translate(uiLang, 'tabs.newClient')}
+            hitSlop={4}
+            style={({ pressed }) => ({
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: pressed ? kitColors.subtle : 'transparent',
+            })}
+          >
+            <UserPlus size={24} color={colors.textPrimary} strokeWidth={1.6} />
+          </Pressable>
           <Pressable
             onPress={lock}
             accessibilityRole="button"

@@ -26,6 +26,8 @@ import { HistoryTab } from '@/src/features/client-profile/tabs/HistoryTab';
 import { RelationshipsTab } from '@/src/features/client-profile/tabs/RelationshipsTab';
 import { rxStatus, rxTypeLabel } from '@/src/features/client-profile/tabs/rxFormat';
 import { useLayout } from '@/src/ui/layout';
+import { handoffLine, readHandoff } from '@/src/features/client-profile/clientFile';
+import { useLangStore } from '@/src/i18n';
 
 type TabType = 'overview' | 'clinical' | 'history' | 'relationships';
 
@@ -48,6 +50,7 @@ export default function ClientProfileScreen() {
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const close = useCallback(() => setSheet(null), []);
   const layout = useLayout();
+  const lang = useLangStore((st) => st.uiLang);
 
   const { data: client, isLoading, error, refetch } = useClient(id);
   const { data: prescriptions } = usePrescriptions({ clientId: id });
@@ -82,6 +85,7 @@ export default function ClientProfileScreen() {
   const phone = formatPhone(client.phone);
   const contactLine = [client.email, phone].filter(Boolean).join(' · ') || 'No email or phone yet';
   const rxBadge = latestRx ? rxStatus(latestRx) : null;
+  const comingBack = handoffLine(readHandoff(client.enrichment?.customFields), lang);
 
   const railSections = (
     <>
@@ -157,6 +161,9 @@ export default function ClientProfileScreen() {
               {client.status === 'active' ? <Badge tone="success" dot>Active</Badge> : null}
             </View>
             <Text className="text-body-md text-text-tertiary mt-[4px]" numberOfLines={1}>{contactLine}</Text>
+            {staff && comingBack ? (
+              <Text className="text-body-md text-info mt-[2px]" numberOfLines={1}>{`${lang === 'fr' ? 'Revient pour' : 'Coming back for'}: ${comingBack}`}</Text>
+            ) : null}
           </View>
           <View className="flex-row items-center gap-[8px]">
             {staff ? <Button label="Book" icon={CalendarPlus} variant="ghost" onPress={() => router.push(`/appointments?book=${client.id}`)} /> : null}

@@ -12,6 +12,29 @@ import { useRxPipelineCounts } from '@/src/api/useRxPipeline';
 import { useFollowUps } from '@/src/api/useHotLeads';
 import { useTodayAppointments } from '@/src/api/useAppointments';
 import { usePermissions } from '@/src/features/auth/usePermissions';
+import { useEffect, useRef } from 'react';
+import { QuickClientSheet } from '@/src/features/clients/QuickClientSheet';
+import { useQuickClient } from '@/src/features/clients/useQuickClient';
+import { useWalkInCounter, dayKey } from '@/src/features/floor/useWalkInCounter';
+import { resolveEffectiveLocationId } from '@/src/features/tenant/useDeviceLocationStore';
+
+/** The one New client sheet, opened from the tab bar, Floor, walk-in or anywhere else. */
+function GlobalQuickClient() {
+  const { open, startVisit, anonymous, hide } = useQuickClient();
+  if (!open) return null;
+  return <QuickClientSheet visible startVisit={startVisit} anonymous={anonymous} onClose={hide} />;
+}
+
+/** Counts "helped" on the store traffic counter each time a visit starts. */
+function HelpedCounterBridge() {
+  const startedAt = useSessionStore((s) => s.sessionStartedAt);
+  const last = useRef(startedAt);
+  useEffect(() => {
+    if (startedAt && startedAt !== last.current) useWalkInCounter.getState().markHelped(dayKey(resolveEffectiveLocationId()));
+    last.current = startedAt;
+  }, [startedAt]);
+  return null;
+}
 
 export default function AppLayout() {
   const mode = useSessionStore((s) => s.mode);
@@ -53,6 +76,8 @@ export default function AppLayout() {
       {/* Keeps the active visit in step with Foundry (session + try-ons) */}
       <SessionServerBridge />
       <VisitOutboxWorker />
+      <HelpedCounterBridge />
+      <GlobalQuickClient />
 
       <Tabs
         tabBar={(props) =>
@@ -71,7 +96,7 @@ export default function AppLayout() {
         <Tabs.Screen name="products" options={{ title: 'Frames' }} />
         <Tabs.Screen name="orders" options={{ title: 'Orders' }} />
         <Tabs.Screen name="follow-ups" options={{ title: 'Follow-ups' }} />
-        <Tabs.Screen name="review" options={{ title: 'Review' }} />
+        <Tabs.Screen name="review" options={{ title: 'Approvals' }} />
         <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
         {/* Not tabs: Schedule is reached from Floor; tools from Profile */}
         <Tabs.Screen name="appointments" options={{ href: null }} />

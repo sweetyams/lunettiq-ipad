@@ -63,6 +63,21 @@ Baseline (Oct 16): 288 grey fills · 305 hex colours · 266 sub-14px text · 85 
 | O4 | Screens reflow in portrait / 11" | 🔄 | Done: Clients, Schedule, Week, profile, visit, Floor, New client, Frames, scanner, sign-in. Orders/Profile done (`b10a103`). Left: on-device check | Two-pane screens (Clients, Schedule, profile, visit, Frames detail) stack or narrow; Floor columns; tab bar |
 | O5 | QA in 4 setups + TestFlight build 4 | 🔄 | Build 4 submitted Oct 20 (Phase O, Foundry wiring, FR Floor). Device check pending | 11"/13" × portrait/landscape screenshots in `docs/v2/qa/orientation/` |
 
+## Phase G · Gap checklist (added Nov 24)
+
+From the review with Ben, Seren and the optician. Plan and validity check: [06-gap-checklist-plan.md](06-gap-checklist-plan.md). Foundry asks: [05-foundry-api-requests.md](05-foundry-api-requests.md).
+
+| # | Task | Status | Notes |
+|---|---|---|---|
+| G1 | Floor funnel, Today's status (late orders), store traffic, New client everywhere | ✅ | Needs Seren's click-through for final arrangement |
+| G2 | Walk-in: new client / start without details, guest profiles, "send you your choices" | ✅ | Guest = `draft-profile` until Foundry allows draft customers |
+| G3 | Visit: tray sheet (variants, features, Rx note), style finder, client presentation, messages, second-pair prompt, sun path | ✅ | Style rules and Rx thresholds to confirm |
+| G4 | Profile: measurements template, handoff, frame collection | ✅ | On `customFields` until Foundry tables |
+| G5 | Orders: store stages, lead-time flags, tracker table, detail with Rx photo, approval request, lab confirmed, receiving check, redo/delay, messages | ✅ | Not yet exercised against lunettiq-demo |
+| G6 | Follow-ups: no discounts, context card, one Follow up button, call log | ✅ | Foundry `discountsEnabled` switch needed |
+| G7 | Review → Approvals; configurator steps all reachable | ✅ | |
+| G8 | Phase 3 (Foundry-dependent): server-sent messages, Rx reminders, emailed Rx matching, receipts at close, approval notification | ⬜ | Foundry doc §0, §3, §5, §8 |
+
 ## Waiting on Foundry
 
 See [01-foundry-handoff-hot-leads.md](01-foundry-handoff-hot-leads.md).

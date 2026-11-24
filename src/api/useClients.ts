@@ -78,7 +78,8 @@ export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: ClientUpdateParams }) =>
-      api.patch<ClientProfile>(`/api/clients/${id}`, data),
+      // Foundry exposes PUT (partial: only the fields sent change); PATCH was a 405.
+      api.put<ClientProfile>(`/api/clients/${id}`, data),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['clients', id] });
       qc.invalidateQueries({ queryKey: ['clients'] });

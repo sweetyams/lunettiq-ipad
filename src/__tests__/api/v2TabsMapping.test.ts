@@ -16,7 +16,7 @@ describe('orders', () => {
       canonicalCustomerId: 'c1', frameSku: 'MARAIS-CRIMSON', lensType: 'progressive',
       depositCents: 30000, totalCents: 83900, createdAt: daysAgo(2),
     }, NOW);
-    expect(o).toMatchObject({ stage: 'in_review', clientId: 'c1', daysInStage: 1, balanceCents: 53900, description: 'Marais Crimson · Progressive' });
+    expect(o).toMatchObject({ stage: 'pending_approval', clientId: 'c1', daysInStage: 1, balanceCents: 53900, description: 'Marais Crimson · Progressive' });
     expect(toOrderItem({ id: 'o2', state: 'picked_up', createdAt: daysAgo(1) }, NOW).stage).toBe('done');
   });
 

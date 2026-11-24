@@ -20,7 +20,7 @@ import { toast } from '@/src/ui/useToastStore';
 type Tab = 'submitted' | 'in_review' | 'completed';
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: 'submitted', label: 'Pending' },
-  { key: 'in_review', label: 'In review' },
+  { key: 'in_review', label: 'Being checked' },
   { key: 'completed', label: 'Done' },
 ];
 
@@ -112,8 +112,8 @@ function ReviewContent() {
   return (
     <View className="flex-1 bg-bg-page">
       <PageHeader
-        title="Review"
-        subtitle={`${summary?.submitted ?? 0} waiting · ${summary?.in_review ?? 0} in review · ${summary?.approved ?? 0} signed off today`}
+        title="Approvals"
+        subtitle={`${summary?.submitted ?? 0} pending approval · ${summary?.in_review ?? 0} being checked · ${summary?.approved ?? 0} approved today`}
         actions={next ? (
           <Button label={`Claim next · ${next.clientName}`} variant="primary" onPress={() => doClaim(next.id)} disabled={claim.isPending} />
         ) : undefined}
@@ -123,7 +123,7 @@ function ReviewContent() {
       </View>
 
       {isLoading ? <LoadingState /> : error ? <ErrorState error={error} onRetry={refetch} /> : list.length === 0 ? (
-        <EmptyState message={tab === 'submitted' ? 'Nothing waiting for review.' : tab === 'in_review' ? 'Nothing claimed right now.' : 'No completed reviews yet.'} />
+        <EmptyState message={tab === 'submitted' ? 'Nothing pending approval.' : tab === 'in_review' ? 'Nothing claimed right now.' : 'No completed reviews yet.'} />
       ) : (
         <ScrollView
           contentContainerStyle={{ padding: 32, paddingTop: 20, paddingBottom: 140 }}
@@ -153,7 +153,7 @@ export default function ReviewScreen() {
   return (
     <PermissionGate
       permissions={['org:rx:verify', 'org:rx:sign_off']}
-      fallback={<EmptyState message="Review is for licensed opticians. Ask a manager if you need access." />}
+      fallback={<EmptyState message="Approvals are for licensed opticians. Ask a manager if you need access." />}
     >
       <ReviewContent />
     </PermissionGate>

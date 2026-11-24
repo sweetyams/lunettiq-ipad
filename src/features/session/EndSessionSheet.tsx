@@ -17,6 +17,10 @@ import { useSyncStore } from '@/src/sync/useSyncStore';
 import { newClose, type EndPayload } from './visitOutbox';
 import { useVisitOutbox, flushClose } from './VisitOutboxWorker';
 import type { QuickTag } from '@/src/api/sessions.types';
+import { useClient } from '@/src/api/useClients';
+import { MessageSheet, type MessageRecipient } from '@/src/features/messages/MessageSheet';
+import { OUTCOME_TEMPLATE, joinFrames, renderTemplate, type TemplateKey } from '@/src/features/messages/templates';
+import { isDraftClient } from '@/src/features/clients/QuickClientSheet';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +87,8 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
   const [internalNotes, setInternalNotes] = useState('');
   const [selectedTags, setSelectedTags] = useState<QuickTag[]>([]);
   const [showFollowUpSheet, setShowFollowUpSheet] = useState(false);
+  // After saving, open the outcome's preloaded message (Messages / Mail) for staff to send.
+  const [afterMessage, setAfterMessage] = useState<{ recipient: MessageRecipient; template: TemplateKey; frames: string } | null>(null);
 
   // ─── Session data capture (before reset) ─────────────────────────────────
   const savedClientIdRef = useRef<string | null>(null);
@@ -98,6 +104,8 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     endSession: resetSession,
   } = useSessionStore();
   const locationId = useEffectiveLocationId();
+  const { data: activeClient } = useClient(activeClientId ?? '');
+  const hasContact = !!(activeClient?.phone || activeClient?.email) && !isDraftClient(activeClient);
 
   const { photos, consentStatus, reset: resetFitting } = useFittingStore();
   const isOnline = useSyncStore((st) => st.isOnline);
@@ -195,7 +203,9 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     const saved = await closeVisit({
       outcome: outcomeMap[outcome] ?? 'no_match',
       notes: internalNotes.trim() || undefined,
-      sendSummary: sendSummary && consentCaptured,
+      // Foundry accepts sendSummary but nothing sends it (no listener on tryon_session.completed);
+      // the message below is what actually reaches the client.
+      sendSummary: false,
       summaryLanguage: language,
       tags: selectedTags,
       orderRef: orderRef.trim() || undefined,
@@ -204,19 +214,28 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       toast.error('Visit not saved', 'No active visit found.');
       return;
     }
+    const messageNow = sendSummary && hasContact;
+    if (messageNow) {
+      const names = (lovedFrames.length ? lovedFrames : framesTried).map((f) => f.productName);
+      setAfterMessage({
+        recipient: { firstName: activeClient?.firstName, phone: activeClient?.phone, email: activeClient?.email, language },
+        template: OUTCOME_TEMPLATE[outcome],
+        frames: joinFrames(names, language),
+      });
+    }
     // Booking the next visit needs Foundry (free times); offline, book it later from the profile.
     if (outcome === 'booked_next_visit' && isOnline) setShowFollowUpSheet(true);
-    else onComplete();
+    else if (!messageNow) onComplete();
   }, [
     activeClientId, sessionId, outcome, sendSummary, consentCaptured, language, internalNotes,
-    selectedTags, orderRef, closeVisit, isOnline, onComplete,
+    selectedTags, orderRef, closeVisit, isOnline, onComplete, hasContact, activeClient, lovedFrames, framesTried,
   ]);
 
   const handleFollowUpSheetClose = useCallback(() => {
     setShowFollowUpSheet(false);
-    // Complete the end-session flow now that follow-up is handled
-    onComplete();
-  }, [onComplete]);
+    // A preloaded message is waiting: it shows next and completes the flow when closed.
+    if (!afterMessage) onComplete();
+  }, [onComplete, afterMessage]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -230,7 +249,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
   return (
     <>
       <Sheet
-        visible={visible && !showFollowUpSheet}
+        visible={visible && !showFollowUpSheet && !afterMessage}
         onClose={handleClose}
         wide
         title={`End visit${activeClientName ? ` with ${activeClientName}` : ''}`}
@@ -281,21 +300,23 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
             <TextField label="Order number" hint="Optional. Links the visit to the sale." value={orderRef} onChangeText={setOrderRef} placeholder="e.g. #1042" autoCapitalize="characters" autoCorrect={false} />
           ) : null}
 
-          <Field label="Follow-up email" hint={consentCaptured ? `Their loved frames${photoCount ? ' and photos' : ''}, so they can decide at home.` : 'Needs their consent from the fitting (photos and email).'}>
+          <Field label="Message the client" hint={hasContact
+            ? (outcome ? `Opens “${renderTemplate(OUTCOME_TEMPLATE[outcome], language, {}).subject}” in Messages or Mail after saving.` : 'Pick how it went; the matching message is preloaded.')
+            : 'No phone or email yet. Use “Send them their choices” in the visit to take them.'}>
             <View className="flex-row items-center justify-between gap-[16px] border border-border rounded-md px-[16px] min-h-[56px]">
               <View className="flex-1 flex-row items-center gap-[8px]">
-                <Text className="text-body-md text-text-primary">Send a summary</Text>
+                <Text className="text-body-md text-text-primary">Send a message now</Text>
                 {lovedFrames.length ? <Badge>{`${lovedFrames.length} loved`}</Badge> : null}
               </View>
-              {sendSummary && consentCaptured ? (
+              {sendSummary && hasContact ? (
                 <ChoiceChips options={[{ key: 'en', label: 'English' }, { key: 'fr', label: 'Français' }]} value={language} onChange={(l: Language | null) => setLanguage(l ?? language)} />
               ) : null}
               <Switch
-                value={sendSummary && consentCaptured}
+                value={sendSummary && hasContact}
                 onValueChange={setSendSummary}
-                disabled={!consentCaptured}
+                disabled={!hasContact}
                 trackColor={{ true: kitColors.primary, false: kitColors.border }}
-                accessibilityLabel="Send a summary email"
+                accessibilityLabel="Send a message now"
               />
             </View>
           </Field>
@@ -310,6 +331,16 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
           </Pressable>
         </View>
       </Sheet>
+
+      {afterMessage ? (
+        <MessageSheet
+          visible={!showFollowUpSheet}
+          onClose={() => { setAfterMessage(null); onComplete(); }}
+          recipient={afterMessage.recipient}
+          templates={[afterMessage.template, 'visit_choices']}
+          vars={{ frames: afterMessage.frames }}
+        />
+      ) : null}
 
       <CreateAppointmentSheet
         visible={showFollowUpSheet}

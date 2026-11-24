@@ -1,5 +1,26 @@
 # Changelog
 
+## [2026-11-24] — Gap checklist: Phases 1–2
+
+Plan: `docs/v2/06-gap-checklist-plan.md`. Foundry asks: `docs/v2/05-foundry-api-requests.md`.
+
+### Added
+- **Floor as a funnel:** Start a visit · Find a client · Open a profile · New client; *Today's status* (late orders first, pickups, paid without Rx, follow-ups, pending approvals); *Store traffic* counter (came in vs helped).
+- **New client from any screen** (tab bar), including *Start without a name* (guest profile, tagged `draft-profile`) and from the Walk-in sheet.
+- **Visit:** tray sheet with colours, features and an Rx fit note; *Find their style* guided questions; full-screen client presentation with Share; preloaded messages (Messages/Mail); *Send them their choices* contact step with a no-marketing promise; second-pair prompt; sunglasses-only path makes the Rx optional; Rx photo and measurements on the File step; handoff on the Close step.
+- **Profile:** Measurements (template-driven, dated history), Coming back for (handoff), Frame collection with missing roles.
+- **Orders:** store-named stages (Pending approval replaces In review; Arrived, to check), 10–12 business-day late flags, *Late* filter, *Tracker* table (client, item, purchase date, staff), order detail with Rx photo/upload (OCR), reminder, request approval, sent to lab (credential), lab confirmed, receiving check, redo/delay, client messages, timeline.
+- **Follow-ups:** card with frames liked and what was discussed, one *Follow up* button, call log with outcomes.
+- Shared message templates (EN/FR), tested for no discount language.
+
+### Changed
+- Discounts removed from Follow-ups. *Review* tab renamed **Approvals**.
+- End visit: the outcome preloads its client message (replaces "Send a summary", which Foundry never sent).
+- Configurator: every step reachable (add-ons were greyed out until lens steps were done); ordering still checks required steps.
+
+### Fixed
+- Client edits used `PATCH /api/clients/{id}`; Foundry only has `PUT`, so contact and tag edits failed.
+
 ## [2026-10-17] — Phase D11: visual QA
 
 ### Added

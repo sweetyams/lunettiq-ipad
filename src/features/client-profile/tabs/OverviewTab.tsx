@@ -4,6 +4,7 @@ import { useInsuranceProfile, useMultiPairQuestionnaire } from '@/src/api/useMul
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Badge, Button, KeyValue, Section, StatusDot, formatDate, formatDollars, formatPhone } from '@/src/ui/kit';
 import type { ClientProfile, WishlistItem } from '@/src/api/clients.types';
+import { HandoffSection, CollectionSection } from '../ClientFileSections';
 
 export type ProfileSheet = 'insurance' | 'lifestyle' | 'multipair' | 'preferences' | 'contact' | 'notes' | 'tags';
 
@@ -74,6 +75,8 @@ export function OverviewTab({ clientId, client, onOpenSheet }: OverviewTabProps)
     <View className="flex-row gap-[20px] items-start">
       {/* Left column: who they are */}
       <View className="flex-1 gap-[20px]">
+        {staff ? <HandoffSection clientId={clientId} /> : null}
+        <CollectionSection clientId={clientId} />
         <Section title="Contact" action={staff ? { label: 'Edit', onPress: () => onOpenSheet('contact') } : undefined}>
           <KeyValue
             rows={[

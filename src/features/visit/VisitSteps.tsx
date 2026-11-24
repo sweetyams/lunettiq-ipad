@@ -16,8 +16,15 @@ import { FitProfileEditSheet } from '@/src/features/client-profile/FitProfileEdi
 import { LifestyleQuestionnaireSheet } from '@/src/features/client-profile/LifestyleQuestionnaireSheet';
 import { Badge, Button, ChoiceChips, ListRow, Section, TextField, VerdictPicker, formatDate, formatPhone, kitColors } from '@/src/ui/kit';
 import { useT, type TKey } from '@/src/i18n';
-import type { Client } from '@/src/api/clients.types';
-import { VISIT_STEPS, VISIT_PURPOSES, nextStep, prevStep, stepDone, type StepFacts, type VisitStep } from './steps';
+import type { Client, ClientProfile } from '@/src/api/clients.types';
+import { VISIT_STEPS, VISIT_PURPOSES, isSunPath, nextStep, prevStep, stepDone, type StepFacts, type VisitStep } from './steps';
+import { RxCaptureSheet } from '@/src/features/rx/RxCaptureSheet';
+import { MeasurementsSheet } from '@/src/features/client-profile/MeasurementsSheet';
+import { readMeasurements, summarize } from '@/src/features/client-profile/measurements';
+import { ContactCaptureSheet } from './VisitExtras';
+import { HandoffSheet } from '@/src/features/client-profile/ClientFileSheets';
+import { handoffLine, readHandoff } from '@/src/features/client-profile/clientFile';
+import { useLangStore } from '@/src/i18n';
 
 /** Facts that mark steps done, from the visit store and the client's file. */
 export function useStepFacts(clientId: string, client: Client | undefined): StepFacts {
@@ -109,7 +116,7 @@ export function WelcomeStep({ client }: { client: Client }) {
   );
 }
 
-type FileSheet = 'contact' | 'rx' | 'fit' | null;
+type FileSheet = 'contact' | 'rx' | 'rxPhoto' | 'fit' | 'measure' | null;
 
 export function FileStep({ client }: { client: Client }) {
   const tr = useT();
@@ -121,14 +128,19 @@ export function FileStep({ client }: { client: Client }) {
   const fit = enrichment?.frameWidthMm && enrichment?.bridgeWidthMm
     ? tr('visit.fitValue', { width: enrichment.frameWidthMm, bridge: enrichment.bridgeWidthMm }) : null;
 
-  const row = (label: string, value: string | null, onPress: () => void, divider: boolean) => (
+  const fr = useLangStore((st) => st.uiLang) === 'fr';
+  const { purposes } = useSessionStore();
+  const sun = isSunPath(purposes);
+  const measured = summarize(readMeasurements((client as ClientProfile).enrichment?.customFields)[0]);
+  const row = (label: string, value: string | null, onPress: () => void, divider: boolean, opts?: { optional?: boolean; extra?: { label: string; onPress: () => void } }) => (
     <ListRow
       divider={divider}
       title={label}
       subtitle={value ?? undefined}
       trailing={
         <View className="flex-row items-center gap-[10px]">
-          {value ? <Badge tone="success" dot>{tr('visit.onFile')}</Badge> : <Badge tone="warning" dot>{tr('visit.missing')}</Badge>}
+          {value ? <Badge tone="success" dot>{tr('visit.onFile')}</Badge> : opts?.optional ? <Badge tone="neutral">{fr ? 'Facultatif' : 'Optional'}</Badge> : <Badge tone="warning" dot>{tr('visit.missing')}</Badge>}
+          {opts?.extra ? <Button label={opts.extra.label} size="sm" variant={value ? 'secondary' : 'primary'} onPress={opts.extra.onPress} /> : null}
           <Button label={value ? tr('visit.edit') : tr('visit.add')} size="sm" onPress={onPress} />
         </View>
       }
@@ -139,12 +151,23 @@ export function FileStep({ client }: { client: Client }) {
     <StepPage title={tr('visit.fileTitle')} hint={tr('visit.fileHint')}>
       <Section padded={false}>
         {row(tr('visit.contact'), contact || null, () => setSheet('contact'), false)}
-        {row(tr('visit.prescription'), latest ? (latest.prescribedAt ? tr('visit.rxExam', { date: formatDate(latest.prescribedAt) ?? '' }) : tr('visit.onFile')) : null, () => setSheet('rx'), true)}
+        {row(tr('visit.prescription'), latest ? (latest.prescribedAt ? tr('visit.rxExam', { date: formatDate(latest.prescribedAt) ?? '' }) : tr('visit.onFile')) : null, () => setSheet('rx'), true,
+          { optional: sun, extra: { label: fr ? 'Photo' : 'Photo', onPress: () => setSheet('rxPhoto') } })}
+        {row(fr ? 'Mesures (EP, hauteurs, lecture)' : 'Measurements (PD, heights, reading)', measured, () => setSheet('measure'), true, { optional: true })}
         {row(tr('visit.fit'), fit, () => setSheet('fit'), true)}
       </Section>
+      {!latest && !sun ? (
+        <Text className="text-body-sm text-text-tertiary">
+          {fr ? 'Pas d’ordonnance? Lisez leur paire actuelle au frontofocomètre (Mesures) et commencez une sélection de montures à essayer.'
+            : 'No prescription? Read their current pair on the lensometer (Measurements) and start pulling frames to try.'}
+        </Text>
+      ) : null}
+      {sun ? <Text className="text-body-sm text-text-tertiary">{fr ? 'Solaires seulement : l’ordonnance est facultative.' : 'Sunglasses only: a prescription is optional.'}</Text> : null}
       {sheet === 'contact' ? <ContactEditSheet clientId={client.id} client={client} visible onClose={() => setSheet(null)} /> : null}
       {sheet === 'rx' ? <PrescriptionSheet clientId={client.id} visible onClose={() => setSheet(null)} /> : null}
       {sheet === 'fit' ? <FitProfileEditSheet clientId={client.id} visible onClose={() => setSheet(null)} /> : null}
+      {sheet === 'rxPhoto' ? <RxCaptureSheet customerId={client.id} visible onClose={() => setSheet(null)} /> : null}
+      {sheet === 'measure' ? <MeasurementsSheet clientId={client.id} visible onClose={() => setSheet(null)} /> : null}
     </StepPage>
   );
 }
@@ -187,15 +210,28 @@ export function QuoteStep({ onOrder }: { onOrder: (frame: FrameTried) => void })
   );
 }
 
-export function CloseStep({ minutes, onEnd }: { minutes: number; onEnd: () => void }) {
+export function CloseStep({ minutes, onEnd, client }: { minutes: number; onEnd: () => void; client?: Client }) {
   const tr = useT();
-  const { framesTried } = useSessionStore();
+  const lang = useLangStore((st) => st.uiLang);
+  const fr = lang === 'fr';
+  const { framesTried, activeClientId } = useSessionStore();
+  const clientId = client?.id ?? activeClientId;
+  const [open, setOpen] = useState<null | 'contact' | 'handoff'>(null);
+  const handoff = handoffLine(readHandoff((client as ClientProfile | undefined)?.enrichment?.customFields), lang);
   const loved = framesTried.filter((f) => f.verdict === 'loved' || f.verdict === 'liked').length;
   return (
     <StepPage title={tr('visit.closeTitle')} hint={tr('visit.closeSummary', { tried: framesTried.length, loved, minutes })}>
+      <Section padded={false}>
+        <ListRow title={fr ? 'Leur envoyer leur sélection' : 'Send them their choices'} subtitle={fr ? 'Leurs montures aimées, par texto ou courriel. Aucun marketing.' : 'Their loved frames by text or email. No marketing.'}
+          trailing={<Button label={fr ? 'Envoyer' : 'Send'} size="sm" onPress={() => setOpen('contact')} />} />
+        <ListRow divider title={fr ? 'Pour la suite' : 'Coming back for'} subtitle={handoff ?? (fr ? 'Solaires, 2e paire, voyage… pour qu’un collègue puisse continuer.' : 'Sunglasses, a second pair, travel… so a colleague can pick up.')}
+          trailing={<Button label={handoff ? (fr ? 'Modifier' : 'Edit') : (fr ? 'Ajouter' : 'Add')} size="sm" onPress={() => setOpen('handoff')} />} />
+      </Section>
       <View className="flex-row">
         <Button label={tr('visit.endVisit')} variant="primary" size="lg" onPress={onEnd} />
       </View>
+      {open === 'contact' && clientId ? <ContactCaptureSheet visible clientId={clientId} onClose={() => setOpen(null)} /> : null}
+      {open === 'handoff' && clientId ? <HandoffSheet visible clientId={clientId} onClose={() => setOpen(null)} /> : null}
     </StepPage>
   );
 }

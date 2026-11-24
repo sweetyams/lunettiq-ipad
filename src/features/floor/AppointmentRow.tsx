@@ -27,8 +27,10 @@ function formatTime(iso: string): { time: string; period: string } {
  * Builder list row; no coloured edges, no full-width buttons.
  */
 export function AppointmentRow({
-  appointment, onMarkArrived, onStartVisit, onOpenVisit, onPress, onLongPress, first, selected, hideAction,
+  appointment, onMarkArrived, onStartVisit, onOpenVisit, onPress, onLongPress, first, selected, hideAction, onOpenClient,
 }: {
+  /** Tap the client's name to open their profile (Floor surfaces client details). */
+  onOpenClient?: (clientId: string) => void;
   appointment: Appointment;
   onMarkArrived: (id: string) => void;
   onStartVisit: (id: string) => void;
@@ -75,7 +77,13 @@ export function AppointmentRow({
             <Text className="text-body-sm text-text-tertiary">{period}</Text>
           </View>
           <View className="flex-1">
-            <Text className="text-body-lg font-medium text-text-primary" numberOfLines={1}>{appointment.clientName ?? tr('floor.client')}</Text>
+            {onOpenClient && appointment.clientId && privacyMode !== 'client' ? (
+              <Pressable onPress={() => onOpenClient(appointment.clientId!)} accessibilityRole="link" accessibilityLabel={`${tr('floor.openProfile')}: ${appointment.clientName ?? tr('floor.client')}`} hitSlop={6} className="self-start">
+                <Text className="text-body-lg font-medium text-text-primary underline" numberOfLines={1}>{appointment.clientName ?? tr('floor.client')}</Text>
+              </Pressable>
+            ) : (
+              <Text className="text-body-lg font-medium text-text-primary" numberOfLines={1}>{appointment.clientName ?? tr('floor.client')}</Text>
+            )}
             <Text className="text-body-sm text-text-tertiary mt-[2px]" numberOfLines={1}>
               {appointment.type}{appointment.duration ? ` · ${appointment.duration} min` : ''}
             </Text>
