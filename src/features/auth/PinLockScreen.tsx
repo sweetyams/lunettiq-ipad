@@ -7,6 +7,10 @@ import { useAuthenticate, AuthenticateResponse } from '@/src/api/useDeviceAuth';
 import { useBiometric } from './useBiometric';
 import { APIError } from '@/src/api/client';
 import { Wordmark } from '@/src/ui/Wordmark';
+import { useUser } from '@clerk/clerk-expo';
+import { useTenantStore } from '@/src/features/tenant/useTenantStore';
+
+import { isNotMemberError } from './authErrors';
 
 // Lock screen colors — hardcoded for reliability (renders before token provider)
 const C = {
@@ -43,9 +47,14 @@ export function PinLockScreen({ onUnlock, isAuthReady = true, onSignOut, onChang
   const [pinError, setPinError] = useState<string | null>(null);
   const [remainingAttempts, setRemainingAttempts] = useState<number | undefined>(undefined);
   const [lockedUntil, setLockedUntil] = useState<string | null>(null);
+  const [notMember, setNotMember] = useState(false);
+  const { user } = useUser();
+  const storeName = useTenantStore((s) => s.activeProject?.name ?? null);
+  const accountEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 
   const handlePinComplete = useCallback((pin: string) => {
     setPinError(null);
+    setNotMember(false);
 
     authenticate(
       { pin },
@@ -79,6 +88,10 @@ export function PinLockScreen({ onUnlock, isAuthReady = true, onSignOut, onChang
               if (error.details && typeof error.details === 'object' && 'remainingAttempts' in error.details) {
                 setRemainingAttempts((error.details as { remainingAttempts: number }).remainingAttempts);
               }
+            } else if (isNotMemberError(error)) {
+              // The PIN may be fine: the account signed in on this iPad isn't on this store.
+              setNotMember(true);
+              setPinError('This iPad’s account can’t open this store');
             } else {
               setPinError(error.message);
             }
@@ -118,6 +131,19 @@ export function PinLockScreen({ onUnlock, isAuthReady = true, onSignOut, onChang
             lockedUntil={lockedUntil}
           />
         </View>
+
+        {notMember ? (
+          <Text style={styles.helpText} accessibilityLiveRegion="polite">
+            {accountEmail ? `Signed in as ${accountEmail}` : 'The signed-in account'}
+            {storeName ? ` isn’t a member of ${storeName}.` : ' isn’t a member of this store.'}
+            {' Ask an owner to add it in Foundry (Team), or sign out and sign in with a store account.'}
+          </Text>
+        ) : null}
+
+        {/* Which account and store this iPad runs as — so staff can tell what's wrong */}
+        {(accountEmail || storeName) && !notMember ? (
+          <Text style={styles.contextText}>{[storeName, accountEmail].filter(Boolean).join(' · ')}</Text>
+        ) : null}
 
         {/* Device owner unlock — escape hatch at bottom */}
         <Pressable
@@ -214,6 +240,21 @@ const styles = StyleSheet.create({
   escapeText: {
     fontSize: 14,
     color: C.textSubtle,
+  },
+  helpText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: C.text,
+    textAlign: 'center',
+    maxWidth: 420,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  contextText: {
+    fontSize: 14,
+    color: C.textSubtle,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   escapeDivider: {
     fontSize: 14,
