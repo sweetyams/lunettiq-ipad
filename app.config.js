@@ -4,8 +4,8 @@ module.exports = ({ config }) => ({
   name: 'Lunettiq',
   slug: 'lunettiq-ipad',
   version: '0.1.0',
-  // In-store iPad lives in a landscape case; layouts are designed landscape-first.
-  orientation: 'landscape',
+  // Landscape-first (the in-store case) but usable in portrait; layouts key off useLayout().
+  orientation: 'default',
   platforms: ['ios'],
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
@@ -18,6 +18,7 @@ module.exports = ({ config }) => ({
     infoPlist: {
       NSCameraUsageDescription: 'Lunettiq uses the camera to capture fitting photos and Second Sight trade-in documentation.',
       NSPhotoLibraryUsageDescription: 'Allow Lunettiq to save fitting photos.',
+      ITSAppUsesNonExemptEncryption: false,
       UIRequiredDeviceCapabilities: ['armv7', 'camera-flash'],
       NSAppTransportSecurity: {
         NSAllowsLocalNetworking: true,

@@ -7,6 +7,8 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "node": "20.20.2",
+      "pnpm": "9.15.4",
       "ios": {
         "simulator": false,
         "buildConfiguration": "Debug"
@@ -14,12 +16,22 @@
     },
     "preview": {
       "distribution": "store",
+      "node": "20.20.2",
+      "pnpm": "9.15.4",
+      "env": {
+        "NODE_ENV": "production"
+      },
       "ios": {
         "buildConfiguration": "Release"
       }
     },
     "production": {
       "distribution": "store",
+      "node": "20.20.2",
+      "pnpm": "9.15.4",
+      "env": {
+        "NODE_ENV": "production"
+      },
       "ios": {
         "buildConfiguration": "Release"
       },
