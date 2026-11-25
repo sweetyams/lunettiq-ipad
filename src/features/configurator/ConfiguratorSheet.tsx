@@ -11,17 +11,18 @@
  * Design: kit Sheet, step chips, choice rows with a near-black selection ring,
  * running total beside the one primary.
  */
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { useState, useMemo, useCallback } from 'react';
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react-native';
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Linking } from 'react-native';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Image } from 'expo-image';
+import { ChevronRight, ChevronLeft, Check, ExternalLink } from 'lucide-react-native';
 import {
   useConfiguratorResolve,
   useConfiguratorSnapshot,
   useLensColours,
   serializeSelections,
-  isStepComplete,
   computePriceDelta,
 } from '@/src/api/useConfigurator';
+import { visibleSteps, isSelectable, stepComplete, pruneSelections, defaultSelections, t } from './flow';
 import { Badge, Button, KeyValue, Section, Sheet, kitColors } from '@/src/ui/kit';
 import type {
   SnapshotStep,
@@ -46,8 +47,20 @@ interface ChoiceCardProps {
 
 function ChoiceCard({ choice, isSelected, onPress, priceDelta }: ChoiceCardProps) {
   const label = choice.label?.en ?? choice.code;
-  const description = choice.description?.en;
+  const description = choice.description?.en || t(choice.helpText);
   const price = priceDelta > 0 ? `+$${(priceDelta / 100).toFixed(2)}` : 'Included';
+  const badge = t(choice.badge);
+
+  if (choice.comingSoon) {
+    // Shown as on the web, not orderable yet.
+    return (
+      <View className="mb-[8px] min-h-[56px] rounded-lg px-[16px] py-[12px] flex-row items-center gap-[14px] border border-border" style={{ margin: 1, opacity: 0.55 }} accessible accessibilityLabel={`${label}, coming soon`}>
+        <View className="w-[22px] h-[22px] rounded-full border border-border" />
+        <Text className="flex-1 text-body-md text-text-secondary">{label}</Text>
+        <Badge>Coming soon</Badge>
+      </View>
+    );
+  }
 
   return (
     <Pressable
@@ -66,7 +79,10 @@ function ChoiceCard({ choice, isSelected, onPress, priceDelta }: ChoiceCardProps
             {isSelected ? <Check size={14} color={kitColors.inverse} strokeWidth={3} /> : null}
           </View>
           <View className="flex-1">
-            <Text className={`text-body-md text-text-primary ${isSelected ? 'font-medium' : ''}`}>{label}</Text>
+            <View className="flex-row items-center gap-[8px]">
+              <Text className={`text-body-md text-text-primary ${isSelected ? 'font-medium' : ''}`}>{label}</Text>
+              {badge ? <Badge tone="info">{badge}</Badge> : null}
+            </View>
             {description ? <Text className="text-body-sm text-text-tertiary mt-[2px]">{description}</Text> : null}
           </View>
           <Text className={`text-body-sm ${priceDelta > 0 ? 'font-medium text-text-primary' : 'text-text-tertiary'}`} style={{ fontVariant: ['tabular-nums'] }}>{price}</Text>
@@ -97,8 +113,15 @@ function ColourSwatch({ colour, isSelected, onPress }: ColourSwatchProps) {
       className="items-center w-[72px] gap-[4px]"
     >
       <View className={`w-[52px] h-[52px] rounded-full items-center justify-center ${isSelected ? 'border-2 border-accent' : 'border border-border'}`}>
-        {/* Swatch colour is product data (the lens tint), not a UI colour. */}
-        <View className="w-[42px] h-[42px] rounded-full" style={{ backgroundColor: colour.hexStart }} />
+        {/* Swatch colour is product data (the lens tint), not a UI colour. A fade shows both ends. */}
+        {colour.imageUrl ? (
+          <Image source={{ uri: colour.imageUrl }} contentFit="cover" style={{ width: 42, height: 42, borderRadius: 21 }} accessibilityIgnoresInvertColors />
+        ) : (
+          <View className="w-[42px] h-[42px] rounded-full overflow-hidden">
+            <View style={{ flex: 1, backgroundColor: colour.hexStart }} />
+            {colour.hexEnd ? <View style={{ flex: 1, backgroundColor: colour.hexEnd }} /> : null}
+          </View>
+        )}
       </View>
       <Text className="text-body-sm text-text-primary text-center" numberOfLines={2}>{displayLabel}</Text>
       <Text className="text-body-sm text-text-tertiary">{priceLabel}</Text>
@@ -135,13 +158,28 @@ function GroupSection({
   return (
     <View className="mb-[24px]">
       <View className="flex-row items-center gap-[8px] mb-[10px]">
-        <Text className="text-heading-lg text-text-primary">{group.label?.en ?? group.code}</Text>
-        {group.isRequired ? <Badge>Required</Badge> : <Text className="text-body-sm text-text-tertiary">Optional</Text>}
+        {t(group.label) ? <Text className="text-heading-lg text-text-primary">{t(group.label)}</Text> : null}
+        {!groupChoices.some(isSelectable) ? null : group.isRequired ? <Badge>Required</Badge> : <Text className="text-body-sm text-text-tertiary">Optional</Text>}
       </View>
 
       {groupChoices.map((choice) => {
         const isSelected = selectedIds.includes(choice.id);
-        const priceDelta = priceRuleMap.get(choice.id) ?? 0;
+        const priceDelta = priceRuleMap.get(choice.id) ?? choice.priceDelta ?? 0;
+
+        if (choice.choiceType === 'content') {
+          const body = t(choice.contentBody) || t(choice.description);
+          return body ? <Text key={choice.id} className="text-body-sm text-text-secondary mb-[10px]">{body}</Text> : null;
+        }
+        if (choice.choiceType === 'link') {
+          const url = typeof choice.link === 'string' ? choice.link : choice.link?.url;
+          return (
+            <Pressable key={choice.id} onPress={url ? () => { Linking.openURL(url).catch(() => {}); } : undefined} disabled={!url} accessibilityRole="link" accessibilityLabel={choice.label?.en ?? choice.code} className="flex-row items-center gap-[6px] min-h-[44px] mb-[8px]">
+              <Text className="text-body-md font-medium text-text-primary underline">{choice.label?.en ?? choice.code}</Text>
+              {url ? <ExternalLink size={16} color={kitColors.textTertiary} /> : null}
+            </Pressable>
+          );
+        }
+        if (choice.choiceType === 'input') return null;
 
         if (choice.choiceType === 'colour' && isSelected && choice.lensColourSetId) {
           const colours = lensColoursBySet.get(choice.lensColourSetId) ?? [];
@@ -256,6 +294,8 @@ export interface ConfiguratorSheetProps {
   productName: string;
   variantId?: string;
   basePrice?: number; // cents
+  /** The last button. Defaults to "Continue to order". */
+  completeLabel?: string;
   onClose: () => void;
   onComplete: (cartResult: CartResult, priceSummary: ConfiguratorPriceSummary) => void;
 }
@@ -266,6 +306,7 @@ export function ConfiguratorSheet({
   productName,
   variantId,
   basePrice = 0,
+  completeLabel = 'Continue to order',
   onClose,
   onComplete,
 }: ConfiguratorSheetProps) {
@@ -320,19 +361,25 @@ export function ConfiguratorSheet({
     return map;
   }, [lensColoursRaw]);
 
-  // Summary step is the last virtual step
-  const steps = snapshot?.steps ?? [];
+  // Pre-pick defaults once the flow loads (the only orderable lens type, say).
+  useEffect(() => {
+    if (snapshot && Object.keys(selections).length === 0) setSelections(pruneSelections(snapshot, defaultSelections(snapshot)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshot]);
+
+  // Summary step is the last virtual step. Only the steps the picks so far make visible.
+  const steps = useMemo(() => (snapshot ? visibleSteps(snapshot, selections) : []), [snapshot, selections]);
   const isSummaryStep = currentStepIdx === steps.length;
   const currentStep: SnapshotStep | null = steps[currentStepIdx] ?? null;
 
   // Check if current step is complete
   const currentStepComplete = useMemo(() => {
     if (!currentStep) return true;
-    return isStepComplete(currentStep.groups, selections);
+    return stepComplete(currentStep, selections);
   }, [currentStep, selections]);
 
   // Jumping between steps means the summary must check every step, not just the last one.
-  const firstIncomplete = useMemo(() => steps.findIndex((st) => !isStepComplete(st.groups, selections)), [steps, selections]);
+  const firstIncomplete = useMemo(() => steps.findIndex((st) => !stepComplete(st, selections)), [steps, selections]);
   const allRequiredDone = firstIncomplete === -1;
 
   // Compute running price delta
@@ -359,24 +406,14 @@ export function ConfiguratorSheet({
     (groupId: string, choiceId: string, selectionType: 'single' | 'multiple') => {
       setSelections((prev) => {
         const existing = prev[groupId] ?? [];
-        if (selectionType === 'single') {
-          // Deselect if already selected, else replace
-          return {
-            ...prev,
-            [groupId]: existing.includes(choiceId) ? [] : [choiceId],
-          };
-        } else {
-          // Toggle in multi-select
-          return {
-            ...prev,
-            [groupId]: existing.includes(choiceId)
-              ? existing.filter((id) => id !== choiceId)
-              : [...existing, choiceId],
-          };
-        }
+        const next = selectionType === 'single'
+          ? { ...prev, [groupId]: existing.includes(choiceId) ? [] : [choiceId] }
+          : { ...prev, [groupId]: existing.includes(choiceId) ? existing.filter((id) => id !== choiceId) : [...existing, choiceId] };
+        // A change can hide later steps or choices: drop picks that are no longer shown.
+        return snapshot ? pruneSelections(snapshot, next) : next;
       });
     },
-    []
+    [snapshot]
   );
 
   const handleSelectColour = useCallback((compositeKey: string, colourId: string) => {
@@ -429,7 +466,7 @@ export function ConfiguratorSheet({
   const footer = isLoading ? undefined : !hasConfigurator ? (
     <View className="flex-1 flex-row justify-end gap-[8px]">
       <Button label="Cancel" variant="ghost" onPress={handleClose} />
-      <Button label="Order frame only" variant="primary" onPress={frameOnly} />
+      {completeLabel === 'Done' ? null : <Button label="Order frame only" variant="primary" onPress={frameOnly} />}
     </View>
   ) : (
     <View className="flex-1 flex-row items-center gap-[8px]">
@@ -439,7 +476,7 @@ export function ConfiguratorSheet({
         <Text className="text-heading-lg text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{money(basePrice > 0 ? total : priceDelta)}</Text>
       </View>
       {isSummaryStep ? (
-        <Button label={allRequiredDone ? 'Continue to order' : 'Finish the lens steps'} variant="primary" onPress={allRequiredDone ? handleComplete : () => handleGoToStep(firstIncomplete)} />
+        <Button label={allRequiredDone ? completeLabel : 'Finish the lens steps'} variant="primary" onPress={allRequiredDone ? handleComplete : () => handleGoToStep(firstIncomplete)} />
       ) : (
         <Button label={currentStepIdx === steps.length - 1 ? 'Review' : 'Next'} icon={ChevronRight} variant="primary" onPress={handleNext} disabled={!currentStepComplete} />
       )}
@@ -458,7 +495,7 @@ export function ConfiguratorSheet({
       {isLoading ? (
         <View className="py-[48px] items-center"><ActivityIndicator color={kitColors.primary} /></View>
       ) : !hasConfigurator ? (
-        <Text className="text-body-md text-text-secondary">This frame has no lens options set up. You can order the frame on its own.</Text>
+        <Text className="text-body-md text-text-secondary">{completeLabel === 'Done' ? 'This store has no lens options set up for this frame yet.' : 'This frame has no lens options set up. You can order the frame on its own.'}</Text>
       ) : (
         <View className="gap-[20px]">
           <View className="flex-row flex-wrap gap-[8px]">
@@ -466,7 +503,7 @@ export function ConfiguratorSheet({
                 lens steps were done). A tick means the step has what it needs. */}
             {[...steps.map((st) => st.name?.en ?? 'Step'), 'Review'].map((name, idx) => {
               const step = steps[idx];
-              const done = step ? isStepComplete(step.groups, selections) && Object.keys(selections).some((g) => step.groups.some((gr) => gr.id === g && (selections[g]?.length ?? 0) > 0)) : false;
+              const done = step ? stepComplete(step, selections) && Object.keys(selections).some((g) => step.groups.some((gr) => gr.id === g && (selections[g]?.length ?? 0) > 0)) : false;
               const on = idx === currentStepIdx;
               return (
                 <Pressable key={`${name}-${idx}`} onPress={() => handleGoToStep(idx)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={`${name}${done ? ', done' : ''}`}>

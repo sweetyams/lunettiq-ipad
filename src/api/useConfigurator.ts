@@ -13,6 +13,11 @@ import type {
   ColourSelections,
 } from './configurator.types';
 import { resolveLensColourLabel } from './configurator.types';
+
+/** Foundry sends `hexCode`; the swatches read `hexStart`. */
+export function normaliseLensColour(c: LensColour): LensColour {
+  return { ...c, hexStart: c.hexStart ?? c.hexCode ?? '#cccccc' };
+}
 import type { SnapshotGroup, SnapshotChoice, SnapshotPriceRule } from './configurator.types';
 
 // --- Query hooks ---
@@ -63,7 +68,7 @@ export function useConfiguratorSnapshot(flowId: string | null) {
 export function useLensColours() {
   return useQuery({
     queryKey: ['configurator', 'lens-colours'],
-    queryFn: () => api.get<LensColour[]>('/api/storefront/configurator/lens-colours'),
+    queryFn: async () => (await api.get<LensColour[]>('/api/storefront/configurator/lens-colours') ?? []).map(normaliseLensColour),
     staleTime: 30 * 60 * 1000, // 30 min — reference data
   });
 }
@@ -101,8 +106,9 @@ export function serializeSelections(
       const choice = choiceMap.get(choiceId);
       if (!choice) continue;
 
-      // Content choices: no cart output
+      // Words and links (with no price): no cart output
       if (choice.choiceType === 'content') continue;
+      if ((choice.choiceType === 'link' || choice.choiceType === 'input') && !(choice.priceDelta > 0)) continue;
 
       // Product choices: addon line
       if (choice.choiceType === 'product') {
@@ -119,11 +125,12 @@ export function serializeSelections(
           ],
         });
         const rule = priceMap.get(choiceId);
-        if (rule?.amount && rule.amount > 0) {
+        const amount = rule?.amount ?? choice.priceDelta ?? 0;
+        if (amount > 0) {
           pricingLines.push({
             code: choice.code,
-            label: rule.label || choice.label?.en || choice.code,
-            amount: rule.amount,
+            label: rule?.label || choice.label?.en || choice.code,
+            amount,
           });
         }
         continue;
@@ -153,11 +160,12 @@ export function serializeSelections(
       // Standard choices
       standardCodes.push(choice.code);
       const rule = priceMap.get(choiceId);
-      if (rule?.amount && rule.amount > 0) {
+      const amount = rule?.amount ?? choice.priceDelta ?? 0;
+      if (amount > 0) {
         pricingLines.push({
           code: choice.code,
-          label: rule.label || choice.label?.en || choice.code,
-          amount: rule.amount,
+          label: rule?.label || choice.label?.en || choice.code,
+          amount,
         });
       }
     }
@@ -211,9 +219,11 @@ export function computePriceDelta(
           const colour = colourMap.get(colourSelKey[1]);
           if (colour) delta += colour.price;
         }
-      } else {
+      }
+      if (choice.choiceType !== 'content') {
+        // A price rule wins; otherwise the choice's own price (live flows set priceDelta, no rules).
         const rule = priceMap.get(choiceId);
-        if (rule?.amount) delta += rule.amount;
+        delta += Math.max(0, rule?.amount ?? choice.priceDelta ?? 0);
       }
     }
   }

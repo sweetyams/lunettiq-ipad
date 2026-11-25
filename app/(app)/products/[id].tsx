@@ -2,12 +2,15 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { ScrollView, View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { ChevronLeft, Heart, Plus, Settings2 } from 'lucide-react-native';
+import { ChevronLeft, Glasses, Heart, Plus } from 'lucide-react-native';
 import { useProduct } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useCreateProductInteraction } from '@/src/api/useProductInteractions';
 import { useProductEnhancement } from '@/src/api/useProductEnhancement';
 import { useAddToWishlist } from '@/src/api/useClients';
+import { usePromotion, promotionApplies } from '@/src/api/usePromotion';
+import { pickFrameVariant, hasRealOptions } from '@/src/features/products/families';
+import { frameSizes } from '@/src/features/products/sizing';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { LoadingState } from '@/src/ui/LoadingState';
@@ -25,17 +28,12 @@ import { productKey, type ProductVariant } from '@/src/api/products.types';
 const colourOf = (v: ProductVariant) => v.selectedOptions.find((o) => /^colou?r$/i.test(o.name))?.value ?? v.title ?? 'Default';
 const text = (v: unknown) => (typeof v === 'string' ? v : (v as Record<string, string> | null)?.en ?? (v as Record<string, string> | null)?.fr ?? '');
 
-function dimensions(metafields: Record<string, unknown> | undefined) {
-  const c = ((metafields?.custom ?? metafields) ?? {}) as Record<string, unknown>;
-  const pick = (...keys: string[]) => keys.map((k) => c[k]).find((v) => v != null && v !== '');
-  return [
-    { label: 'Lens width', value: pick('lens_width_mm', 'lens_width') },
-    { label: 'Bridge', value: pick('bridge_width_mm', 'bridge_width', 'bridge') },
-    { label: 'Temple', value: pick('temple_length_mm', 'temple_length', 'temple') },
-    { label: 'Lens height', value: pick('lens_height_mm', 'lens_height') },
-    { label: 'Frame width', value: pick('frame_width_mm', 'frame_width') },
-  ].filter((d) => d.value != null).map((d) => ({ label: d.label, value: `${String(d.value)} mm` }));
-}
+/** A text metafield's value ("custom.composition": { value }). */
+const metaText = (mf: Record<string, unknown> | undefined, key: string) => {
+  const v = mf?.[`custom.${key}`] ?? mf?.[key];
+  const value = v && typeof v === 'object' && 'value' in (v as object) ? (v as { value: unknown }).value : v;
+  return typeof value === 'string' ? value.trim() : '';
+};
 
 /** Product detail: photography left, inspector right; visit actions when a visit is open. */
 export default function ProductDetailScreen() {
@@ -55,6 +53,7 @@ export default function ProductDetailScreen() {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [photo, setPhoto] = useState(0);
   const [ordering, setOrdering] = useState<{ cart?: CartResult; price?: ConfiguratorPriceSummary } | null>(null);
+  const { data: promo } = usePromotion();
   const [saved, setSaved] = useState(false);
   const logged = useRef<string | null>(null);
 
@@ -67,6 +66,8 @@ export default function ProductDetailScreen() {
     logInteraction.mutate({ clientId: activeClientId!, productId: product.id ?? product.shopifyId, type: 'viewed', sessionId });
   }, [product, inVisit, activeClientId, sessionId, logInteraction]);
 
+  // Lunettiq's variants are legacy lens options (BLACK FADE, POLARIZED…): never shown. Only real colour/size options are.
+  const realOptions = useMemo(() => hasRealOptions(product?.variants ?? []), [product?.variants]);
   const colourVariants = useMemo(() => {
     const seen = new Set<string>();
     return (product?.variants ?? []).filter((v) => {
@@ -82,11 +83,15 @@ export default function ProductDetailScreen() {
   if (!product) return <EmptyState message="Frame not found" />;
 
   const title = productTitle(product);
-  const variant = product.variants?.find((v) => v.shopifyId === variantId) ?? product.variants?.[0];
+  const variant = (realOptions ? product.variants?.find((v) => v.shopifyId === variantId) : undefined) ?? pickFrameVariant(product.variants);
   const key = productKey(product);
   const inTray = framesTried.some((f) => f.productId === key);
   const fit = inVisit ? suggestions?.find((s) => s.productId === key || s.productId === product.id) : undefined;
-  const dims = dimensions(product.metafields as Record<string, unknown> | undefined);
+  const dims = frameSizes(product.metafields as Record<string, unknown> | undefined);
+  const composition = metaText(product.metafields as Record<string, unknown> | undefined, 'composition')
+    .split(/\r?\n/).map((l) => l.replace(/^[*\-•]\s*/, '').trim()).filter(Boolean);
+  const onPromo = promotionApplies(promo, product.shopifyId);
+  const lensesDone = !(inVisit && staff);
   const description = text(product.description);
   const stock = variant ? (!variant.availableForSale ? 'out' : (variant.inventoryQuantity ?? 99) <= 3 ? 'low' : 'in') : product.viewHints?.stockBucket;
   const images = product.images.length ? product.images : variant?.imageUrl ? [{ url: variant.imageUrl, alt: title }] : [];
@@ -125,11 +130,13 @@ export default function ProductDetailScreen() {
             {staff ? (
               <Button label={saved ? 'Saved' : 'Save to wishlist'} icon={Heart} variant="ghost" onPress={save} disabled={saved || !variant} loading={addToWishlist.isPending} />
             ) : null}
-            {staff ? <Button label="Order with lenses" icon={Settings2} onPress={() => setOrdering({})} /> : null}
+            <Button label="Choose lenses" icon={Glasses} onPress={() => setOrdering({})} />
             <Button label={inTray ? 'In the tray' : 'Add to tray'} icon={Plus} variant="primary" onPress={addToTray} disabled={inTray} />
           </>
         ) : (
-          <Text className="text-body-sm text-text-tertiary">Start a visit to add to a tray or order.</Text>
+          <>
+            <Button label="Choose lenses" icon={Glasses} onPress={() => setOrdering({})} />
+          </>
         )}
       </View>
 
@@ -167,6 +174,7 @@ export default function ProductDetailScreen() {
               {staff && variant?.compareAtPrice ? <Text className="text-body-md text-text-tertiary line-through">{formatPrice(variant.compareAtPrice)}</Text> : null}
               {stock === 'out' ? <Badge tone="danger">Out of stock</Badge> : stock === 'low' ? <Badge tone="warning">Low stock</Badge> : stock === 'in' ? <Badge tone="success" dot>In stock</Badge> : null}
               {inTray ? <Badge tone="info">In the tray</Badge> : null}
+              {onPromo && promo?.messages?.badge?.en ? <Badge tone="info">{promo.messages.badge.en}</Badge> : null}
             </View>
             {product.vendor ? <Text className="text-body-md text-text-tertiary">{product.vendor}</Text> : null}
           </View>
@@ -182,7 +190,7 @@ export default function ProductDetailScreen() {
 
           {product.shopifyId ? <ColourSiblings productId={product.shopifyId} currentHandle={product.handle} /> : null}
 
-          {colourVariants.length > 1 ? (
+          {realOptions && colourVariants.length > 1 ? (
             <View className="gap-[8px]">
               <Text className="text-body-sm font-medium text-text-secondary">
                 {colourVariants.some((v) => v.selectedOptions.some((o) => /^colou?r$/i.test(o.name))) ? 'Colour' : 'Version'}
@@ -196,6 +204,9 @@ export default function ProductDetailScreen() {
           ) : null}
 
           {dims.length ? <Section title="Size"><KeyValue mono rows={dims} /></Section> : null}
+          {onPromo && promo?.messages?.banner?.en ? (
+            <Section title={promo.title?.en ?? 'Promotion'}><Text className="text-body-md text-text-primary">{promo.messages.banner.en}</Text></Section>
+          ) : null}
 
           {staff && variant && (variant.sku || variant.inventoryQuantity != null) ? (
             <Section title="Stock">
@@ -210,6 +221,11 @@ export default function ProductDetailScreen() {
             <Section title="Fitting guidance"><Text className="text-body-md text-text-primary">{enhancement.fittingGuidance.en}</Text></Section>
           ) : null}
           {description ? <Section title="About"><Text className="text-body-md text-text-primary">{description}</Text></Section> : null}
+          {composition.length ? (
+            <Section title="Details">
+              <View className="gap-[4px]">{composition.map((line) => <Text key={line} className="text-body-md text-text-secondary">· {line}</Text>)}</View>
+            </Section>
+          ) : null}
           {enhancement?.story?.en ? <Section title="Story"><Text className="text-body-md text-text-secondary">{enhancement.story.en}</Text></Section> : null}
         </ScrollView>
       </View>
@@ -221,8 +237,14 @@ export default function ProductDetailScreen() {
           productName={title}
           variantId={variant?.shopifyId}
           basePrice={variant ? Math.round(Number(variant.price) * 100) : 0}
+          completeLabel={lensesDone ? 'Done' : 'Continue to order'}
           onClose={() => setOrdering(null)}
-          onComplete={(cart, price) => setOrdering({ cart, price })}
+          onComplete={(cart, price) => {
+            if (!lensesDone) { setOrdering({ cart, price }); return; }
+            // Outside a visit it's a price walk-through: no order without a client.
+            setOrdering(null);
+            toast.success(`With these lenses: ${formatPrice(price.total / 100) ?? ''}`, inVisit ? 'Switch to staff mode to order.' : 'Start a visit to order them for a client.');
+          }}
         />
       ) : null}
       {ordering?.cart && ordering.price ? (

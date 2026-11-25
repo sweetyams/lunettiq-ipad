@@ -14,6 +14,12 @@ interface ProductCardProps {
   fitScore?: number | null;
   fitReasons?: string[];
   stockStatus?: 'in' | 'low' | 'out';
+  /** Card name instead of the product title (a family name). */
+  name?: string;
+  /** Line under the name instead of colours / vendor ("3 colours · Optical & sun"). */
+  subtitle?: string;
+  /** Price instead of the product's lowest ("from" price for a family). */
+  priceFrom?: string | null;
 }
 
 export const productTitle = (p: Pick<Product, 'title'>) =>
@@ -31,14 +37,14 @@ export function formatPrice(v: string | number | null | undefined): string | nul
  * colours and (staff only) price. Stock and fit are small badges, never
  * coloured slabs.
  */
-export function ProductCard({ product, onPress, onLongPress, fitScore = null, fitReasons, stockStatus }: ProductCardProps) {
+export function ProductCard({ product, onPress, onLongPress, fitScore = null, fitReasons, stockStatus, name, subtitle, priceFrom }: ProductCardProps) {
   const staff = usePrivacyStore((s) => s.mode) === 'staff';
   const image = product.images[0];
-  const title = productTitle(product);
+  const title = name ?? productTitle(product);
   const stock = stockStatus ?? product.viewHints?.stockBucket;
   const colourOption = product.options?.find((o) => /^colou?r$/i.test(o.name));
   const colours = colourOption?.values?.length ?? (product.variantCount > 1 ? product.variantCount : 0);
-  const price = staff ? formatPrice(product.priceMin) : null;
+  const price = staff ? formatPrice(priceFrom !== undefined ? priceFrom : product.priceMin) : null;
   const id = product.shopifyId ?? product.id ?? '';
   const fit = fitScore != null && fitScore >= 5 ? 'Good fit' : fitScore != null && fitScore >= 3 ? 'Close fit' : null;
 
@@ -47,7 +53,7 @@ export function ProductCard({ product, onPress, onLongPress, fitScore = null, fi
       onPress={() => onPress(id)}
       onLongPress={onLongPress ? () => onLongPress(id) : undefined}
       accessibilityRole="button"
-      accessibilityLabel={[title, colours > 1 ? `${colours} colours` : null, price, stock === 'out' ? 'out of stock' : stock === 'low' ? 'low stock' : null, fit].filter(Boolean).join(', ')}
+      accessibilityLabel={[title, subtitle ?? (colours > 1 ? `${colours} colours` : null), price, stock === 'out' ? 'out of stock' : stock === 'low' ? 'low stock' : null, fit].filter(Boolean).join(', ')}
       accessibilityHint={fitReasons?.length ? fitReasons.join(', ') : undefined}
     >
       {({ pressed }) => (
@@ -69,7 +75,7 @@ export function ProductCard({ product, onPress, onLongPress, fitScore = null, fi
           <View className="px-[14px] py-[12px] border-t border-border gap-[2px]">
             <Text className="text-body-md font-medium text-text-primary" numberOfLines={1}>{title}</Text>
             <View className="flex-row items-center justify-between gap-[8px]">
-              <Text className="text-body-sm text-text-tertiary" numberOfLines={1}>{colours > 1 ? `${colours} colours` : product.vendor ?? ''}</Text>
+              <Text className="text-body-sm text-text-tertiary" numberOfLines={1}>{subtitle ?? (colours > 1 ? `${colours} colours` : product.vendor ?? '')}</Text>
               {price ? <Text className="text-body-sm font-medium text-text-primary" style={{ fontVariant: ['tabular-nums'] }}>{price}</Text> : null}
             </View>
           </View>

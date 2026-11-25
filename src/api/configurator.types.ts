@@ -18,6 +18,17 @@ export interface ConfiguratorSnapshot {
   };
   steps: SnapshotStep[];
   priceRules?: SnapshotPriceRule[];
+  /** Show a step, group or choice only when earlier picks match (Foundry storefront/evaluator.ts). */
+  conditionSets?: SnapshotConditionSet[];
+}
+
+export interface SnapshotConditionSet {
+  id: string;
+  targetType: 'step' | 'choice_group' | 'choice' | string;
+  targetId: string;
+  logic: 'all' | 'any';
+  /** field: a group id or code; value: a choice id or code. */
+  conditions: { field: string; operator: string; value: unknown }[];
 }
 
 export interface SnapshotStep {
@@ -35,6 +46,7 @@ export interface SnapshotGroup {
   selectionType: 'single' | 'multiple';
   isRequired: boolean;
   sortOrder: number;
+  displayStyle?: string | null;
   choices: SnapshotChoice[];
 }
 
@@ -43,8 +55,17 @@ export interface SnapshotChoice {
   code: string;
   label: { en: string; fr?: string };
   description?: { en?: string; fr?: string } | null;
-  choiceType: 'standard' | 'product' | 'colour' | 'content';
-  priceDelta: number; // cents
+  choiceType: 'standard' | 'product' | 'colour' | 'content' | 'link' | 'input';
+  priceDelta: number; // cents — the choice's price when no price rule overrides it
+  /** Shown but not orderable yet (live: prescription lens types). */
+  comingSoon?: boolean;
+  badge?: { en?: string; fr?: string } | string | null;
+  helpText?: { en?: string; fr?: string } | null;
+  /** Words for a `content` choice. */
+  contentBody?: { en?: string; fr?: string } | string | null;
+  /** Where a `link` choice goes (e.g. book an appointment). */
+  link?: string | { url?: string } | null;
+  imageUrl?: string | null;
   shopifyProductId: string | null;
   lensColourSetId: string | null;
   sortOrder: number;
@@ -64,8 +85,11 @@ export interface LensColour {
   code: string;
   /** Foundry returns Bilingual ({en, fr}) — resolve before rendering */
   label: string | { en: string; fr?: string };
+  /** Foundry sends `hexCode`; normaliseLensColour copies it here. */
   hexStart: string;
+  hexCode?: string;
   hexEnd?: string | null; // null = solid, string = gradient
+  imageUrl?: string | null;
   price: number; // cents
   category: string;
   status: 'active' | 'discontinued';
