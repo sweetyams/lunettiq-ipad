@@ -12,7 +12,7 @@ import { useSessionStore } from '@/src/features/session/useSessionStore';
 import type { FrameTried } from '@/src/features/session/useSessionStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
-import { ProductCard } from '@/src/ui/ProductCard';
+import { ProductCard, gridColumns } from '@/src/ui/ProductCard';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
 import { EmptyState } from '@/src/ui/EmptyState';
@@ -63,9 +63,9 @@ function useElapsed(startedAt: number | null) {
 
 export default function SessionWorkspaceScreen() {
   const layout = useLayout();
-  // Catalogue beside the tray: ~220pt tiles in whatever width is left (tab bar ≈ 96pt).
+  // Catalogue beside the tray: square cards, 3–4 across in whatever width is left (tab bar floats at the bottom).
   const trayWidth = { wide: 400, regular: 340, compact: 300 }[layout.size];
-  const catalogueColumns = Math.max(2, Math.min(4, Math.floor((layout.width - 96 - trayWidth - 48) / 220)));
+  const catalogueColumns = gridColumns(layout.width - trayWidth - 48);
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const handToClient = usePrivacyStore((s) => s.handToClient);

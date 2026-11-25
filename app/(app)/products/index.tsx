@@ -6,7 +6,7 @@ import { useProducts } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useFilters } from '@/src/api/useFilters';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
-import { ProductCard } from '@/src/ui/ProductCard';
+import { ProductCard, gridColumns } from '@/src/ui/ProductCard';
 import { FilterSheet } from '@/src/ui/FilterSheet';
 import { LoadingState } from '@/src/ui/LoadingState';
 import { ErrorState } from '@/src/ui/ErrorState';
@@ -21,8 +21,8 @@ const PAGE = 50;
 export default function FramesScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  // ~240pt tiles in the width beside the tab bar (≈96pt): 2 in portrait 11", 4–5 in landscape 13".
-  const numColumns = Math.max(2, Math.min(5, Math.floor((width - 96 - 48) / 240)));
+  // Square cards, Foundry-style: 3 across in portrait, 4 in landscape (tab bar floats at the bottom).
+  const numColumns = gridColumns(width - 48);
   const { activeClientId, activeClientName, mode } = useSessionStore();
   const inVisit = mode !== 'idle' && !!activeClientId;
 

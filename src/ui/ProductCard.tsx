@@ -4,6 +4,7 @@ import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Badge } from '@/src/ui/kit/Badge';
 import { elevation } from '@/src/ui/kit/elevation';
 import type { Product } from '@/src/api/products.types';
+export { gridColumns } from './productGrid';
 
 interface ProductCardProps {
   product: Product;
@@ -26,7 +27,7 @@ export function formatPrice(v: string | number | null | undefined): string | nul
 }
 
 /**
- * ProductCard — Builder canvas tile: photography first on white, then name,
+ * ProductCard — square, full-bleed photo (as in the Foundry admin), then name,
  * colours and (staff only) price. Stock and fit are small badges, never
  * coloured slabs.
  */
@@ -51,9 +52,10 @@ export function ProductCard({ product, onPress, onLongPress, fitScore = null, fi
     >
       {({ pressed }) => (
         <View className={`bg-bg-page border rounded-lg overflow-hidden ${pressed ? 'border-text-tertiary' : 'border-border'}`} style={elevation.raised}>
-          <View className="items-center justify-center bg-bg-page" style={{ aspectRatio: 4 / 3 }}>
+          {/* Square, full-bleed photo (Foundry admin cards): the studio shots already sit on a light background. */}
+          <View className="items-center justify-center bg-bg-subtle" style={{ aspectRatio: 1 }}>
             {image ? (
-              <Image source={{ uri: image.url }} contentFit="contain" style={{ width: '88%', height: '88%' }} accessibilityIgnoresInvertColors />
+              <Image source={{ uri: image.url }} contentFit="cover" transition={150} style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors />
             ) : (
               <Text className="text-body-sm text-text-dim">No photo</Text>
             )}
