@@ -9,10 +9,10 @@ type Metafields = Record<string, unknown> | undefined | null;
 export interface SizeRow { label: string; value: string }
 
 const KINDS: { kind: string; label: string; match: RegExp; keys: string[] }[] = [
-  { kind: 'lens', label: 'Lens width', match: /lens\s*width|^width$|^a$/i, keys: ['lens_width', 'lens_width_mm'] },
-  { kind: 'bridge', label: 'Bridge', match: /bridge|^b$/i, keys: ['bridge_width', 'bridge_width_mm', 'bridge'] },
-  { kind: 'length', label: 'Temple', match: /temple|arm|length|^c$/i, keys: ['temple_length', 'temple_length_mm', 'temple'] },
-  { kind: 'frameWidth', label: 'Frame width', match: /frame\s*width|total\s*width/i, keys: ['frame_width', 'frame_width_mm'] },
+  { kind: 'lens', label: 'A · Lens width', match: /lens\s*width|^width$|^a$/i, keys: ['lens_width', 'lens_width_mm'] },
+  { kind: 'bridge', label: 'B · Bridge', match: /bridge|^b$/i, keys: ['bridge_width', 'bridge_width_mm', 'bridge'] },
+  { kind: 'length', label: 'C · Temple', match: /temple|arm|length|^c$/i, keys: ['temple_length', 'temple_length_mm', 'temple'] },
+  { kind: 'frameWidth', label: 'Frame width', match: /frame\s*width|total\s*width/i, keys: ['overall_frame_width', 'frame_width', 'frame_width_mm'] },
   { kind: 'lensHeight', label: 'Lens height', match: /height/i, keys: ['lens_height', 'lens_height_mm'] },
 ];
 

@@ -6,6 +6,10 @@
 export interface ProductSibling {
   colour: string | null;
   colourHex: string | null;
+  /** Second tone for a two-tone swatch (tortoise: brown + black). */
+  colourHex2?: string | null;
+  swatchType?: 'solid' | '2-tone' | 'image' | string | null;
+  swatchImage?: string | null;
   type: string | null;
   handle: string;
   title: string;

@@ -2,15 +2,17 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { ScrollView, View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { ChevronLeft, Glasses, Heart, Plus } from 'lucide-react-native';
+import { Check, ChevronLeft, Glasses, Heart, Plus } from 'lucide-react-native';
 import { useProduct } from '@/src/api/useProducts';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useCreateProductInteraction } from '@/src/api/useProductInteractions';
 import { useProductEnhancement } from '@/src/api/useProductEnhancement';
 import { useAddToWishlist } from '@/src/api/useClients';
 import { usePromotion, promotionApplies } from '@/src/api/usePromotion';
-import { pickFrameVariant, hasRealOptions } from '@/src/features/products/families';
+import { pickFrameVariant, hasRealOptions, eyewearType, parseFrameTitle } from '@/src/features/products/families';
 import { frameSizes } from '@/src/features/products/sizing';
+import { frameSpecs, frameCallouts, lowStockCount, metaValue } from '@/src/features/products/specs';
+import { useRelatedProducts } from '@/src/api/useRelatedProducts';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
 import { LoadingState } from '@/src/ui/LoadingState';
@@ -92,11 +94,18 @@ export default function ProductDetailScreen() {
     .split(/\r?\n/).map((l) => l.replace(/^[*\-•]\s*/, '').trim()).filter(Boolean);
   const onPromo = promotionApplies(promo, product.shopifyId);
   const lensesDone = !(inVisit && staff);
-  const description = text(product.description);
-  const stock = variant ? (!variant.availableForSale ? 'out' : (variant.inventoryQuantity ?? 99) <= 3 ? 'low' : 'in') : product.viewHints?.stockBucket;
+  const mf = product.metafields as Record<string, unknown> | undefined;
+  const description = text(product.description) || text((product as { descriptions?: unknown }).descriptions);
+  const specs = frameSpecs(mf);
+  const kind = product.eyewearType === 'sun' || product.eyewearType === 'optical' ? product.eyewearType : eyewearType(product);
+  const callouts = frameCallouts(kind);
+  const productBadge = metaValue(mf, 'theme.badge');
+  // Foundry's online count where it decides (sellableQuantity), else the store's on-hand.
+  const units = variant?.sellableQuantity ?? variant?.inventoryQuantity;
+  const fewLeft = variant?.availableForSale ? lowStockCount(units) : null;
+  const stock = variant ? (!variant.availableForSale ? 'out' : (units ?? 99) <= 3 ? 'low' : 'in') : product.viewHints?.stockBucket;
   const images = product.images.length ? product.images : variant?.imageUrl ? [{ url: variant.imageUrl, alt: title }] : [];
   const galleryWidth = Math.min(width * 0.55, 760);
-
   const addToTray = () => {
     if (inTray) return;
     addFrameTried({
@@ -145,17 +154,18 @@ export default function ProductDetailScreen() {
         <View style={{ width: galleryWidth }} className="border-r border-border">
           <View className="flex-1 items-center justify-center">
             {images[photo] ? (
-              <Image source={{ uri: images[photo]!.url }} contentFit="contain" style={{ width: '90%', height: '80%' }} accessibilityLabel={images[photo]!.alt ?? title} />
+              <Image source={{ uri: images[photo]!.url }} contentFit="contain" style={{ width: '100%', height: '100%' }} accessibilityLabel={images[photo]!.alt ?? title} />
             ) : (
               <Text className="text-body-md text-text-dim">No photo</Text>
             )}
           </View>
           {images.length > 1 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, padding: 16 }} className="flex-grow-0 border-t border-border">
+            // Sits above the floating tab bar (it covered the strip before).
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 }} className="flex-grow-0 border-t border-border mb-[104px]">
               {images.map((img, i) => (
-                <Pressable key={`${img.url}-${i}`} onPress={() => setPhoto(i)} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${i + 1}`} accessibilityState={{ selected: i === photo }}>
-                  <View className={`w-[88px] h-[66px] rounded-md overflow-hidden items-center justify-center ${i === photo ? 'border-2 border-accent' : 'border border-border'}`}>
-                    <Image source={{ uri: img.url }} contentFit="contain" style={{ width: '90%', height: '90%' }} />
+                <Pressable key={`${img.url}-${i}`} onPress={() => setPhoto(i)} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${i + 1} of ${images.length}`} accessibilityState={{ selected: i === photo }}>
+                  <View className={`w-[76px] h-[76px] rounded-md overflow-hidden bg-bg-subtle ${i === photo ? 'border-2 border-accent' : 'border border-border'}`}>
+                    <Image source={{ uri: img.url }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
                   </View>
                 </Pressable>
               ))}
@@ -175,6 +185,8 @@ export default function ProductDetailScreen() {
               {stock === 'out' ? <Badge tone="danger">Out of stock</Badge> : stock === 'low' ? <Badge tone="warning">Low stock</Badge> : stock === 'in' ? <Badge tone="success" dot>In stock</Badge> : null}
               {inTray ? <Badge tone="info">In the tray</Badge> : null}
               {onPromo && promo?.messages?.badge?.en ? <Badge tone="info">{promo.messages.badge.en}</Badge> : null}
+              {productBadge ? <Badge>{productBadge}</Badge> : null}
+              {fewLeft ? <Badge tone="warning">{`Only ${fewLeft} left`}</Badge> : null}
             </View>
             {product.vendor ? <Text className="text-body-md text-text-tertiary">{product.vendor}</Text> : null}
           </View>
@@ -190,6 +202,15 @@ export default function ProductDetailScreen() {
 
           {product.shopifyId ? <ColourSiblings productId={product.shopifyId} currentHandle={product.handle} /> : null}
 
+          <View className="gap-[8px]">
+            {callouts.map((line) => (
+              <View key={line} className="flex-row items-center gap-[10px]">
+                <Check size={16} color={kitColors.textTertiary} />
+                <Text className="text-body-md text-text-secondary">{line}</Text>
+              </View>
+            ))}
+          </View>
+
           {realOptions && colourVariants.length > 1 ? (
             <View className="gap-[8px]">
               <Text className="text-body-sm font-medium text-text-secondary">
@@ -204,6 +225,7 @@ export default function ProductDetailScreen() {
           ) : null}
 
           {dims.length ? <Section title="Size"><KeyValue mono rows={dims} /></Section> : null}
+          {specs.length ? <Section title="Specs"><KeyValue rows={specs} /></Section> : null}
           {onPromo && promo?.messages?.banner?.en ? (
             <Section title={promo.title?.en ?? 'Promotion'}><Text className="text-body-md text-text-primary">{promo.messages.banner.en}</Text></Section>
           ) : null}
@@ -227,6 +249,7 @@ export default function ProductDetailScreen() {
             </Section>
           ) : null}
           {enhancement?.story?.en ? <Section title="Story"><Text className="text-body-md text-text-secondary">{enhancement.story.en}</Text></Section> : null}
+          <RelatedFrames handle={product.handle} family={parseFrameTitle(title).family} staff={staff} onOpen={(h) => router.push(`/products/${h}`)} />
         </ScrollView>
       </View>
 
@@ -262,5 +285,35 @@ export default function ProductDetailScreen() {
         />
       ) : null}
     </View>
+  );
+}
+
+/** lunettiq.com's "Related products": other families first (same family is already in the colour picker). */
+function RelatedFrames({ handle, family, staff, onOpen }: { handle: string; family: string; staff: boolean; onOpen: (handle: string) => void }) {
+  const { data = [] } = useRelatedProducts(handle);
+  const others = data.filter((r) => parseFrameTitle(text(r.title)).family.toUpperCase() !== family.toUpperCase()).slice(0, 8);
+  if (!others.length) return null;
+  return (
+    <Section title="More like this">
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+        {others.map((r) => (
+          <Pressable key={r.id} onPress={() => onOpen(r.handle)} accessibilityRole="button" accessibilityLabel={`${text(r.title)}${r.matchReasons?.length ? `, ${r.matchReasons.slice(0, 2).join(', ')}` : ''}`} className="w-[150px]">
+            {({ pressed }) => (
+              <View className={`rounded-lg overflow-hidden border ${pressed ? 'border-text-tertiary' : 'border-border'}`}>
+                <View className="bg-bg-subtle" style={{ aspectRatio: 1 }}>
+                  {r.image ? <Image source={{ uri: r.image }} contentFit="cover" style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors /> : null}
+                </View>
+                <View className="px-[10px] py-[8px] border-t border-border gap-[2px]">
+                  <Text className="text-body-sm font-medium text-text-primary" numberOfLines={1}>{text(r.title)}</Text>
+                  <Text className="text-body-sm text-text-tertiary" numberOfLines={1}>
+                    {r.matchReasons?.[0] ?? ''}{staff && r.price ? `${r.matchReasons?.[0] ? ' · ' : ''}${formatPrice(r.price / 100) ?? ''}` : ''}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </Pressable>
+        ))}
+      </ScrollView>
+    </Section>
   );
 }

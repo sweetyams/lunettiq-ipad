@@ -26,6 +26,8 @@ export interface ProductVariant {
   selectedOptions: { name: string; value: string }[];
   imageUrl: string | null;
   inventoryQuantity?: number;
+  /** Units Foundry sells online (inventory/sellable-online.ts); absent where Shopify decides. */
+  sellableQuantity?: number | null;
 }
 
 export interface ProductOption {
@@ -48,6 +50,8 @@ export interface Product {
   origin?: string;
   category?: string | null;
   productType?: string | null;
+  /** optical | sun, from Foundry (canonical_products.eyewear_type). */
+  eyewearType?: string | null;
   images: ProductImage[];
   priceMin: string | null;
   priceMax: string | null;

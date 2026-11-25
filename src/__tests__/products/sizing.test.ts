@@ -5,15 +5,15 @@ describe('frameSizes', () => {
   it('reads the sizing text the way the web does', () => {
     const mf = { 'custom.sizing_dimensions': { type: 'multi_line_text_field', value: 'Nose Bridge: 21\nWidth: 47\nLength: 145' } };
     expect(frameSizes(mf)).toEqual([
-      { label: 'Lens width', value: '47 mm' },
-      { label: 'Bridge', value: '21 mm' },
-      { label: 'Temple', value: '145 mm' },
+      { label: 'A · Lens width', value: '47 mm' },
+      { label: 'B · Bridge', value: '21 mm' },
+      { label: 'C · Temple', value: '145 mm' },
     ]);
   });
   it('prefers separate number fields and keeps unknown lines', () => {
     const mf = { 'custom.lens_width': { value: 50 }, 'custom.sizing_dimensions': { value: 'Width: 47\nWeight: 22g' } };
     expect(frameSizes(mf)).toEqual([
-      { label: 'Lens width', value: '50 mm' },
+      { label: 'A · Lens width', value: '50 mm' },
       { label: 'Weight', value: '22g' },
     ]);
   });

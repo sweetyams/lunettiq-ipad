@@ -41,52 +41,60 @@ function TypeButton({ label, active, onPress }: TypeButtonProps) {
   );
 }
 
-// --- Colour Chip ---
+// --- Swatch ---
 
-interface ColourChipProps {
+/** The colour as lunettiq.com paints it: its swatch image, two tones split down the middle, or one colour. */
+export function FrameSwatch({ sibling, size = 18 }: { sibling: Pick<ProductSibling, 'colourHex' | 'colourHex2' | 'swatchImage' | 'swatchType'>; size?: number }) {
+  const style = { width: size, height: size, borderRadius: size / 2 };
+  if (sibling.swatchImage) {
+    return <Image source={{ uri: sibling.swatchImage }} style={style} contentFit="cover" accessibilityIgnoresInvertColors />;
+  }
+  if (!sibling.colourHex) return null;
+  // Swatch colours are product data (the frame's acetate), not UI colours.
+  return (
+    <View className="overflow-hidden border border-border flex-row" style={style}>
+      <View style={{ flex: 1, backgroundColor: sibling.colourHex }} />
+      {sibling.colourHex2 ? <View style={{ flex: 1, backgroundColor: sibling.colourHex2 }} /> : null}
+    </View>
+  );
+}
+
+// --- Colour Card ---
+
+interface ColourCardProps {
   sibling: ProductSibling;
   isCurrent: boolean;
   onPress: () => void;
 }
 
-function ColourChip({ sibling, isCurrent, onPress }: ColourChipProps) {
+const titleCase = (v: string) => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase();
+
+/** One colour of the family: its photo, swatch and name (the web shows the photo on hover). */
+function ColourCard({ sibling, isCurrent, onPress }: ColourCardProps) {
+  const name = titleCase(sibling.colour ?? sibling.title);
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${sibling.colour ?? sibling.title}${isCurrent ? ', current' : ''}`}
+      accessibilityLabel={`${name}${isCurrent ? ', current' : ''}`}
       accessibilityState={{ selected: isCurrent }}
-      className={`min-h-[44px] min-w-[44px] px-md py-sm rounded-full flex-row items-center justify-center border ${
-        isCurrent
-          ? 'bg-bg-page border-accent border-2'
-          : 'bg-bg-page border-border'
-      }`}
+      className="w-[120px]"
     >
-      {/* Colour swatch circle */}
-      {sibling.colourHex && (
-        <View
-          className={`w-5 h-5 rounded-full mr-xs border ${'border-border'}`}
-          style={{ backgroundColor: sibling.colourHex }}
-        />
-      )}
-      {/* Image thumbnail (fallback if no hex) */}
-      {!sibling.colourHex && sibling.image && (
-        <View className="w-5 h-5 rounded-full mr-xs overflow-hidden border border-border">
-          <Image
-            source={{ uri: sibling.image }}
-            style={{ width: 20, height: 20 }}
-            contentFit="cover"
-          />
+      {({ pressed }) => (
+        <View className={`rounded-lg overflow-hidden bg-bg-page ${isCurrent ? 'border-2 border-accent' : `border ${pressed ? 'border-text-tertiary' : 'border-border'}`}`} style={isCurrent ? undefined : { margin: 1 }}>
+          <View className="bg-bg-subtle items-center justify-center" style={{ aspectRatio: 1 }}>
+            {sibling.image ? (
+              <Image source={{ uri: sibling.image }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
+            ) : (
+              <FrameSwatch sibling={sibling} size={36} />
+            )}
+          </View>
+          <View className="flex-row items-center gap-[6px] px-[8px] py-[8px] border-t border-border">
+            <FrameSwatch sibling={sibling} size={14} />
+            <Text className={`flex-1 text-body-sm text-text-primary ${isCurrent ? 'font-medium' : ''}`} numberOfLines={1}>{name}</Text>
+          </View>
         </View>
       )}
-      <Text
-        className={`text-body-sm font-medium ${
-          'text-text-primary'
-        }`}
-        numberOfLines={1}
-      >
-        {sibling.colour ?? sibling.title}
-      </Text>
     </Pressable>
   );
 }
@@ -194,18 +202,19 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
         </View>
       )}
 
-      {/* Colour chips */}
-      {filteredSiblings.length > 1 && (
+      {/* Colours: one card each, with the frame's photo, as on lunettiq.com (one colour still shows its name). */}
+      {filteredSiblings.length >= 1 && (
         <View>
           <Text className="text-body-sm text-text-tertiary mb-[8px]">
-            Colour: <Text className="text-text-primary">{currentSibling?.colour ?? ''}</Text>
+            Colour <Text className="text-text-primary font-medium">{currentSibling?.colour ? titleCase(currentSibling.colour) : ''}</Text>
+            {filteredSiblings.length > 1 ? ` · ${filteredSiblings.length} colours` : ''}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View className="flex-row gap-sm">
+            <View className="flex-row gap-[10px]">
               {filteredSiblings.map((sibling) => {
                 const isCurrent = sibling.handle === currentHandle || sibling.shopifyId === productId;
                 return (
-                  <ColourChip
+                  <ColourCard
                     key={sibling.shopifyId}
                     sibling={sibling}
                     isCurrent={isCurrent}
