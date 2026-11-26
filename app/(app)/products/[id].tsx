@@ -24,6 +24,7 @@ import { Badge, Button, ChoiceChips, KeyValue, Section, kitColors } from '@/src/
 import { ConfiguratorSheet } from '@/src/features/configurator/ConfiguratorSheet';
 import { OrderSummarySheet } from '@/src/features/configurator/OrderSummarySheet';
 import { toast } from '@/src/ui/useToastStore';
+import { sizedImage } from '@/src/ui/imageUrl';
 import type { CartResult, ConfiguratorPriceSummary } from '@/src/api/configurator.types';
 import { productKey, type ProductVariant } from '@/src/api/products.types';
 
@@ -154,7 +155,7 @@ export default function ProductDetailScreen() {
         <View style={{ width: galleryWidth }} className="border-r border-border">
           <View className="flex-1 items-center justify-center">
             {images[photo] ? (
-              <Image source={{ uri: images[photo]!.url }} contentFit="contain" style={{ width: '100%', height: '100%' }} accessibilityLabel={images[photo]!.alt ?? title} />
+              <Image source={{ uri: sizedImage(images[photo]!.url, 1600) }} contentFit="contain" style={{ width: '100%', height: '100%' }} accessibilityLabel={images[photo]!.alt ?? title} />
             ) : (
               <Text className="text-body-md text-text-dim">No photo</Text>
             )}
@@ -165,7 +166,7 @@ export default function ProductDetailScreen() {
               {images.map((img, i) => (
                 <Pressable key={`${img.url}-${i}`} onPress={() => setPhoto(i)} accessibilityRole="imagebutton" accessibilityLabel={`Photo ${i + 1} of ${images.length}`} accessibilityState={{ selected: i === photo }}>
                   <View className={`w-[76px] h-[76px] rounded-md overflow-hidden bg-bg-subtle ${i === photo ? 'border-2 border-accent' : 'border border-border'}`}>
-                    <Image source={{ uri: img.url }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
+                    <Image source={{ uri: sizedImage(img.url, 240) }} contentFit="cover" style={{ width: '100%', height: '100%' }} />
                   </View>
                 </Pressable>
               ))}
