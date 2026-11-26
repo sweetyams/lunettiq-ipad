@@ -1,13 +1,12 @@
 import { View, Text, ScrollView, RefreshControl } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
   useReviewQueue,
   useRxApprovalSummary,
   useClaimApproval,
   useReleaseApproval,
-  useApprovalHeartbeat,
 } from '@/src/api/useRxApprovals';
+import { ApprovalReviewSheet } from '@/src/features/approvals/ApprovalReviewSheet';
 import { formatWaiting, type ReviewItem } from '@/src/api/rxMapping';
 import { Avatar } from '@/src/ui/Avatar';
 import { Badge, Button, FilterChips, ListRow, PageHeader, Section } from '@/src/ui/kit';
@@ -69,29 +68,19 @@ function ReviewRow({ item, tab, first, busy, onClaim, onRelease, onOpen }: {
 }
 
 function ReviewContent() {
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>('submitted');
+  // The request under review: tapping a row used to open the client profile, with no way to act.
+  const [openId, setOpenId] = useState<string | null>(null);
   const { data: summary } = useRxApprovalSummary();
   const { data: items, isLoading, error, refetch, isRefetching } = useReviewQueue(tab);
   const claim = useClaimApproval();
   const release = useReleaseApproval();
-  const heartbeat = useApprovalHeartbeat();
-
-  // Keep a claimed request alive while the optician works on it.
-  const [claimedId, setClaimedId] = useState<string | null>(null);
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  useEffect(() => {
-    if (!claimedId) return;
-    heartbeatRef.current = setInterval(() => heartbeat.mutate(claimedId), 30_000);
-    return () => { if (heartbeatRef.current) clearInterval(heartbeatRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [claimedId]);
 
   const doClaim = async (id: string) => {
     try {
       await claim.mutateAsync(id);
-      setClaimedId(id);
-      toast.success('Claimed', 'It’s in your review list now.');
+      // Straight into the review (the sheet keeps the review time going while it's open).
+      setOpenId(id);
     } catch {
       toast.error('Couldn’t claim', 'Another optician may have taken it. Refresh and try the next one.');
     }
@@ -99,7 +88,6 @@ function ReviewContent() {
   const doRelease = async (id: string) => {
     try {
       await release.mutateAsync(id);
-      setClaimedId(null);
       toast.info('Released', 'Back in the pending queue.');
     } catch {
       toast.error('Couldn’t release', 'Check the connection and try again.');
@@ -139,12 +127,13 @@ function ReviewContent() {
                 busy={claim.isPending || release.isPending}
                 onClaim={() => doClaim(item.id)}
                 onRelease={() => doRelease(item.id)}
-                onOpen={() => router.push(`/clients/${item.clientId}`)}
+                onOpen={() => setOpenId(item.id)}
               />
             ))}
           </Section>
         </ScrollView>
       )}
+      {openId ? <ApprovalReviewSheet id={openId} onClose={() => setOpenId(null)} /> : null}
     </View>
   );
 }

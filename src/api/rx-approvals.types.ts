@@ -73,16 +73,22 @@ export interface SubmitApprovalPayload {
   notes?: string;
 }
 
+/** Foundry returnApprovalSchema. */
 export interface ReturnPayload {
-  reason: string;
+  reasons: { code: string; label: string }[];
+  note: string;
 }
 
+/** Foundry rejectApprovalSchema. */
 export interface RejectPayload {
-  reason: string;
+  category: string;
+  note: string;
 }
 
+/** Foundry signOffSchema: the optician re-authenticates (their PIN on the iPad) and attests. */
 export interface SignOffPayload {
-  credential?: string;
+  reauth: { method: 'surface_pin' | 'clerk_stepup'; token: string };
+  attestationVersion: string;
 }
 
 export interface CorrectionsPayload {
