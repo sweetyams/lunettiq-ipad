@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
@@ -8,6 +8,8 @@ import type { ProductSibling } from '@/src/api/families.types';
 interface ColourSiblingsProps {
   productId: string;
   currentHandle?: string;
+  /** The frame's own type, used until the family loads. */
+  type?: 'optical' | 'sun' | null;
 }
 
 // --- Type Toggle Button ---
@@ -104,59 +106,43 @@ function ColourCard({ sibling, isCurrent, onPress }: ColourCardProps) {
  * Shows: Family Name → Optical/Sun toggle (when both exist) → Colour chips.
  * Mirrors Foundry's LunettiqFamilySwitcher pattern.
  */
-export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps) {
+type Kind = 'optical' | 'sun';
+const kindOf = (s: Pick<ProductSibling, 'type'>): Kind => (s.type === 'sun' ? 'sun' : 'optical');
+const colourKey = (s: Pick<ProductSibling, 'colour' | 'handle'>) => (s.colour ?? s.handle).trim().toLowerCase();
+
+/**
+ * What the switcher shows for the frame on screen. The active type is always the
+ * current frame's (it used to be state set once, before the family had loaded, so
+ * it stuck on Optical). Colours are matched without case ("GREEN" / "Green").
+ * Pure, tested.
+ */
+export function familyView(siblings: ProductSibling[], current: { handle?: string; shopifyId: string }, fallbackType: Kind | null = null) {
+  const currentSibling = siblings.find((s) => s.handle === current.handle || s.shopifyId === current.shopifyId);
+  const activeType: Kind = currentSibling ? kindOf(currentSibling) : fallbackType ?? 'optical';
+  const types = new Set(siblings.map(kindOf));
+  const byOrder = (a: ProductSibling, b: ProductSibling) => a.sortOrder - b.sortOrder;
+  const colours = siblings.filter((s) => kindOf(s) === activeType).sort(byOrder);
+  /** Where a tap on Optical / Sun goes: the same colour in that type, else its first colour; null when already there. */
+  const targetFor = (type: Kind): ProductSibling | null => {
+    if (type === activeType) return null;
+    const ofType = siblings.filter((s) => kindOf(s) === type).sort(byOrder);
+    const sameColour = currentSibling ? ofType.find((s) => colourKey(s) === colourKey(currentSibling)) : undefined;
+    return sameColour ?? ofType[0] ?? null;
+  };
+  return { currentSibling, activeType, colours, hasBothTypes: types.has('optical') && types.has('sun'), targetFor };
+}
+
+export function ColourSiblings({ productId, currentHandle, type }: ColourSiblingsProps) {
   const router = useRouter();
-  const { data: family, isLoading } = useProductFamily(productId);
-
-  // Determine current product's type from siblings
-  const currentSibling = family?.siblings.find(
-    (s) => s.handle === currentHandle || s.shopifyId === productId
+  const { data: family } = useProductFamily(productId);
+  const view = useMemo(
+    () => familyView(family?.siblings ?? [], { handle: currentHandle, shopifyId: productId }, type ?? null),
+    [family?.siblings, currentHandle, productId, type],
   );
-  const currentType = currentSibling?.type ?? 'optical';
+  const { currentSibling, activeType, hasBothTypes } = view;
+  const filteredSiblings = view.colours;
 
-  // State: which type tab is selected (optical or sun)
-  const [selectedType, setSelectedType] = useState<'optical' | 'sun'>(
-    currentType === 'sun' ? 'sun' : 'optical'
-  );
-
-  // Group siblings by colour to find optical/sun pairs
-  const { colourGroups, hasOptical, hasSun, hasBothTypes } = useMemo(() => {
-    if (!family?.siblings) return { colourGroups: new Map(), hasOptical: false, hasSun: false, hasBothTypes: false };
-
-    const groups = new Map<string, { optical: ProductSibling | null; sun: ProductSibling | null }>();
-    for (const s of family.siblings) {
-      const key = s.colour ?? s.handle;
-      const group = groups.get(key) ?? { optical: null, sun: null };
-      if (s.type === 'sun') {
-        group.sun = s;
-      } else {
-        // 'optical' or null defaults to optical
-        group.optical = s;
-      }
-      groups.set(key, group);
-    }
-
-    const hasOpt = family.siblings.some((s) => s.type !== 'sun');
-    const hasSn = family.siblings.some((s) => s.type === 'sun');
-    return { colourGroups: groups, hasOptical: hasOpt, hasSun: hasSn, hasBothTypes: hasOpt && hasSn };
-  }, [family?.siblings]);
-
-  // Filtered siblings for current type
-  const filteredSiblings = useMemo(() => {
-    const siblings: ProductSibling[] = [];
-    for (const [, group] of colourGroups) {
-      const sibling = selectedType === 'sun'
-        ? (group.sun ?? group.optical)
-        : (group.optical ?? group.sun);
-      if (sibling) siblings.push(sibling);
-    }
-    return siblings.sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [colourGroups, selectedType]);
-
-  if (isLoading || !family || !family.siblings || family.siblings.length <= 1) {
-    // No siblings or loading — only render if there are types to toggle
-    if (!hasBothTypes) return null;
-  }
+  if (!family?.siblings?.length || (family.siblings.length <= 1 && !hasBothTypes)) return null;
 
   const handleSiblingPress = (sibling: ProductSibling) => {
     if (sibling.handle === currentHandle || sibling.shopifyId === productId) return;
@@ -164,20 +150,10 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
     router.replace(`/products/${sibling.shopifyId}`);
   };
 
-  const handleTypeSwitch = (type: 'optical' | 'sun') => {
-    if (type === selectedType) return;
-    setSelectedType(type);
-
-    // Navigate to the same colour in the new type (if available)
-    const currentColour = currentSibling?.colour;
-    if (currentColour) {
-      const group = colourGroups.get(currentColour);
-      const target = type === 'sun' ? group?.sun : group?.optical;
-      if (target && target.handle !== currentHandle && target.shopifyId !== productId) {
-        // Replace so back button returns to product list, not previous type variant
-        router.replace(`/products/${target.shopifyId}`);
-      }
-    }
+  const handleTypeSwitch = (next: Kind) => {
+    const target = view.targetFor(next);
+    // Replace so Back returns to the list, not the other type.
+    if (target) router.replace(`/products/${target.shopifyId}`);
   };
 
   return (
@@ -190,12 +166,12 @@ export function ColourSiblings({ productId, currentHandle }: ColourSiblingsProps
           <View className="flex-row rounded-full overflow-hidden border border-border">
             <TypeButton
               label="Optical"
-              active={selectedType === 'optical'}
+              active={activeType === 'optical'}
               onPress={() => handleTypeSwitch('optical')}
             />
             <TypeButton
               label="Sun"
-              active={selectedType === 'sun'}
+              active={activeType === 'sun'}
               onPress={() => handleTypeSwitch('sun')}
             />
           </View>

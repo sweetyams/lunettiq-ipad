@@ -200,7 +200,7 @@ export default function ProductDetailScreen() {
             </Section>
           ) : null}
 
-          {product.shopifyId ? <ColourSiblings productId={product.shopifyId} currentHandle={product.handle} /> : null}
+          {product.shopifyId ? <ColourSiblings productId={product.shopifyId} currentHandle={product.handle} type={kind} /> : null}
 
           <View className="gap-[8px]">
             {callouts.map((line) => (
