@@ -1,5 +1,6 @@
 import { View, Text, FlatList, Pressable, RefreshControl, ScrollView } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LayoutGrid, Rows3 } from 'lucide-react-native';
 import { useOrders } from '@/src/api/useRxPipeline';
 import { ORDER_STAGES, ageLevel, formatMoney, lateOrders, stageLabel, type OrderItem, type OrderStage } from '@/src/api/ordersMapping';
@@ -105,7 +106,22 @@ function OrdersContent() {
   const { data: orders, isLoading, error, refetch, isRefetching } = useOrders();
   const [filter, setFilter] = useState<Filter>('active');
   const [view, setView] = useState<View_>('cards');
-  const [open, setOpen] = useState<OrderItem | null>(null);
+  // The open order by id, read from the live list: a snapshot kept acting on the order's old
+  // stage after a move (its main button repeated the move and failed).
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = useMemo(() => (openId ? (orders ?? []).find((o) => o.id === openId) ?? null : null), [orders, openId]);
+  const setOpen = (o: OrderItem | null) => setOpenId(o?.id ?? null);
+
+  // Floor's counts open the matching list (?filter=late | ready_for_pickup | awaiting_rx…). The param
+  // is cleared after it's read so the same link works again while this tab stays mounted.
+  const params = useLocalSearchParams<{ filter?: string }>();
+  const router = useRouter();
+  useEffect(() => {
+    const f = params.filter;
+    if (!f) return;
+    if (f === 'active' || f === 'late' || ORDER_STAGES.some((st) => st.key === f)) setFilter(f as Filter);
+    router.setParams({ filter: undefined });
+  }, [params.filter, router]);
 
   const active = useMemo(() => (orders ?? []).filter((o) => o.stage !== 'done'), [orders]);
   const late = useMemo(() => lateOrders(active), [active]);

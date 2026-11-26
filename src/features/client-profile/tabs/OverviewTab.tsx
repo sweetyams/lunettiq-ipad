@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import { useCatalogueLookup } from '@/src/api/useCatalogueLookup';
 import { useClientPreferences, useClientWishlist, useClientSegments } from '@/src/api/useClients';
 import { useInsuranceProfile, useMultiPairQuestionnaire } from '@/src/api/useMultiPair';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
@@ -32,6 +33,7 @@ function BadgeGroup({ label, values, tone = 'outline' }: { label: string; values
 }
 
 export function OverviewTab({ clientId, client, onOpenSheet }: OverviewTabProps) {
+  const lookup = useCatalogueLookup();
   const staff = usePrivacyStore((s) => s.mode) === 'staff';
   const { data: preferences } = useClientPreferences(clientId);
   const { data: wishlistRaw } = useClientWishlist(clientId);
@@ -105,14 +107,20 @@ export function OverviewTab({ clientId, client, onOpenSheet }: OverviewTabProps)
           {wishlist.length === 0 ? (
             <Empty>Nothing saved yet.</Empty>
           ) : (
-            wishlist.slice(0, 6).map((item, i) => (
-              <View key={item.id} className={`flex-row items-center justify-between px-[20px] min-h-[52px] ${i > 0 ? 'border-t border-border' : ''}`}>
-                <Text className="text-body-md text-text-primary flex-1" numberOfLines={1}>{item.product?.title ?? 'Frame'}</Text>
-                {item.product?.price != null ? (
-                  <Text className="text-body-sm text-text-tertiary" style={{ fontVariant: ['tabular-nums'] }}>{formatDollars(item.product.price)}</Text>
-                ) : null}
-              </View>
-            ))
+            wishlist.slice(0, 6).map((item, i) => {
+              // Foundry's rows carry only ids (shopifyVariantId): named and priced from the catalogue.
+              const hit = item.product ? null : lookup((item as { shopifyVariantId?: string }).shopifyVariantId ?? item.variantId ?? item.productId);
+              const title = item.product?.title ?? hit?.title ?? 'Frame';
+              const price = item.product?.price ?? (hit?.price != null ? Number(hit.price) : null);
+              return (
+                <View key={item.id} className={`flex-row items-center justify-between px-[20px] min-h-[52px] ${i > 0 ? 'border-t border-border' : ''}`}>
+                  <Text className="text-body-md text-text-primary flex-1" numberOfLines={1}>{title}</Text>
+                  {price != null && Number.isFinite(price) ? (
+                    <Text className="text-body-sm text-text-tertiary" style={{ fontVariant: ['tabular-nums'] }}>{formatDollars(price)}</Text>
+                  ) : null}
+                </View>
+              );
+            })
           )}
         </Section>
 

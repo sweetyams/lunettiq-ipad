@@ -68,8 +68,8 @@ export function RxSection() {
   const { hasAny } = usePermissions();
   const canReview = hasAny('org:rx:verify', 'org:rx:sign_off');
   const rows: Array<{ key: string; tone: 'success' | 'warning' | 'info' | 'muted'; label: string; route: string }> = [
-    { key: 'ready', tone: 'success', label: `${counts?.ready ?? 0} ready for pickup`, route: '/orders' },
-    { key: 'awaiting', tone: 'warning', label: `${counts?.awaiting_rx ?? 0} awaiting a prescription`, route: '/orders' },
+    { key: 'ready', tone: 'success', label: `${counts?.ready ?? 0} ready for pickup`, route: '/orders?filter=ready_for_pickup' },
+    { key: 'awaiting', tone: 'warning', label: `${counts?.awaiting_rx ?? 0} awaiting a prescription`, route: '/orders?filter=awaiting_rx' },
     { key: 'progress', tone: 'muted', label: `${(counts?.ordered ?? 0) + (counts?.in_lab ?? 0) + (counts?.quality_check ?? 0)} in progress`, route: '/orders' },
   ];
   if (canReview) rows.push({ key: 'review', tone: 'info', label: `${approvals?.submitted ?? 0} waiting for your review`, route: '/review' });

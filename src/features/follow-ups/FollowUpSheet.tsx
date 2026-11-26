@@ -5,6 +5,7 @@
  */
 import { useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
+import { useCatalogueLookup } from '@/src/api/useCatalogueLookup';
 import { useRouter } from 'expo-router';
 import { Button, ChoiceChips, Field, KeyValue, Section, Sheet, TextField, formatDate, formatPhone } from '@/src/ui/kit';
 import { toast } from '@/src/ui/useToastStore';
@@ -47,16 +48,18 @@ export function FollowUpSheet({ item, onClose }: { item: FollowUp; onClose: () =
     const list = Array.isArray(sessions) ? sessions : [];
     return list.slice().sort((a, b) => Date.parse(b.startedAt ?? b.createdAt) - Date.parse(a.startedAt ?? a.createdAt))[0];
   }, [sessions]);
+  const lookup = useCatalogueLookup();
   const liked = useMemo(() => {
     const list = Array.isArray(interactions) ? interactions : [];
     const names = list
       .filter((i) => i.type === 'liked' || (i.type as string) === 'loved' || i.type === 'tried_on')
       .sort((a, b) => Number(b.type === 'liked') - Number(a.type === 'liked'))
-      .map((i) => i.product?.title)
+      // Rows carry only the product id: named from the catalogue when there's no joined product.
+      .map((i) => i.product?.title ?? lookup((i as { productId?: string }).productId)?.title)
       .filter((t): t is string => !!t)
       .map(titleCase);
     return [...new Set(names)].slice(0, 4);
-  }, [interactions]);
+  }, [interactions, lookup]);
   const frames = liked.length ? liked : item.frame ? [item.frame] : [];
   const handoff = handoffLine(readHandoff(client?.enrichment?.customFields), lang);
   const firstName = client?.firstName ?? item.clientName.split(' ')[0];
@@ -66,8 +69,11 @@ export function FollowUpSheet({ item, onClose }: { item: FollowUp; onClose: () =
     const map = CALL_TO_CONTACT[result];
     try {
       await logContact.mutateAsync({ opportunityId: item.id, type: 'call', outcome: map.outcome, notes: notes.trim() || undefined });
-      if (map.status) await update.mutateAsync({ id: item.id, status: map.status }).catch(() => undefined);
-      toast.success(fr ? 'Appel noté' : 'Call logged');
+      // The call is logged; moving the lead can still fail (needs a manager's right): say so
+      // instead of "Call logged" while it stays in the queue.
+      const moved = map.status ? await update.mutateAsync({ id: item.id, status: map.status }).then(() => true, () => false) : true;
+      if (moved) toast.success(fr ? 'Appel noté' : 'Call logged');
+      else toast.warning(fr ? 'Appel noté, suivi pas mis à jour' : 'Call logged, follow-up not updated', fr ? 'Il reste dans la liste. Un gestionnaire peut le fermer.' : 'It stays in the queue. A manager can close it.');
       if (result === 'booked') { onClose(); router.push(`/appointments?book=${item.clientId}`); return; }
       onClose();
     } catch {
@@ -144,7 +150,7 @@ export function FollowUpSheet({ item, onClose }: { item: FollowUp; onClose: () =
           vars={{ frames: frames.length ? joinFrames(frames.slice(0, 2), lang) : null }}
           onOpened={({ template, channel }) => {
             logContact.mutate({ opportunityId: item.id, type: channel, outcome: 'sent', templateUsed: template });
-            update.mutate({ id: item.id, status: 'contacted' });
+            update.mutate({ id: item.id, status: 'contacted' }, { onError: () => toast.warning(fr ? 'Suivi pas mis à jour' : 'Follow-up not updated', fr ? 'Le message est noté; le suivi reste dans la liste.' : 'The message is logged; the follow-up stays in the queue.') });
             onClose();
           }}
         />

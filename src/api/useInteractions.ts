@@ -20,8 +20,13 @@ export function toInteractionBody(params: CreateInteractionParams) {
 export function useInteractions(clientId: string) {
   return useQuery({
     queryKey: ['interactions', clientId],
-    queryFn: () => 
-      api.get<InteractionListResponse>(`/api/clients/${clientId}/interactions`),
+    // Foundry returns a plain array (after the client unwraps { data }); History and Clinical read
+    // `.interactions`, so every client's history looked empty. Both shapes are accepted.
+    queryFn: async (): Promise<InteractionListResponse> => {
+      const res = await api.get<InteractionListResponse | Interaction[]>(`/api/clients/${clientId}/interactions`);
+      if (Array.isArray(res)) return { interactions: res, total: res.length } as InteractionListResponse;
+      return res ?? ({ interactions: [], total: 0 } as unknown as InteractionListResponse);
+    },
     enabled: !!clientId,
     staleTime: 60 * 1000, // 1 minute - timeline changes frequently
   });

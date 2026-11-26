@@ -1,4 +1,5 @@
 import { View, Text, FlatList, TextInput, Pressable, ScrollView } from 'react-native';
+import { isDraftClient } from '@/src/features/clients/QuickClientSheet';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { User, Search, UserPlus, Plus, Play, CalendarPlus } from 'lucide-react-native';
@@ -30,6 +31,8 @@ export default function ClientsScreen() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  // Return pressed before the search caught up: open the first result for this text once it's in.
+  const [openWhenReady, setOpenWhenReady] = useState<string | null>(null);
   const router = useRouter();
   const layout = useLayout();
   const keyboard = useKeyboard();
@@ -52,7 +55,7 @@ export default function ClientsScreen() {
 
     switch (activeFilter) {
       case 'recent':
-        params.sort = 'updatedAt';
+        params.sort = '-updatedAt'; // newest first; 'updatedAt' listed the oldest clients
         params.limit = 20;
         break;
       case 'cult':
@@ -62,20 +65,34 @@ export default function ClientsScreen() {
         params.tag = 'member-vault';
         break;
       case 'incomplete':
-        // P0 API gap — for now show all, will filter client-side
+        // No server filter: filtered below (guest drafts and clients with no phone or email).
+        params.limit = 200;
         break;
     }
     return params;
   }, [debouncedQuery, activeFilter]);
 
   // Fetch clients
-  const { data, isLoading, error, refetch } = useClients(searchParams);
-  const clients = data?.clients ?? [];
-  const total = data?.total ?? 0;
+  const { data, isLoading, isFetching, error, refetch } = useClients(searchParams);
+  const fetched = data?.clients ?? [];
+  // "Incomplete" used to show every client: it's the guests and anyone we can't reach.
+  const clients = useMemo(
+    () => (activeFilter === 'incomplete' ? fetched.filter((c) => isDraftClient(c) || (!c.email && !c.phone)) : fetched),
+    [fetched, activeFilter],
+  );
+  const total = activeFilter === 'incomplete' ? clients.length : data?.total ?? 0;
+
+  useEffect(() => {
+    if (openWhenReady === null || debouncedQuery !== openWhenReady || isFetching) return;
+    setOpenWhenReady(null);
+    const first = clients[0];
+    if (first) router.push(`/clients/${first.id}`);
+  }, [openWhenReady, debouncedQuery, isFetching, clients, router]);
 
   // Selected client for preview
   const selectedClient = useMemo(
-    () => (selectedClientId ? clients.find((c) => c.id === selectedClientId) : clients[0]) ?? null,
+    // The selected client, else the first result (a search that drops the selection left the preview blank).
+    () => (selectedClientId ? clients.find((c) => c.id === selectedClientId) : undefined) ?? clients[0] ?? null,
     [selectedClientId, clients],
   );
 
@@ -121,7 +138,12 @@ export default function ClientsScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="search"
-                onSubmitEditing={() => { const first = clients[0]; if (first) router.push(`/clients/${first.id}`); }}
+                onSubmitEditing={() => {
+                  // Before the 300ms debounce the list still shows the previous search: wait for this one.
+                  if (searchQuery !== debouncedQuery || isFetching) { setDebouncedQuery(searchQuery); setOpenWhenReady(searchQuery); return; }
+                  const first = clients[0];
+                  if (first) router.push(`/clients/${first.id}`);
+                }}
                 accessibilityLabel="Search clients"
               />
             </View>

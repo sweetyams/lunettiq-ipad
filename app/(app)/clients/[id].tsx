@@ -151,7 +151,7 @@ export default function ClientProfileScreen() {
       {/* Header */}
       <View className="px-[32px] pt-[16px] pb-[20px] bg-bg-page">
         <Pressable
-          onPress={() => router.back()}
+          onPress={() => router.navigate('/clients')}
           className="flex-row items-center self-start min-h-[44px] gap-[4px] -ml-[6px]"
           hitSlop={8}
           accessibilityRole="button"

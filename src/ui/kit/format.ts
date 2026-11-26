@@ -10,7 +10,10 @@ export function formatPhone(raw: string | null | undefined): string | null {
 /** "Sep 28, 2026" — dates staff read, never ISO. */
 export function formatDate(iso: string | null | undefined): string | null {
   if (!iso) return null;
-  const d = new Date(iso);
+  // A date with no time ("2026-03-14", an exam or expiry date) is that day here, not UTC midnight
+  // (which showed the day before in Montreal).
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const d = dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3])) : new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
   return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
 }

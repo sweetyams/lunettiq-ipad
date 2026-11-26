@@ -40,7 +40,8 @@ export function useTodayAppointments(locationId?: string) {
   const params: AppointmentListParams = { date: today, locationId };
 
   return useQuery({
-    queryKey: ['appointments', 'today', locationId],
+    // The date is in the key: an iPad left on overnight moves to the new day (it kept yesterday).
+    queryKey: ['appointments', 'today', today, locationId],
     queryFn: () => fetchAppointments(params),
     staleTime: 2 * 60 * 1000,
     // Refetch every 5 min to stay in sync

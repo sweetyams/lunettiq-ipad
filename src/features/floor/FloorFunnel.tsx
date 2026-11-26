@@ -123,9 +123,9 @@ export function TodayStatus() {
   const calls = (followUps ?? []).filter((f) => f.due === 'call_now' || f.due === 'last_chance').length;
 
   const rows: Array<{ key: string; tone: StatusDotTone; label: string; detail?: string; count: number; route: string }> = [
-    { key: 'late', tone: late.length ? 'danger' : 'success', label: late.length ? tr('floor.late') : tr('floor.lateNone'), detail: late.slice(0, 3).map((o) => o.clientName).join(', ') || undefined, count: late.length, route: '/orders' },
-    { key: 'pickup', tone: 'success', label: tr('floor.pickups'), count: pickups, route: '/orders' },
-    { key: 'rx', tone: toRemind ? 'warning' : 'muted', label: tr('floor.waitingRx'), detail: toRemind ? tr('floor.remindDue', { count: toRemind }) : undefined, count: waiting.length, route: '/orders' },
+    { key: 'late', tone: late.length ? 'danger' : 'success', label: late.length ? tr('floor.late') : tr('floor.lateNone'), detail: late.slice(0, 3).map((o) => o.clientName).join(', ') || undefined, count: late.length, route: '/orders?filter=late' },
+    { key: 'pickup', tone: 'success', label: tr('floor.pickups'), count: pickups, route: '/orders?filter=ready_for_pickup' },
+    { key: 'rx', tone: toRemind ? 'warning' : 'muted', label: tr('floor.waitingRx'), detail: toRemind ? tr('floor.remindDue', { count: toRemind }) : undefined, count: waiting.length, route: '/orders?filter=awaiting_rx' },
     { key: 'calls', tone: calls ? 'warning' : 'muted', label: tr('floor.followUps'), count: calls, route: '/follow-ups' },
   ];
   if (canReview) rows.push({ key: 'approvals', tone: 'info', label: tr('floor.approvals'), count: approvals?.submitted ?? 0, route: '/review' });

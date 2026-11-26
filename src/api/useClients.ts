@@ -57,7 +57,7 @@ export function useRecentClients() {
     queryKey: ['clients', 'recent'],
     queryFn: () =>
       api.get<ClientListResponse>('/api/clients', {
-        params: { sort: 'updatedAt', limit: '5' },
+        params: { sort: '-updatedAt', limit: '5' }, // '-' = newest first (Foundry sorts ascending otherwise)
       }),
     staleTime: 5 * 60 * 1000,
   });

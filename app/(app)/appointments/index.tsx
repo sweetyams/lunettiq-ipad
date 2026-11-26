@@ -38,8 +38,9 @@ export default function ScheduleScreen() {
   const { arrive, startVisit } = useVisitActions();
 
   // Deep links: Floor rows (?selected=) and profile "Book" (?book=clientId).
-  useEffect(() => { if (selected) setSelectedId(selected); }, [selected]);
-  useEffect(() => { if (book) setBooking({ clientId: book }); }, [book]);
+  // Cleared once read: this tab stays mounted, so the same link (Book again) used to do nothing.
+  useEffect(() => { if (selected) { setSelectedId(selected); router.setParams({ selected: undefined }); } }, [selected, router]);
+  useEffect(() => { if (book) { setBooking({ clientId: book }); router.setParams({ book: undefined }); } }, [book, router]);
 
   const staffName = useMemo(() => new Map((staff ?? []).map((s) => [s.id, s.name])), [staff]);
   const all: Appointment[] = useMemo(

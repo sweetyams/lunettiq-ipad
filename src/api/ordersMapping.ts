@@ -36,6 +36,10 @@ const STATE_TO_STAGE: Record<string, OrderStage> = {
   delivered: 'done',
   picked_up: 'done',
   fulfilled: 'done',
+  // Closed without being made: off the open lists (they used to fall through to "Pending approval").
+  cancelled: 'done',
+  canceled: 'done',
+  refunded: 'done',
 };
 
 export interface FoundryRxOrderRow {
