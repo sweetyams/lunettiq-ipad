@@ -90,3 +90,22 @@ Insurance receipts are created from `orders` (`POST /api/admin/orders/{orderId}/
 ## 9. Not asked (decisions pending)
 
 Scheduled invoices / pre-orders (grey area), lab EDI sync (lab cooperation), try-on video, remote measurements.
+
+## 10. Found in the 2026-11-26 app review
+
+The iPad now works around the first four; the rest need Foundry.
+
+| # | Request | Why |
+|---|---|---|
+| 10.1 | `GET /api/storefront/products` should read `q` (and `stock`) | It ignores both, so every search returned the whole catalogue. The iPad now searches on the device. |
+| 10.2 | `GET /api/clients/{id}/interactions` should return `{ interactions, total }` or document the array | The iPad read `.interactions` and every history looked empty. It now accepts both shapes. |
+| 10.3 | Wishlist rows and `product-interactions` should join the product (title, price, image) | Rows carry only ids. The iPad now names them from its catalogue. |
+| 10.4 | Rx order create should take a `tryonSessionId` column | The iPad puts it in `lensSpec` for now. |
+| 10.5 | `PUT /api/clients/{id}/preferences` should save (handler is a TODO that only audits) | Saving preferences shows success and changes nothing. |
+| 10.6 | Second Sight and custom-design create should fill `customerId` / `canonicalCustomerId` from `clientId`; add `PATCH` or document `POST [id]/grade` and `[id]/credit` | Both inserts fail on NOT NULL columns; the iPad's grade/credit paths don't exist. |
+| 10.7 | Multi-pair: `recommend` routes any request with `customerId` to history; accept needs `acceptedPairIndices`; questionnaire returns one object; insurance expects `annualAllowance` | The feature is broken end to end on the iPad. Needs an agreed contract before the iPad is changed. |
+| 10.8 | Let store staff (`:call`) set a follow-up's status, or give the iPad a staff-level endpoint | `PATCH /admin/hot-leads/{id}` needs `org:hot_leads:manage` (manager). The iPad now warns instead of claiming success. |
+| 10.9 | Appointment ranges: accept `dateFrom`/`dateTo` with the tenant's timezone | Sent without an offset, read as server time; the week view may drift 4–5 hours. |
+| 10.10 | Allow `no_show` from `scheduled` | Marking an unconfirmed appointment no-show returns 422. |
+
+iPad-side items still open from the review (not Foundry): an approval detail screen (sign off / reject / return — claiming a request currently leads nowhere), permissions after a staff PIN switch (they follow the device owner, not the person who unlocked), and Face ID's passcode fallback unlocking as the owner.
