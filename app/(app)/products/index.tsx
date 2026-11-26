@@ -15,6 +15,7 @@ import { Badge, Button, FilterChips, PageHeader, kitColors } from '@/src/ui/kit'
 import { productKey, type ProductListParams } from '@/src/api/products.types';
 import { groupByFamily, eyewearType, type EyewearType, type FrameFamily } from '@/src/features/products/families';
 import { usePromotion, promotionApplies } from '@/src/api/usePromotion';
+import { searchProducts } from '@/src/features/products/search';
 
 type Sort = 'newest' | 'best-match' | 'price-asc' | 'price-desc';
 type Kind = 'all' | EyewearType;
@@ -52,12 +53,9 @@ export default function FramesScreen() {
   }, [query]);
   useEffect(() => { setSort((s) => (inVisit ? (s === 'newest' ? 'best-match' : s) : s === 'best-match' ? 'newest' : s)); }, [inVisit]);
 
-  const params: ProductListParams = useMemo(() => ({
-    q: debounced || undefined,
-    stock: stock.length === 1 ? (stock[0] as 'in' | 'low' | 'out') : undefined,
-    limit,
-    offset: 0,
-  }), [debounced, stock, limit]);
+  // Search and stock run on the device: Foundry's storefront products endpoint ignores `q` and
+  // `stock` (every search returned the whole catalogue), and the whole catalogue is loaded anyway.
+  const params: ProductListParams = useMemo(() => ({ limit, offset: 0 }), [limit]);
   const { data, isLoading, error, refetch, isRefetching } = useProducts(params);
   const { data: filterData } = useFilters();
   const { data: suggestions } = useSuggestions(inVisit ? activeClientId : null, { limit: 50 });
@@ -67,7 +65,7 @@ export default function FramesScreen() {
   const products = useMemo(() => {
     let list = data?.data ?? [];
     // Multi-stock selections and facets are filtered here (the API takes one stock value).
-    if (stock.length > 1) list = list.filter((p) => stock.includes(p.viewHints?.stockBucket ?? 'in'));
+    if (stock.length) list = list.filter((p) => stock.includes(p.viewHints?.stockBucket ?? 'in'));
     if (kind !== 'all') list = list.filter((p) => eyewearType(p) === kind);
     const active = Object.entries(facets).filter(([, v]) => v.length);
     if (active.length && filterData?.products) {
@@ -76,12 +74,14 @@ export default function FramesScreen() {
         return !!map && active.every(([g, vals]) => vals.some((v) => (map[g] ?? []).includes(v)));
       });
     }
-    const sorted = [...list];
-    if (sort === 'best-match') sorted.sort((a, b) => (scores.get(productKey(b))?.score ?? 0) - (scores.get(productKey(a))?.score ?? 0));
+    // A search ranks by how well each frame matches; a price sort still wins when chosen.
+    const searched = debounced ? searchProducts(list, debounced) : list;
+    const sorted = [...searched];
+    if (sort === 'best-match' && !debounced) sorted.sort((a, b) => (scores.get(productKey(b))?.score ?? 0) - (scores.get(productKey(a))?.score ?? 0));
     if (sort === 'price-asc') sorted.sort((a, b) => parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0'));
     if (sort === 'price-desc') sorted.sort((a, b) => parseFloat(b.priceMin ?? '0') - parseFloat(a.priceMin ?? '0'));
     return sorted;
-  }, [data, stock, facets, filterData, sort, scores, kind]);
+  }, [data, stock, facets, filterData, sort, scores, kind, debounced]);
 
   // One card per family (AURA: green and tortoise, optical and sun), as on lunettiq.com.
   const families = useMemo(() => groupByFamily(products, kind === 'all' ? null : kind), [products, kind]);
@@ -120,7 +120,7 @@ export default function FramesScreen() {
     <View className="flex-1 bg-bg-page">
       <PageHeader
         title={inVisit ? `Frames for ${activeClientName?.split(' ')[0] ?? 'the client'}` : 'Frames'}
-        subtitle={`${families.length} frames · ${products.length} colourways${inVisit ? ' · best matches first' : ''}`}
+        subtitle={`${families.length} ${families.length === 1 ? 'frame' : 'frames'} · ${products.length} ${products.length === 1 ? 'colourway' : 'colourways'}${inVisit && !debounced ? ' · best matches first' : ''}`}
         meta={inVisit ? <Badge tone="success" dot>Visit open</Badge> : undefined}
         actions={<Button label="Scan" icon={ScanLine} onPress={() => router.push('/products/scanner')} />}
       />

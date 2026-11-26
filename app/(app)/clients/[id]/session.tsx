@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { Camera, Check, Search, Smartphone, ChevronRight, ShoppingBag, MessageSquare, Presentation, Sparkles } from 'lucide-react-native';
 
 import { useProducts } from '@/src/api/useProducts';
+import { searchProducts } from '@/src/features/products/search';
 import { useSuggestions } from '@/src/api/useSuggestions';
 import { useClient, useClientEnrichment, useClientPreferences } from '@/src/api/useClients';
 import { useInsuranceProfile } from '@/src/api/useMultiPair';
@@ -83,9 +84,12 @@ export default function SessionWorkspaceScreen() {
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('best-match');
-  const queryParams: ProductListParams = { q: search || undefined, limit: 50, offset: 0 };
+  // The whole catalogue (Frames loads the same, so it's one cached request); search runs on the
+  // device because Foundry's products endpoint ignores `q`. It used to show only the first 50 frames.
+  const queryParams: ProductListParams = { limit: 300, offset: 0 };
   const { data: productsResponse, isLoading: productsLoading, error: productsError, refetch: refetchProducts } = useProducts(queryParams);
-  const products = productsResponse?.data ?? [];
+  const allProducts = productsResponse?.data ?? [];
+  const products = useMemo(() => searchProducts(allProducts, search), [allProducts, search]);
   const { data: suggestions } = useSuggestions(id, { limit: 12 });
 
   const [showEnd, setShowEnd] = useState(false);
@@ -106,11 +110,13 @@ export default function SessionWorkspaceScreen() {
     : [...products].sort((a, b) => {
     if (sortBy === 'price-asc') return parseFloat(a.priceMin ?? '0') - parseFloat(b.priceMin ?? '0');
     if (sortBy === 'price-desc') return parseFloat(b.priceMax ?? '0') - parseFloat(a.priceMax ?? '0');
+    // While searching, keep the search's ranking; otherwise suggested frames first.
+    if (search.trim()) return 0;
     return Number(suggested.has(productKey(b))) - Number(suggested.has(productKey(a)));
-  }), [products, sortBy, suggested, style, styleActive]);
+  }), [products, sortBy, suggested, style, styleActive, search]);
 
   const addToTray = useCallback((key: string) => {
-    const product = products.find((p) => productKey(p) === key || p.id === key);
+    const product = allProducts.find((p) => productKey(p) === key || p.id === key);
     if (!product) return;
     if (inTray.has(productKey(product))) {
       toast.info('Already in the tray', titleOf(product));
@@ -126,16 +132,17 @@ export default function SessionWorkspaceScreen() {
       photoIds: [],
       triedAt: Date.now(),
     });
-  }, [products, inTray, addFrameTried]);
+  }, [allProducts, inTray, addFrameTried]);
 
   const startOrder = useCallback((frame: FrameTried) => {
-    const product = products.find((p) => productKey(p) === frame.productId);
+    // The whole catalogue, not the search results: a tray frame can be ordered whatever was searched since.
+    const product = allProducts.find((p) => productKey(p) === frame.productId);
     if (!product) {
       toast.info('Find the frame first', 'Search the catalogue for it, then order from the tray.');
       return;
     }
     setOrdering({ product });
-  }, [products]);
+  }, [allProducts]);
 
   const fitRange = enrichment?.frameWidthMm && enrichment?.bridgeWidthMm
     ? `${Math.max(44, enrichment.frameWidthMm - 3)}–${enrichment.frameWidthMm + 3} □ ${enrichment.bridgeWidthMm - 2}–${enrichment.bridgeWidthMm + 2}`
