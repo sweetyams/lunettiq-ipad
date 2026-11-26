@@ -32,6 +32,8 @@ export interface RxOrderInput {
   notes?: string;
   cart: CartResult;
   price: ConfiguratorPriceSummary;
+  /** The visit (try-on session) the order came from. */
+  sessionId?: string | null;
 }
 
 /**
@@ -53,6 +55,8 @@ export function toRxOrderCreate(i: RxOrderInput) {
       productId: i.productId,
       productName: i.productName,
       shopifyVariantId: i.variantId ?? null,
+      // The visit it was ordered in (Foundry's Rx order has no column for it yet).
+      ...(i.sessionId ? { tryonSessionId: i.sessionId } : {}),
       attributes: attrs,
       addons: (i.cart.addonLines ?? []).map((l) => Object.fromEntries((l.attributes ?? []).map((a) => [a.key, a.value]))),
       pricingLines: i.price.pricingLines,

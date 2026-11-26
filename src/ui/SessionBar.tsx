@@ -1,4 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
+import { useVisitElapsed } from '@/src/features/session/elapsed';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'expo-router';
 import { ChevronRight, RefreshCw } from 'lucide-react-native';
@@ -9,19 +10,6 @@ import { useAuthContext } from '@/src/features/auth/AuthProvider';
 import { EndSessionSheet } from '@/src/features/session/EndSessionSheet';
 import { Badge, Button, StatusDot, kitColors } from '@/src/ui/kit';
 
-function useElapsed(startedAt: number | null) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!startedAt) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [startedAt]);
-  if (!startedAt) return '0:00';
-  const s = Math.max(0, Math.floor((now - startedAt) / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}` : `${m}:${String(s % 60).padStart(2, '0')}`;
-}
 
 /**
  * SessionBar — shows on every tab while a visit is open, so staff can jump
@@ -36,7 +24,7 @@ export function SessionBar() {
   const { activeOperator } = useOperatorStore();
   const { lock, pinEnabled } = useAuthContext();
   const { data: client } = useClient(activeClientId ?? '');
-  const elapsed = useElapsed(sessionStartedAt);
+  const elapsed = useVisitElapsed(sessionStartedAt);
 
   if (mode === 'idle' || !activeClientId) return null;
   if (pathname?.includes(`/clients/${activeClientId}/session`) || pathname?.includes(`/clients/${activeClientId}/fitting`)) return null;

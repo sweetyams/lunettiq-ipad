@@ -5,6 +5,7 @@ import { User, Search, UserPlus, Plus, Play, CalendarPlus } from 'lucide-react-n
 
 import { useClients } from '@/src/api/useClients';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
+import { toast } from '@/src/ui/useToastStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
 import { Badge, Button, FilterChips, ListRow, PageHeader, Section, StatRow, formatPhone, kitColors } from '@/src/ui/kit';
@@ -253,6 +254,13 @@ function ClientPreview({ client }: ClientPreviewProps) {
 
 
   const handleStartSession = useCallback(() => {
+    // A visit for someone else is open: say so (startSession silently refused and the screen
+    // landed on "No visit in progress"). The same client's visit just reopens.
+    const { mode: m, activeClientId: open, activeClientName: openName } = useSessionStore.getState();
+    if (m !== 'idle' && open !== client.id) {
+      toast.warning('Another visit is open', `End ${openName ?? 'that'} visit before starting a new one.`);
+      return;
+    }
     startSession(client.id, name);
     router.push(`/clients/${client.id}/session`);
   }, [client.id, name, startSession, router]);

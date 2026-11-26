@@ -7,6 +7,7 @@ import { useClient } from '@/src/api/useClients';
 import { usePrescriptions } from '@/src/api/usePrescriptions';
 import { useClientUpcoming } from '@/src/api/useAppointments';
 import { useSessionStore } from '@/src/features/session/useSessionStore';
+import { toast } from '@/src/ui/useToastStore';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Avatar } from '@/src/ui/Avatar';
 import { LoadingState } from '@/src/ui/LoadingState';
@@ -71,6 +72,13 @@ export default function ClientProfileScreen() {
 
   const handleStartSession = useCallback(() => {
     if (!client) return;
+    // A visit for someone else is open: say so (startSession silently refused and the screen
+    // landed on "No visit in progress"). The same client's visit just reopens.
+    const { mode: m, activeClientId: open, activeClientName: openName } = useSessionStore.getState();
+    if (m !== 'idle' && open !== client.id) {
+      toast.warning('Another visit is open', `End ${openName ?? 'that'} visit before starting a new one.`);
+      return;
+    }
     startSession(client.id, clientName);
     router.push(`/clients/${client.id}/session`);
   }, [client, clientName, startSession, router]);

@@ -101,6 +101,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     sessionId,
     appointmentId,
     framesTried,
+    sessionNotes,
     endSession: resetSession,
   } = useSessionStore();
   const locationId = useEffectiveLocationId();
@@ -130,11 +131,12 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
         const type = verdictToInteractionType(f.verdict);
         return type ? [{ productId: f.productId, variantId: f.variantId, type, notes: f.notes || undefined, metadata: { verdict: f.verdict, photoCount: f.photoIds.length } }] : [];
       }),
-      end,
+      // The rail's visit notes ("saved to their history when the visit ends") go with the close notes.
+      end: { ...end, notes: [sessionNotes.trim(), end.notes?.trim()].filter(Boolean).join('\n\n') || undefined },
     });
     useVisitOutbox.getState().add(job);
-    resetSession();
-    resetFitting();
+    // The visit is cleared in finish(), after the booking / message steps: clearing it here
+    // unmounted the screens hosting those sheets, so they never opened.
     if (!isOnline) {
       toast.info('Visit saved on this iPad', 'It syncs to Foundry when the iPad is back online.');
       return true;
@@ -147,7 +149,14 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       setSubmitting(false);
     }
     return true;
-  }, [activeClientId, sessionId, locationId, appointmentId, framesTried, isOnline, resetSession, resetFitting]);
+  }, [activeClientId, sessionId, locationId, appointmentId, framesTried, sessionNotes, isOnline]);
+
+  /** The close is saved: clear the visit and leave. */
+  const finish = useCallback(() => {
+    resetSession();
+    resetFitting();
+    onComplete();
+  }, [resetSession, resetFitting, onComplete]);
   const consentCaptured = consentStatus === 'granted';
 
   // Frames the client loved: what the follow-up email is about.
@@ -180,8 +189,8 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       return;
     }
 
-    if (await closeVisit({ outcome: 'no_match', sendSummary: false, tags: [] })) onComplete();
-  }, [activeClientId, sessionId, closeVisit, onComplete]);
+    if (await closeVisit({ outcome: 'no_match', sendSummary: false, tags: [] })) finish();
+  }, [activeClientId, sessionId, closeVisit, finish]);
 
 
   const handleSubmit = useCallback(async () => {
@@ -225,17 +234,17 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
     }
     // Booking the next visit needs Foundry (free times); offline, book it later from the profile.
     if (outcome === 'booked_next_visit' && isOnline) setShowFollowUpSheet(true);
-    else if (!messageNow) onComplete();
+    else if (!messageNow) finish();
   }, [
     activeClientId, sessionId, outcome, sendSummary, consentCaptured, language, internalNotes,
-    selectedTags, orderRef, closeVisit, isOnline, onComplete, hasContact, activeClient, lovedFrames, framesTried,
+    selectedTags, orderRef, closeVisit, isOnline, finish, hasContact, activeClient, lovedFrames, framesTried,
   ]);
 
   const handleFollowUpSheetClose = useCallback(() => {
     setShowFollowUpSheet(false);
     // A preloaded message is waiting: it shows next and completes the flow when closed.
-    if (!afterMessage) onComplete();
-  }, [onComplete, afterMessage]);
+    if (!afterMessage) finish();
+  }, [finish, afterMessage]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -335,7 +344,7 @@ export function EndSessionSheet({ visible, onDismiss, onComplete }: EndSessionSh
       {afterMessage ? (
         <MessageSheet
           visible={!showFollowUpSheet}
-          onClose={() => { setAfterMessage(null); onComplete(); }}
+          onClose={() => { setAfterMessage(null); finish(); }}
           recipient={afterMessage.recipient}
           templates={[afterMessage.template, 'visit_choices']}
           vars={{ frames: afterMessage.frames }}

@@ -61,10 +61,21 @@ export const outboxDeps: OutboxDeps = {
     api.post(`/api/clients/${clientId}/tryon-sessions/${sessionId}/end`, body),
 };
 
-/** Run one close now (End visit calls this right after saving it). */
-export async function flushClose(job: PendingClose): Promise<PendingClose> {
+/** Closes being sent right now, by job id: End visit and the worker share one run, never two. */
+const inFlight = new Map<string, Promise<PendingClose>>();
+
+/**
+ * Run one close now (End visit calls this right after saving it). Adding the job also
+ * wakes the worker; both used to send the same job, doubling tried-on and verdict
+ * interactions and calling /end twice.
+ */
+export function flushClose(job: PendingClose): Promise<PendingClose> {
+  const running = inFlight.get(job.id);
+  if (running) return running;
   const { save } = useVisitOutbox.getState();
-  return runClose(job, outboxDeps, save);
+  const run = runClose(job, outboxDeps, save).finally(() => inFlight.delete(job.id));
+  inFlight.set(job.id, run);
+  return run;
 }
 
 const TICK_MS = 15_000;

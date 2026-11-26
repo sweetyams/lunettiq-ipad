@@ -1,4 +1,5 @@
 import { View, Text, Pressable, TextInput, ScrollView, FlatList } from 'react-native';
+import { useVisitElapsed } from '@/src/features/session/elapsed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Image } from 'expo-image';
@@ -48,19 +49,6 @@ function HeaderIcon({ icon: Icon, label, onPress }: { icon: typeof Camera; label
 
 const titleOf = (p: Product) => (typeof p.title === 'string' ? p.title : p.title?.en ?? p.title?.fr ?? '');
 
-function useElapsed(startedAt: number | null) {
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  if (!startedAt) return '0:00';
-  const s = Math.max(0, Math.floor((now - startedAt) / 1000));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = String(s % 60).padStart(2, '0');
-  return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
-}
 
 export default function SessionWorkspaceScreen() {
   const layout = useLayout();
@@ -79,7 +67,7 @@ export default function SessionWorkspaceScreen() {
   const { data: enrichment } = useClientEnrichment(id);
   const { data: preferences } = useClientPreferences(id);
   const { data: insurance } = useInsuranceProfile(id);
-  const elapsed = useElapsed(sessionStartedAt);
+  const elapsed = useVisitElapsed(sessionStartedAt);
   const facts = useStepFacts(id, client);
 
   const [search, setSearch] = useState('');
@@ -99,7 +87,7 @@ export default function SessionWorkspaceScreen() {
   const fr = lang === 'fr';
   const styleActive = Object.values(style).some((v) => v && v !== 'any');
   // Order flow: configurator → summary, for one tray frame.
-  const [ordering, setOrdering] = useState<{ product: Product; cart?: CartResult; price?: ConfiguratorPriceSummary } | null>(null);
+  const [ordering, setOrdering] = useState<{ product: Product; variantId?: string; cart?: CartResult; price?: ConfiguratorPriceSummary } | null>(null);
 
   const inTray = useMemo(() => new Set(framesTried.map((f) => f.productId)), [framesTried]);
   const suggested = useMemo(() => new Set((suggestions ?? []).map((s: { productId: string }) => s.productId)), [suggestions]);
@@ -141,7 +129,7 @@ export default function SessionWorkspaceScreen() {
       toast.info('Find the frame first', 'Search the catalogue for it, then order from the tray.');
       return;
     }
-    setOrdering({ product });
+    setOrdering({ product, variantId: frame.variantId });
   }, [allProducts]);
 
   const fitRange = enrichment?.frameWidthMm && enrichment?.bridgeWidthMm
@@ -352,6 +340,7 @@ export default function SessionWorkspaceScreen() {
           visible
           productId={ordering.product.id ?? ordering.product.shopifyId}
           productName={titleOf(ordering.product)}
+          variantId={ordering.variantId}
           cartResult={ordering.cart}
           priceSummary={ordering.price}
           clientId={id}

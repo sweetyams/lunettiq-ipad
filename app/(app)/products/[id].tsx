@@ -66,7 +66,7 @@ export default function ProductDetailScreen() {
   useEffect(() => {
     if (!product || !inVisit || logged.current === product.shopifyId) return;
     logged.current = product.shopifyId;
-    logInteraction.mutate({ clientId: activeClientId!, productId: product.id ?? product.shopifyId, type: 'viewed', sessionId });
+    logInteraction.mutate({ clientId: activeClientId!, productId: productKey(product), type: 'viewed', sessionId });
   }, [product, inVisit, activeClientId, sessionId, logInteraction]);
 
   // Lunettiq's variants are legacy lens options (BLACK FADE, POLARIZED…): never shown. Only real colour/size options are.

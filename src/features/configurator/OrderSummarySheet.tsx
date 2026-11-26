@@ -45,12 +45,12 @@ interface OrderSummarySheetProps {
 }
 
 export function OrderSummarySheet({
-  visible, productId, productName, variantId, cartResult, priceSummary, clientId, onClose, onOrderCreated,
+  visible, productId, productName, variantId, cartResult, priceSummary, clientId, sessionId, onClose, onOrderCreated,
 }: OrderSummarySheetProps) {
   const [rxId, setRxId] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
   const createOrder = useCreateRxOrder();
-  const { data: prescriptions = [] } = usePrescriptions(clientId ? { clientId } : undefined);
+  const { data: prescriptions = [] } = usePrescriptions({ clientId }) // no client: nothing is fetched (never the store-wide list);
 
   const lensRows = cartResult.attributes
     .filter((a) => a.key.startsWith('_') && !a.key.endsWith('Price'))
@@ -62,7 +62,7 @@ export function OrderSummarySheet({
     if (!clientId) return;
     try {
       const order = await createOrder.mutateAsync({
-        clientId, productId, productName, variantId, prescriptionId: rxId, notes, cart: cartResult, price: priceSummary,
+        clientId, productId, productName, variantId, sessionId, prescriptionId: rxId, notes, cart: cartResult, price: priceSummary,
       });
       onOrderCreated(order.id);
     } catch {

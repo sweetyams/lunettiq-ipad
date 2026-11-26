@@ -5,8 +5,9 @@ const MAX_PHOTOS = 20;
 
 interface FittingStore extends FittingState, FittingActions {}
 
-export const useFittingStore = create<FittingStore>((set, get) => ({
+export const useFittingStore = create<FittingStore & { visitKey: string | null }>((set, get) => ({
   // State
+  visitKey: null,
   isActive: false,
   consentStatus: 'pending',
   consentCapturedAt: null,
@@ -15,8 +16,14 @@ export const useFittingStore = create<FittingStore>((set, get) => ({
   maxPhotos: MAX_PHOTOS,
 
   // Actions
-  startFitting: () => {
-    set({ 
+  startFitting: (visitKey = null) => {
+    // Same visit: back to the camera with its photos and consent (they used to be wiped each time).
+    if (visitKey && visitKey === get().visitKey) {
+      set({ isActive: true });
+      return;
+    }
+    set({
+      visitKey,
       isActive: true,
       consentStatus: 'pending',
       photos: [],
@@ -95,6 +102,7 @@ export const useFittingStore = create<FittingStore>((set, get) => ({
 
   reset: () => {
     set({
+      visitKey: null,
       isActive: false,
       consentStatus: 'pending',
       consentCapturedAt: null,

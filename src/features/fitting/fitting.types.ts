@@ -26,7 +26,8 @@ export interface FittingState {
 }
 
 export interface FittingActions {
-  startFitting: () => void;
+  /** Opens the camera for a visit: keeps that visit's photos and consent, starts fresh for another visit. */
+  startFitting: (visitKey?: string | null) => void;
   endFitting: () => void;
   setConsent: (granted: boolean) => void;
   addPhoto: (photo: SessionPhoto) => void;

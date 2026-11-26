@@ -23,7 +23,7 @@ export default function FittingScreen() {
   const [selectedPhotoForDetail, setSelectedPhotoForDetail] = useState<SessionPhoto | null>(null);
   
   // Stores
-  const { activeClientId, activeClientName, mode, startFitting: startSessionFitting, endFitting: endSessionFitting } = useSessionStore();
+  const { activeClientId, activeClientName, sessionId, mode, startFitting: startSessionFitting, endFitting: endSessionFitting } = useSessionStore();
   const { handedToClient, handToClient } = usePrivacyStore();
   const {
     isActive,
@@ -51,7 +51,7 @@ export default function FittingScreen() {
     }
 
     // Start fitting mode in both stores
-    startFittingStore();
+    startFittingStore(sessionId);
     startSessionFitting();
 
     // Cleanup on unmount — return to session mode
@@ -59,7 +59,7 @@ export default function FittingScreen() {
       endFittingStore();
       endSessionFitting();
     };
-  }, [activeClientId, id, startFittingStore, startSessionFitting, endFittingStore, endSessionFitting, router]);
+  }, [activeClientId, id, sessionId, startFittingStore, startSessionFitting, endFittingStore, endSessionFitting, router]);
 
   const handleCapture = (photo: CameraCapturedPicture) => {
     // Check consent on first capture

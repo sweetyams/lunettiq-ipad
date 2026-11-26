@@ -315,13 +315,13 @@ export function ConfiguratorSheet({
   const [colourSelections, setColourSelections] = useState<ColourSelections>({});
 
   // Resolve which flow applies
-  const { data: resolveData, isLoading: resolving } = useConfiguratorResolve(
+  const { data: resolveData, isLoading: resolving, error: resolveError, refetch: refetchResolve } = useConfiguratorResolve(
     visible ? productId : null
   );
   const firstChannel = resolveData?.channels?.[0];
 
   // Load the snapshot
-  const { data: snapshot, isLoading: loadingSnapshot } = useConfiguratorSnapshot(
+  const { data: snapshot, isLoading: loadingSnapshot, error: snapshotError, refetch: refetchSnapshot } = useConfiguratorSnapshot(
     firstChannel?.flowId ?? null
   );
 
@@ -329,6 +329,9 @@ export function ConfiguratorSheet({
   const { data: lensColoursRaw = [] } = useLensColours();
 
   const isLoading = resolving || loadingSnapshot;
+  // A failed load is not "no lens options": offering "Order frame only" then made lensless orders.
+  const loadFailed = !isLoading && !snapshot && !!(resolveError || snapshotError);
+  const retryLoad = () => { if (resolveError) void refetchResolve(); else void refetchSnapshot(); };
   const hasConfigurator = !!snapshot && (snapshot.steps?.length ?? 0) > 0;
 
   // Flatten all choices and groups from snapshot
@@ -463,7 +466,12 @@ export function ConfiguratorSheet({
   const total = basePrice + priceDelta;
   const frameOnly = () => onComplete({ attributes: [], addonLines: [], pricingLines: [] } as unknown as CartResult, { basePrice, addons: 0, total: basePrice, pricingLines: [] });
 
-  const footer = isLoading ? undefined : !hasConfigurator ? (
+  const footer = isLoading ? undefined : loadFailed ? (
+    <View className="flex-1 flex-row justify-end gap-[8px]">
+      <Button label="Cancel" variant="ghost" onPress={handleClose} />
+      <Button label="Try again" variant="primary" onPress={retryLoad} />
+    </View>
+  ) : !hasConfigurator ? (
     <View className="flex-1 flex-row justify-end gap-[8px]">
       <Button label="Cancel" variant="ghost" onPress={handleClose} />
       {completeLabel === 'Done' ? null : <Button label="Order frame only" variant="primary" onPress={frameOnly} />}
@@ -494,6 +502,8 @@ export function ConfiguratorSheet({
     >
       {isLoading ? (
         <View className="py-[48px] items-center"><ActivityIndicator color={kitColors.primary} /></View>
+      ) : loadFailed ? (
+        <Text className="text-body-md text-text-secondary">The lens options didn’t load. Check the connection and try again.</Text>
       ) : !hasConfigurator ? (
         <Text className="text-body-md text-text-secondary">{completeLabel === 'Done' ? 'This store has no lens options set up for this frame yet.' : 'This frame has no lens options set up. You can order the frame on its own.'}</Text>
       ) : (
