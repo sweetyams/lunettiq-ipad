@@ -130,7 +130,8 @@ export default function ProductDetailScreen() {
   return (
     <View className="flex-1 bg-bg-page">
       <View className="flex-row items-center gap-[12px] px-[32px] py-[12px] border-b border-border">
-        <Pressable onPress={() => router.back()} className="flex-row items-center gap-[4px] min-h-[44px] -ml-[6px]" accessibilityRole="button" accessibilityLabel="Back">
+        {/* "Frames" goes to the list (it's underneath in the stack), not to whatever screen opened this one. */}
+        <Pressable onPress={() => router.navigate('/products')} className="flex-row items-center gap-[4px] min-h-[44px] -ml-[6px]" accessibilityRole="button" accessibilityLabel="Back to Frames">
           <ChevronLeft size={20} color={kitColors.textTertiary} />
           <Text className="text-body-md text-text-tertiary">Frames</Text>
         </Pressable>
