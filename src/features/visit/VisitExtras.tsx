@@ -11,6 +11,7 @@ import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Share } from 'react-native';
 import { Modal } from '@/src/ui/Modal';
 import { Image } from 'expo-image';
+import { sizedImage } from '@/src/ui/imageUrl';
 import { Sparkles, X, Share2, ShieldCheck } from 'lucide-react-native';
 import { Badge, Button, ChoiceChips, Field, Sheet, TextField, VerdictPicker, kitColors } from '@/src/ui/kit';
 import { toast } from '@/src/ui/useToastStore';
@@ -43,7 +44,7 @@ function TrayFrame({ frame, clientId, lang, onOrder, first }: { frame: FrameTrie
   return (
     <View className={`flex-row gap-[20px] py-[16px] ${first ? '' : 'border-t border-border'}`}>
       <View className="w-[220px] h-[140px] rounded-lg border border-border overflow-hidden bg-bg-subtle items-center justify-center">
-        {frame.imageUrl ? <Image source={{ uri: frame.imageUrl }} accessibilityLabel={frame.productName} style={{ width: '100%', height: '100%' }} contentFit="contain" /> : null}
+        {frame.imageUrl ? <Image source={{ uri: sizedImage(frame.imageUrl, 640) }} accessibilityLabel={frame.productName} style={{ width: '100%', height: '100%' }} contentFit="contain" /> : null}
       </View>
       <View className="flex-1 gap-[10px]">
         <View className="flex-row items-center gap-[10px]">
@@ -197,7 +198,7 @@ export function PresentationView({ visible, onClose, clientFirstName }: { visibl
           ) : shown.map((f) => (
             <View key={f.id} style={{ width: shown.length === 1 ? '100%' : '48%' }} className="gap-[12px]">
               <View className="aspect-[16/9] rounded-xl bg-bg-subtle overflow-hidden items-center justify-center">
-                {f.imageUrl ? <Image source={{ uri: f.imageUrl }} accessibilityLabel={f.productName} style={{ width: '90%', height: '90%' }} contentFit="contain" transition={200} /> : null}
+                {f.imageUrl ? <Image source={{ uri: sizedImage(f.imageUrl, 384) }} accessibilityLabel={f.productName} style={{ width: '90%', height: '90%' }} contentFit="contain" transition={200} /> : null}
               </View>
               <Text className="text-heading-xl text-text-primary text-center">{f.productName}</Text>
             </View>

@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('expo-router', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock('expo-image', () => ({ Image: () => null }));
 vi.mock('react-native', () => ({ View: () => null, Text: () => null, ScrollView: () => null, Pressable: () => null }));
+vi.mock('@/src/ui/imageUrl', () => ({ sizedImage: (u: string) => u }));
 vi.mock('@/src/api/useProductFamily', () => ({ useProductFamily: () => ({ data: undefined }) }));
 
 import { familyView } from '@/src/ui/ColourSiblings';

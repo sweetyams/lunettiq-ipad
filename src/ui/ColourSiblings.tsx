@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
+import { sizedImage } from '@/src/ui/imageUrl';
 import { useProductFamily } from '@/src/api/useProductFamily';
 import type { ProductSibling } from '@/src/api/families.types';
 
@@ -49,7 +50,7 @@ function TypeButton({ label, active, onPress }: TypeButtonProps) {
 export function FrameSwatch({ sibling, size = 18 }: { sibling: Pick<ProductSibling, 'colourHex' | 'colourHex2' | 'swatchImage' | 'swatchType'>; size?: number }) {
   const style = { width: size, height: size, borderRadius: size / 2 };
   if (sibling.swatchImage) {
-    return <Image source={{ uri: sibling.swatchImage }} style={style} contentFit="cover" accessibilityIgnoresInvertColors />;
+    return <Image source={{ uri: sizedImage(sibling.swatchImage, size * 3) }} style={style} contentFit="cover" accessibilityIgnoresInvertColors />;
   }
   if (!sibling.colourHex) return null;
   // Swatch colours are product data (the frame's acetate), not UI colours.
@@ -86,7 +87,7 @@ function ColourCard({ sibling, isCurrent, onPress }: ColourCardProps) {
         <View className={`rounded-lg overflow-hidden bg-bg-page ${isCurrent ? 'border-2 border-accent' : `border ${pressed ? 'border-text-tertiary' : 'border-border'}`}`} style={isCurrent ? undefined : { margin: 1 }}>
           <View className="bg-bg-subtle items-center justify-center" style={{ aspectRatio: 1 }}>
             {sibling.image ? (
-              <Image source={{ uri: sibling.image }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
+              <Image source={{ uri: sizedImage(sibling.image, 384) }} style={{ width: '100%', height: '100%' }} contentFit="cover" accessibilityIgnoresInvertColors />
             ) : (
               <FrameSwatch sibling={sibling} size={36} />
             )}

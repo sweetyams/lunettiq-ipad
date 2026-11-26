@@ -303,7 +303,7 @@ function RelatedFrames({ handle, family, staff, onOpen }: { handle: string; fami
             {({ pressed }) => (
               <View className={`rounded-lg overflow-hidden border ${pressed ? 'border-text-tertiary' : 'border-border'}`}>
                 <View className="bg-bg-subtle" style={{ aspectRatio: 1 }}>
-                  {r.image ? <Image source={{ uri: r.image }} contentFit="cover" style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors /> : null}
+                  {r.image ? <Image source={{ uri: sizedImage(r.image, 300) }} contentFit="cover" style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors /> : null}
                 </View>
                 <View className="px-[10px] py-[8px] border-t border-border gap-[2px]">
                   <Text className="text-body-sm font-medium text-text-primary" numberOfLines={1}>{text(r.title)}</Text>

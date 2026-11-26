@@ -1,5 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import { sizedImage } from '@/src/ui/imageUrl';
 import { usePrivacyStore } from '@/src/features/privacy/PrivacyModeProvider';
 import { Badge } from '@/src/ui/kit/Badge';
 import { elevation } from '@/src/ui/kit/elevation';
@@ -61,7 +62,7 @@ export function ProductCard({ product, onPress, onLongPress, fitScore = null, fi
           {/* Square, full-bleed photo (Foundry admin cards): the studio shots already sit on a light background. */}
           <View className="items-center justify-center bg-bg-subtle" style={{ aspectRatio: 1 }}>
             {image ? (
-              <Image source={{ uri: image.url }} contentFit="cover" transition={150} style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors />
+              <Image source={{ uri: sizedImage(image.url, 640) }} contentFit="cover" transition={150} style={{ width: '100%', height: '100%' }} accessibilityIgnoresInvertColors />
             ) : (
               <Text className="text-body-sm text-text-dim">No photo</Text>
             )}

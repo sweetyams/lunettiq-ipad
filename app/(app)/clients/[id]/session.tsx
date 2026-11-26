@@ -3,6 +3,7 @@ import { useVisitElapsed } from '@/src/features/session/elapsed';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Image } from 'expo-image';
+import { sizedImage } from '@/src/ui/imageUrl';
 import { Camera, Check, Search, Smartphone, ChevronRight, ShoppingBag, MessageSquare, Presentation, Sparkles } from 'lucide-react-native';
 
 import { useProducts } from '@/src/api/useProducts';
@@ -284,7 +285,7 @@ export default function SessionWorkspaceScreen() {
                     <View key={frame.id} className={`px-[16px] py-[12px] gap-[10px] ${i > 0 ? 'border-t border-border' : ''}`}>
                       <View className="flex-row items-center gap-[12px]">
                         <View className="w-[56px] h-[40px] rounded-sm border border-border overflow-hidden items-center justify-center">
-                          {frame.imageUrl ? <Image source={{ uri: frame.imageUrl }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
+                          {frame.imageUrl ? <Image source={{ uri: sizedImage(frame.imageUrl, 256) }} contentFit="cover" style={{ width: '100%', height: '100%' }} /> : null}
                         </View>
                         <Text className="flex-1 text-body-md font-medium text-text-primary" numberOfLines={2}>{frame.productName}</Text>
                         {isLoved ? <Button label="Order" size="sm" onPress={() => startOrder(frame)} /> : null}

@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { useState } from 'react';
 import { Image } from 'expo-image';
+import { sizedImage } from '@/src/ui/imageUrl';
 import { X } from 'lucide-react-native';
 import { Modal } from '@/src/ui/Modal';
 import { Wordmark } from '@/src/ui/Wordmark';
@@ -67,7 +68,7 @@ export function HandedToClientView() {
           {framesTried.map((f) => (
             <View key={f.id} style={{ width: cardWidth }} className="border border-border rounded-lg overflow-hidden bg-bg-page">
               <View className="w-full items-center justify-center" style={{ aspectRatio: 4 / 3 }}>
-                {f.imageUrl ? <Image source={{ uri: f.imageUrl }} contentFit="contain" style={{ width: '90%', height: '90%' }} accessibilityLabel={f.productName} /> : null}
+                {f.imageUrl ? <Image source={{ uri: sizedImage(f.imageUrl, 750) }} contentFit="contain" style={{ width: '90%', height: '90%' }} accessibilityLabel={f.productName} /> : null}
               </View>
               <View className="p-[20px] gap-[14px] border-t border-border">
                 <Text className="text-heading-lg text-text-primary" numberOfLines={1}>{f.productName}</Text>
